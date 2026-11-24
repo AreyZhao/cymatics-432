@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>432Hz 音流学 · 万物共振</title>
+<!-- build: v3 reactive -->
+
+<meta name="description" content="会跟着音乐共振的克拉尼图形：麦克风听外放音乐、本地音乐频谱、或内置 120 BPM 天籁节拍，都能驱动这幅 432Hz 音流学沙画。">
+<meta property="og:title" content="432Hz 音流学 · 万物共振">
+<meta property="og:description" content="会跟着音乐共振的克拉尼图形 · 手机外放音乐它也会一起舞动">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --nf: 0px;
+    --pat: #00e5ff;
+    --pat-soft: rgba(0,229,255,.18);
+    --pat-line: rgba(0,229,255,.34);
+    --pat-glow: rgba(0,229,255,.5);
+    --accent:#00e5ff;
+    --accent-2:#b6fbff;
+    --accent-soft:rgba(0,229,255,.10);
+    --accent-line:rgba(0,229,255,.34);
+    --accent-glow:rgba(0,229,255,.55);
+    --pink:#ff4d8d;
+    --text:#eaf4f7;
+    --muted:rgba(234,244,247,.52);
+    --glass:rgba(10,13,19,.62);
+    --stroke:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;background:#000;color:var(--text);overflow:hidden;
+    font-family:system-ui,-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+    overscroll-behavior:none;user-select:none;-webkit-user-select:none;
+    -webkit-text-size-adjust:100%;text-size-adjust:100%;
+  }
+  #stage{position:fixed;top:0;right:0;bottom:0;left:0;width:100%;height:100%;display:block;touch-action:none;z-index:1}
+  #vignette{
+    position:fixed;top:0;right:0;bottom:0;left:0;z-index:2;pointer-events:none;
+    background:radial-gradient(ellipse 78% 68% at 50% 46%,rgba(0,0,0,0) 32%,rgba(0,0,0,.46) 100%);
+  }
+
+  /* ---------- 玻璃面板 ---------- */
+  .ui-layer{
+    position:fixed;left:0;width:100%;z-index:20;display:flex;justify-content:center;
+    padding:0 12px;pointer-events:none;transition:opacity .55s ease;
+  }
+  #top-bar{top:12px;top:calc(12px + env(safe-area-inset-top))}
+  #bottom-bar{bottom:12px;bottom:calc(12px + var(--nf) + env(safe-area-inset-bottom));transition:bottom .35s cubic-bezier(.2,.9,.3,1),opacity .55s ease}
+  .bar{
+    pointer-events:auto;display:flex;align-items:center;justify-content:center;
+    gap:8px;flex-wrap:wrap;max-width:100%;
+    padding:8px 10px;border-radius:16px;
+    background:var(--glass);border:1px solid var(--stroke);
+    -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+    box-shadow:0 12px 44px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  .btn{
+    appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);
+    background:rgba(255,255,255,.05);color:var(--text);
+    font-size:13px;line-height:1;padding:9px 12px;border-radius:10px;
+    cursor:pointer;white-space:nowrap;transition:background .18s,border-color .18s,color .18s,box-shadow .18s;
+    font-family:inherit;
+  }
+  .btn:hover{background:rgba(255,255,255,.11)}
+  .btn:active{transform:scale(.97)}
+  .btn.mic{color:var(--pink);border-color:rgba(255,77,141,.34);background:rgba(255,77,141,.09)}
+  .btn.mic.on{background:var(--pink);border-color:transparent;color:#fff;box-shadow:0 0 24px rgba(255,77,141,.55)}
+  .btn.primary{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+  .btn.primary.on{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600;box-shadow:0 0 26px var(--accent-glow)}
+  .btn.icon{width:34px;height:34px;padding:0;border-radius:50%;color:var(--muted);font-size:14px}
+  .btn.icon.sm{width:30px;height:30px;font-size:12px}
+  .btn.music{color:#b388ff;border-color:rgba(179,136,255,.34);background:rgba(179,136,255,.09)}
+  .btn.music.on{background:#b388ff;border-color:transparent;color:#170a2b;font-weight:600;box-shadow:0 0 24px rgba(179,136,255,.45)}
+  .meter{flex-basis:100%;height:2px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:1px}
+  .meter i{display:block;height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .1s linear}
+  .tip-row{flex-basis:100%;display:none;font-size:11px;line-height:1.5;color:#ffe0a8;text-align:center;padding:2px 4px 0}
+  .tip-row.on{display:block}
+  .tip-row b{color:#ffd27a;font-weight:600}
+
+  select.btn{padding-right:26px;background-image:linear-gradient(45deg,transparent 50%,rgba(255,255,255,.5) 50%),linear-gradient(135deg,rgba(255,255,255,.5) 50%,transparent 50%);background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  select.btn option{background:#0d1016;color:#eaf4f7}
+
+  .brand{
+    display:flex;align-items:baseline;gap:4px;padding:0 4px;
+    font-size:10px;letter-spacing:.3em;font-weight:600;color:var(--muted);white-space:nowrap;
+  }
+  .brand em{font-style:normal;color:var(--accent);letter-spacing:.06em}
+  @media (max-width:560px){.brand{display:none}}
+
+  /* ---------- 底部控制 ---------- */
+  #bottom-bar .bar{flex-direction:column;gap:9px;width:min(680px,100%);padding:10px 12px}
+  .row{display:flex;align-items:center;gap:10px;width:100%;min-width:0}
+  .unit{font-size:11px;color:var(--muted);letter-spacing:.08em;padding-left:2px}
+  #freqInput{
+    width:76px;flex:0 0 auto;padding:7px 8px;border-radius:9px;
+    border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.5);color:#fff;
+    font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;
+    outline:none;font-family:inherit;transition:border-color .18s;
+  }
+  #freqInput:focus{border-color:var(--accent)}
+  input[type=range]{
+    flex:1;min-width:60px;-webkit-appearance:none;appearance:none;height:22px;background:transparent;outline:none;margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),rgba(255,255,255,.18))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;margin-top:-6px;box-shadow:0 0 12px var(--accent-glow);cursor:pointer}
+  input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.22)}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:#fff;box-shadow:0 0 12px var(--accent-glow)}
+  .tag{
+    flex:0 0 auto;font-size:11px;color:var(--muted);letter-spacing:.02em;
+    border:1px solid var(--stroke);border-radius:7px;padding:5px 7px;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .presets{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:1px}
+  .presets::-webkit-scrollbar{display:none}
+  .chip{
+    appearance:none;-webkit-appearance:none;flex:0 0 auto;
+    border:1px solid var(--stroke);background:rgba(255,255,255,.04);color:var(--muted);
+    font-size:12px;padding:6px 9px;border-radius:8px;cursor:pointer;font-family:inherit;
+    font-variant-numeric:tabular-nums;transition:.18s;
+  }
+  .chip:hover{background:rgba(255,255,255,.1);color:var(--text)}
+  .chip.on{color:#00161c;background:var(--accent);border-color:transparent;font-weight:600}
+
+  /* ---------- 钢琴抽屉 ---------- */
+  #piano-drawer{
+    position:fixed;left:0;right:0;bottom:var(--nf);z-index:30;
+    height:148px;display:block;padding:6px;
+    background:radial-gradient(ellipse at 50% 110%,var(--pat-soft),transparent 62%),linear-gradient(180deg,rgba(8,10,14,.97),rgba(2,3,5,.98));
+    border-top:1px solid var(--stroke);
+    -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+    box-shadow:0 -16px 44px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.05);
+    transform:translateY(calc(100% + var(--nf) + 16px));transition:transform .36s cubic-bezier(.2,.9,.3,1);
+    overflow-x:auto;overflow-y:hidden;touch-action:pan-x;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;
+  }
+  #piano-drawer::-webkit-scrollbar{display:none}
+  #piano-drawer.open{transform:translateY(0)}
+  .piano-inner{position:relative;display:flex;height:100%;width:100%;min-width:100%}
+  .piano-inner.scroll{width:max-content;min-width:0}
+  .key{position:relative;border-radius:0 0 7px 7px;cursor:pointer;touch-action:pan-x;transition:background .08s,box-shadow .12s,transform .08s}
+  .key.white{
+    flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;
+    background:linear-gradient(180deg,rgba(255,255,255,.46),rgba(255,255,255,.22) 52%,var(--pat-soft));
+    border:1px solid var(--pat-line);border-top:none;border-left-color:rgba(0,0,0,.55);
+    color:rgba(234,244,247,.82);font-size:10px;font-weight:600;z-index:1;
+    box-shadow:inset 0 -10px 16px rgba(0,0,0,.26),inset 0 -2px 0 var(--pat-line),inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .piano-inner.scroll .key.white{flex:0 0 auto;width:var(--kw,26px)}
+  .key.white.active{
+    background:linear-gradient(180deg,var(--pat),var(--accent-2));
+    color:#00161c;border-color:transparent;
+    box-shadow:0 0 18px var(--pat-glow),inset 0 0 16px rgba(255,255,255,.35);
+    transform:translateY(1px);
+  }
+  .key.black{
+    position:absolute;top:0;height:62%;width:6.2%;
+    background:linear-gradient(180deg,#141a22,#020305 62%,var(--pat-soft));
+    border:1px solid var(--pat-line);border-top:none;
+    border-radius:0 0 4px 4px;z-index:2;box-shadow:0 5px 12px rgba(0,0,0,.9);
+  }
+  .piano-inner.scroll .key.black{width:calc(var(--kw,26px) * 0.62)}
+  .key.black.active{background:linear-gradient(180deg,var(--pat),var(--accent-2));border-color:transparent;box-shadow:0 0 20px var(--pat-glow)}
+  @media (max-width:768px){
+    #piano-drawer{height:138px}
+  }
+  body.piano-open #bottom-bar{bottom:calc(154px + var(--nf));bottom:calc(154px + var(--nf) + env(safe-area-inset-bottom))}
+
+  /* ---------- 提示 / 浮层 ---------- */
+  #hint{
+    position:fixed;left:50%;bottom:calc(126px + var(--nf));bottom:calc(126px + var(--nf) + env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:15;text-align:center;font-size:12px;line-height:1.95;letter-spacing:.04em;
+    color:var(--muted);pointer-events:none;transition:opacity .7s ease;
+  }
+  #hint.gone{opacity:0}
+  #dbg{
+    position:fixed;left:6px;bottom:calc(6px + env(safe-area-inset-bottom));z-index:9999;
+    display:none;padding:4px 6px;border-radius:6px;background:rgba(0,0,0,.78);
+    color:#5f5;font:10px/1.45 ui-monospace,Menlo,monospace;white-space:pre;pointer-events:none;
+  }
+  #toast{
+    position:fixed;left:50%;top:74px;top:calc(74px + env(safe-area-inset-top));transform:translate(-50%,-10px);
+    z-index:60;max-width:88vw;padding:11px 16px;border-radius:12px;text-align:center;
+    background:rgba(6,10,14,.94);border:1px solid var(--accent-line);
+    font-size:13px;line-height:1.7;color:#ddf6fa;box-shadow:0 14px 44px rgba(0,0,0,.65);
+    opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease;
+  }
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+
+  #sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:65;display:none;
+    padding:0 10px calc(10px + var(--nf) + env(safe-area-inset-bottom));
+    background:rgba(0,0,0,.35);
+  }
+  #sheet.on{display:block}
+  #sheet .sheet-inner{
+    max-width:520px;margin:0 auto;background:rgba(9,12,17,.97);
+    border:1px solid var(--stroke);border-radius:18px;
+    padding:14px 14px 12px;box-shadow:0 -18px 60px rgba(0,0,0,.85);
+  }
+  #sheet .sheet-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  #sheet .sheet-label{flex:0 0 34px;font-size:11px;color:var(--muted);letter-spacing:.12em}
+  .swatches{display:flex;gap:10px;flex-wrap:wrap}
+  .swatch{
+    width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.18);
+    padding:0;cursor:pointer;position:relative;outline:none;
+  }
+  .swatch.on{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.14),0 0 16px var(--accent-glow)}
+  .sizes{display:flex;gap:8px;flex-wrap:wrap}
+  .size-btn{
+    appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);
+    background:rgba(255,255,255,.04);color:var(--muted);font-size:12px;
+    padding:7px 12px;border-radius:8px;cursor:pointer;font-family:inherit;
+  }
+  .size-btn.on{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600}
+  #sheet .sheet-done{
+    display:block;width:100%;margin-top:2px;padding:10px;border-radius:10px;border:none;
+    background:var(--accent);color:#00161c;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  #help{
+    position:fixed;top:0;right:0;bottom:0;left:0;z-index:70;display:none;align-items:center;justify-content:center;padding:20px;
+    background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+  }
+  #help.on{display:flex}
+  #help .panel{
+    width:min(430px,100%);max-height:80vh;overflow:auto;
+    background:rgba(10,13,18,.97);border:1px solid var(--stroke);border-radius:18px;
+    padding:20px 20px 14px;box-shadow:0 26px 70px rgba(0,0,0,.85);
+  }
+  #help h2{margin:0;font-size:14px;letter-spacing:.14em;font-weight:600;color:var(--accent)}
+  #help h3{margin:18px 0 6px;font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:600}
+  #help p,#help li{margin:0;font-size:13px;line-height:1.8;color:rgba(234,244,247,.8)}
+  #help ul{margin:0;padding-left:17px}
+  #help li{margin:2px 0}
+  #help .fine{margin-top:14px;font-size:11px;color:rgba(234,244,247,.4);line-height:1.7}
+  #help .close{
+    display:block;margin:18px auto 0;padding:10px 26px;border-radius:10px;border:none;
+    background:var(--accent);color:#00161c;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  #help .close.ghost{background:rgba(255,255,255,.08);color:var(--text);border:1px solid var(--stroke);margin-bottom:-6px}
+  #help .close.ghost:hover{background:rgba(255,255,255,.14)}
+
+  body.ui-hidden #top-bar,body.ui-hidden #bottom-bar,body.ui-hidden #hint{opacity:.05}
+  body.ui-hidden #hint{opacity:0}
+  @media (prefers-reduced-motion:reduce){.ui-layer,#piano-drawer{transition:none!important}}
+</style>
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+<div id="vignette"></div>
+
+<div id="hint">
+  <div>拖动旋转 · 双指缩放</div>
+  <div>轻点画面 隐藏面板</div>
+</div>
+
+<div id="toast"></div>
+<div id="dbg"></div>
+
+<header id="top-bar" class="ui-layer">
+  <div class="bar">
+    <span class="brand">CYMATICS<em>432</em></span>
+    <button id="micBtn" class="btn mic">🎤 外音</button>
+    <button id="musicBtn" class="btn music">🎵 放首歌</button>
+    <button id="autoBtn" class="btn primary">✨ 天籁</button>
+    <select id="instSelect" class="btn" aria-label="音色">
+      <option value="musicbox">🎼 八音盒</option>
+      <option value="piano">🎹 电子琴</option>
+      <option value="flute">🌬️ 长笛</option>
+      <option value="synth">🌌 合成器</option>
+    </select>
+    <button id="fullBtn" class="btn icon sm" aria-label="全屏">⛶</button>
+    <button id="helpBtn" class="btn icon sm" aria-label="说明">?</button>
+    <div class="meter" id="meter" aria-hidden="true"><i id="meterFill"></i></div>
+    <div class="tip-row" id="wxTip"></div>
+  </div>
+</header>
+<input id="musicFile" type="file" accept="audio/*" hidden>
+
+<footer id="bottom-bar" class="ui-layer">
+  <div class="bar">
+    <div class="row">
+      <span class="unit">Hz</span>
+      <input id="freqInput" type="text" inputmode="decimal" value="345" aria-label="频率（0 到无限，可输入 ∞）">
+      <input id="freqSlider" type="range" min="0" max="1000" step="1" value="0" aria-label="频率滑块">
+      <span id="modeTag" class="tag">m2 · n2</span>
+      <span id="bpmTag" class="tag" hidden>— BPM</span>
+    </div>
+    <div class="row">
+      <div class="presets">
+        <button class="chip on" data-freq="345">345</button>
+        <button class="chip" data-freq="432">432</button>
+        <button class="chip" data-freq="528">528</button>
+        <button class="chip" data-freq="639">639</button>
+        <button class="chip" data-freq="741">741</button>
+        <button class="chip" data-freq="963">963</button>
+        <button class="chip" data-freq="1000000" title="无上限">∞</button>
+      </div>
+      <button id="pianoBtn" class="btn">🎹 键盘</button>
+      <button id="styleBtn" class="btn icon sm" aria-label="配色与琴键数">🎨</button>
+    </div>
+  </div>
+</footer>
+
+<div id="piano-drawer" aria-hidden="true"><div id="pianoInner" class="piano-inner"></div></div>
+
+<div id="sheet">
+  <div class="sheet-inner">
+    <div class="sheet-row">
+      <span class="sheet-label">配色</span>
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <div class="sheet-row">
+      <span class="sheet-label">琴键</span>
+      <div class="sizes" id="sizes"></div>
+    </div>
+    <button class="sheet-done" id="sheetClose">完成</button>
+  </div>
+</div>
+
+<div id="help">
+  <div class="panel">
+    <h2>432Hz 音流学</h2>
+    <h3>怎么玩</h3>
+    <ul>
+      <li>拖动画面旋转视角，双指捏合 / 滚轮缩放。</li>
+      <li>轻点画面：隐藏或固定界面。</li>
+      <li>🎨 配色/琴键：可选 5 套配色，琴键可在 13 / 25 / 49 / 88 键之间切换（大琴键可左右滑动）。</li>
+      <li>底部拖动频率滑块，图形会随频率换形状；范围 0 → ∞（拖到最右为无上限，也可在输入框直接填 <b>∞</b>）。</li>
+    </ul>
+    <h3>三种驱动方式</h3>
+    <ul>
+      <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸（效果最好，但需要系统浏览器）。</li>
+      <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
+      <li>✨ <b>天籁</b>：内置 120 BPM 节拍与五声音阶旋律，不用麦克风也不用音乐文件。</li>
+    </ul>
+    <h3>浏览器兼容</h3>
+    <ul>
+      <li>Chrome / Edge / Safari / 三星浏览器：全部功能。</li>
+      <li>微信内置浏览器：能看效果、能放歌、能用天籁；麦克风被微信禁用，请点右上角「⋯ → 在浏览器中打开」。</li>
+      <li>老设备：不支持 WebGL 时会给出提示；帧率偏低时自动降低渲染量。</li>
+    </ul>
+    <h3>分享到微信</h3>
+    <ul>
+      <li>微信只能打开网址，不能直接打开本地 .html 文件。</li>
+      <li>把文件上传到 GitHub Pages / Netlify Drop 等免费静态托管，拿到 https 链接后分享，微信里点开即可查看。</li>
+    </ul>
+    <p class="fine">音流学（Cymatics）：克拉尼图形由圆膜的贝塞尔模态 |J<sub>m</sub>(z r)·cos(mθ)| 生成，振幅为零的节线处颗粒聚集。音频只在本机分析，不会上传。</p>
+    <button class="close ghost" id="shareBtn">分享 / 复制链接</button>
+    <button class="close" id="helpClose">知道了</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+   * 工具函数
+   * ============================================================ */
+  var clamp = function (v, a, b) { return v < a ? a : (v > b ? b : v); };
+  var TAU = Math.PI * 2;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function hslToRgb(h, s, l) {
+    h = ((h % 1) + 1) % 1;
+    var a = s * Math.min(l, 1 - l);
+    var f = function (n) {
+      var k = (n + h * 12) % 12;
+      return l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    };
+    return [f(0), f(8), f(4)];
+  }
+  function midiToFreq(m) { return 432 * Math.pow(2, (m - 69) / 12); }
+
+  var toastEl = $('toast'), toastTimer = 0;
+  function toast(html, ms) {
+    toastEl.innerHTML = html;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, ms || 4200);
+  }
+
+  /* ============================================================
+   * 克拉尼图形：模型参数
+   * ============================================================ */
+  var ZEROS = [
+    [2.4048, 5.5201, 8.6537, 11.7915],
+    [3.8317, 7.0156, 10.1735, 13.3237],
+    [5.1356, 8.4172, 11.6198, 14.7960],
+    [6.3802, 9.7610, 13.0152, 16.2235],
+    [7.5883, 11.0647, 14.3725, 17.6160]
+  ];
+  var MODE_TABLE = [
+    [0,1],[2,1],[1,2],[3,1],[0,2],
+    [2,2],[4,1],[1,1],[3,2],[0,3],
+    [2,3],[1,3],[4,2],[3,3],[0,4],
+    [2,4],[1,4],[4,3],[3,4],[2,2]
+  ];
+
+  function modeForFreq(f) {
+    if (!(f > 0)) return [0, 1];
+    if (f >= 330 && f <= 360) return [2, 2];
+    var lg = Math.log10(f + 1);
+    var idx = ((Math.floor(lg * 6) % MODE_TABLE.length) + MODE_TABLE.length) % MODE_TABLE.length;
+    return MODE_TABLE[idx];
+  }
+  function hueForFreq(f) {
+    if (!(f > 0)) return state.themeHue;
+    var l = Math.log2(f / 345);
+    if (!isFinite(l)) l = 0;
+    return state.themeHue - clamp(l, -3.5, 3.5) * 0.05;
+  }
+
+  /* ============================================================
+   * 粒子系统
+   * ============================================================ */
+  var R_WORLD = 7.5;
+  var isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent) ||
+                 Math.min(window.screen.width, window.screen.height) < 560;
+  var COUNT = isMobile ? 42000 : 82000;
+  var LUT_N = 1024;
+
+  var posArr = new Float32Array(COUNT * 3);
+  var seedArr = new Float32Array(COUNT);
+  var prevArr = new Float32Array(COUNT);
+  var curArr = new Float32Array(COUNT);
+  var scratch = new Float32Array(COUNT);
+  var lutIdx = new Float32Array(COUNT);
+  var cosM = [];
+  var lut = new Float32Array(LUT_N);
+  var lutKey = '';
+
+  (function buildPoints() {
+    for (var m = 0; m < 5; m++) cosM.push(new Float32Array(COUNT));
+    for (var i = 0; i < COUNT; i++) {
+      var r = Math.sqrt(Math.random());          // 圆盘内均匀分布
+      var th = Math.random() * TAU;
+      posArr[i * 3] = Math.cos(th) * r * R_WORLD;
+      posArr[i * 3 + 1] = 0;
+      posArr[i * 3 + 2] = Math.sin(th) * r * R_WORLD;
+      seedArr[i] = Math.random();
+      lutIdx[i] = r * (LUT_N - 1);
+      cosM[0][i] = 1;
+      for (var k = 1; k < 5; k++) cosM[k][i] = Math.cos(k * th);
+    }
+  })();
+
+  function besselJ(m, x) {
+    if (x < 0) x = -x;
+    var half = x * 0.5, term = 1, k;
+    for (k = 1; k <= m; k++) term *= half / k;
+    var sum = term;
+    var factor = -half * half;
+    for (k = 1; k <= 90; k++) {
+      term *= factor / (k * (k + m));
+      sum += term;
+      if (Math.abs(term) < 1e-14) break;
+    }
+    return sum;
+  }
+
+  function buildLut(m, z) {
+    var key = m + ':' + z.toFixed(5);
+    if (key === lutKey) return;
+    lutKey = key;
+    for (var i = 0; i < LUT_N; i++) lut[i] = besselJ(m, z * (i / (LUT_N - 1)));
+  }
+
+  /* ============================================================
+   * WebGL 初始化
+   * ============================================================ */
+  var canvas = $('stage');
+  var GL_OPTS = { alpha: false, antialias: true, depth: false, stencil: false, powerPreference: 'high-performance' };
+  var gl = canvas.getContext('webgl2', GL_OPTS) || canvas.getContext('webgl', GL_OPTS) || canvas.getContext('experimental-webgl', GL_OPTS);
+
+  function fatal(msg) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;padding:24px;background:#05070a;color:#dfeef2;font-size:14px;line-height:1.9;text-align:center';
+    d.innerHTML = msg;
+    document.body.appendChild(d);
+  }
+  if (!gl) {
+    fatal('当前浏览器无法创建 WebGL（图形渲染）上下文。<br>请用手机自带的 Chrome / Safari 打开这个页面。');
+    return;
+  }
+
+  var VS = [
+    'precision highp float;',
+    'attribute vec3 aPos;',
+    'attribute float aPrev;',
+    'attribute float aCur;',
+    'attribute float aSeed;',
+    'uniform mat4 uProj;',
+    'uniform mat4 uView;',
+    'uniform float uMix;',
+    'uniform float uSharp;',
+    'uniform float uPx;',
+    'uniform float uDpr;',
+    'uniform float uPulse;',
+    'uniform float uGain;',
+    'uniform float uR;',
+    'uniform float uTime;',
+    'uniform float uWave;',
+    'uniform float uDbg;',
+    'uniform float uWaveAmp;',
+    'uniform vec3 uColor;',
+    'varying vec3 vColor;',
+    'void main(){',
+    '  float r = length(aPos.xz) / uR;',
+    '  vec4 mv = uView * vec4(aPos, 1.0);',
+    '  gl_Position = uProj * mv;',
+    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0);',
+    '  if (uDbg > 2.5 && uDbg < 3.5) {',
+    '    gl_Position = vec4(aPos.x * 0.1, aPos.z * 0.1, 0.0, 1.0);',
+    '    gl_PointSize = 12.0;',
+    '  } else if (uDbg > 3.5 && uDbg < 4.5) {',
+    '    gl_PointSize = 8.0;',
+    '  }',
+    '  float val = mix(aPrev, aCur, uMix);',
+    '  float glow = exp(-val * uSharp);',
+    '  glow = pow(glow, 1.15);',
+    '  float edge = 1.0 - smoothstep(0.88, 1.0, r);',
+    '  float shimmer = 0.88 + 0.12 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
+    '  float b = glow * uPulse * edge * shimmer * (0.62 + aSeed * 0.7) * uGain;',
+    '  float wr = uWave * 1.25;',
+    '  float wq = (r - wr) * 7.5;',
+    '  float ring = exp(-wq * wq) * uWaveAmp;',
+    '  b += ring * edge * 1.1;',
+    '  if (uDbg > 2.5) {',
+    '    vColor = vec3(0.0, 1.0, 1.0);',
+    '  } else {',
+    '    vColor = uColor * b;',
+    '  }',
+    '}'
+  ].join('\n');
+
+  var FS = [
+    'precision mediump float;',
+    'varying vec3 vColor;',
+    'void main(){',
+    '  vec2 p = gl_PointCoord - 0.5;',
+    '  float d = length(p) * 2.0;',
+    '  float a = max(0.0, 1.0 - d);',
+    '  a = a * a;',
+    '  gl_FragColor = vec4(vColor * a, 1.0);',
+    '}'
+  ].join('\n');
+
+  function compile(type, src) {
+    var sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      throw new Error('Shader: ' + gl.getShaderInfoLog(sh));
+    }
+    return sh;
+  }
+
+  var prog, U = {}, A = {};
+  try {
+    prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  } catch (e) {
+    fatal('着色器创建失败：' + e.message);
+    return;
+  }
+  gl.useProgram(prog);
+
+  ['aPos', 'aPrev', 'aCur', 'aSeed'].forEach(function (n) {
+    A[n] = gl.getAttribLocation(prog, n);
+  });
+  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor'].forEach(function (n) {
+    U[n] = gl.getUniformLocation(prog, n);
+  });
+
+  function makeBuffer(data, usage) {
+    var b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, data, usage);
+    return b;
+  }
+  var posBuf = makeBuffer(posArr, gl.STATIC_DRAW);
+  var seedBuf = makeBuffer(seedArr, gl.STATIC_DRAW);
+  var prevBuf = makeBuffer(prevArr, gl.DYNAMIC_DRAW);
+  var curBuf = makeBuffer(curArr, gl.DYNAMIC_DRAW);
+
+  function bindAttr(loc, buf, size) {
+    if (loc < 0) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+  }
+  bindAttr(A.aPos, posBuf, 3);
+  bindAttr(A.aPrev, prevBuf, 1);
+  bindAttr(A.aCur, curBuf, 1);
+  bindAttr(A.aSeed, seedBuf, 1);
+
+  gl.disable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE);
+  gl.clearColor(0, 0, 0, 1);
+
+  /* ============================================================
+   * 状态
+   * ============================================================ */
+  var state = {
+    freq: 345,
+    m: 2,
+    n: 2,
+    z: 8.4172,
+    hue: 0.55,
+    hueTarget: 0.55,
+    modeDirty: true,
+    transMix: 0,
+    time: 0,
+    beatEnv: 0,
+    energy: 0,
+    instrument: 'musicbox',
+    micOn: false,
+    seqOn: false,
+    musicOn: false,
+    level: 0,
+    centroid: 0,
+    gainPeak: 0.08,
+    bassHist: [],
+    beatTimes: [],
+    lastBeat: 0,
+    bpm: 0,
+    wave: 0,
+    waveAmp: 0,
+    silent: 0,
+    silentHinted: false,
+    prevBass: 0,
+    fluxHist: [],
+    audioHz: 0,
+    manualFreq: 345,
+    lastFreqPush: 0,
+    themeId: 'cyan',
+    themeHue: 0.55,
+    keyRange: '13'
+  };
+
+  var POINT_SIZE = isMobile ? 2.6 : 2.2;
+  var HALO = false;
+
+  function setMode(m, z) {
+    buildLut(m, z);
+    var cm = cosM[m], mix = state.transMix;
+    for (var i = 0; i < COUNT; i++) {
+      var f = lutIdx[i];
+      var i0 = f | 0;
+      var fr = f - i0;
+      var j = lut[i0] + (lut[i0 + 1] - lut[i0]) * fr;
+      scratch[i] = Math.abs(j * cm[i]);
+    }
+    for (var k = 0; k < COUNT; k++) prevArr[k] = prevArr[k] * (1 - mix) + curArr[k] * mix;
+    curArr.set(scratch);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, prevBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, prevArr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, curBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, curArr);
+
+    state.transMix = 0;
+  }
+
+  /* ============================================================
+   * 相机
+   * ============================================================ */
+  var cam = { theta: 0.55, phi: 0.6, dist: 22, tTheta: 0.55, tPhi: 0.6, tDist: 22, userZoom: false };
+  var lastInteract = 0;
+  var eye = [0, 0, 0];
+  var matProj = new Float32Array(16);
+  var matView = new Float32Array(16);
+
+  /* 按屏幕宽高比自动取景：竖屏更俯视、横屏更侧视 */
+  function defaultPhi() {
+    var aspect = window.innerWidth / window.innerHeight;
+    if (aspect < 0.75) return 0.46;
+    if (aspect < 1.05) return 0.55;
+    return 0.64;
+  }
+  function fitDist(phi) {
+    var aspect = Math.max(0.2, window.innerWidth / window.innerHeight);
+    var tanH = Math.tan(Math.PI / 8);           // fov 45° 的一半
+    var dH = (R_WORLD * 1.06) / (tanH * aspect);
+    var dV = (R_WORLD * Math.cos(phi) * 1.3) / tanH;
+    return clamp(Math.max(dH, dV), 14, 110);
+  }
+  function resetCamera() {
+    cam.tPhi = defaultPhi();
+    cam.tDist = fitDist(cam.tPhi);
+    cam.tTheta = 0.55;
+  }
+
+  function perspective(out, fovy, aspect, near, far) {
+    var f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+    out[0] = f / aspect; out[1] = 0; out[2] = 0; out[3] = 0;
+    out[4] = 0; out[5] = f; out[6] = 0; out[7] = 0;
+    out[8] = 0; out[9] = 0; out[10] = (far + near) * nf; out[11] = -1;
+    out[12] = 0; out[13] = 0; out[14] = 2 * far * near * nf; out[15] = 0;
+  }
+  function lookAt(out, e, c, up) {
+    var zx = e[0] - c[0], zy = e[1] - c[1], zz = e[2] - c[2];
+    var len = Math.hypot(zx, zy, zz) || 1;
+    zx /= len; zy /= len; zz /= len;
+    var xx = up[1] * zz - up[2] * zy;
+    var xy = up[2] * zx - up[0] * zz;
+    var xz = up[0] * zy - up[1] * zx;
+    len = Math.hypot(xx, xy, xz) || 1;
+    xx /= len; xy /= len; xz /= len;
+    var yx = zy * xz - zz * xy;
+    var yy = zz * xx - zx * xz;
+    var yz = zx * xy - zy * xx;
+    out[0] = xx; out[1] = yx; out[2] = zx; out[3] = 0;
+    out[4] = xy; out[5] = yy; out[6] = zy; out[7] = 0;
+    out[8] = xz; out[9] = yz; out[10] = zz; out[11] = 0;
+    out[12] = -(xx * e[0] + xy * e[1] + xz * e[2]);
+    out[13] = -(yx * e[0] + yy * e[1] + yz * e[2]);
+    out[14] = -(zx * e[0] + zy * e[1] + zz * e[2]);
+    out[15] = 1;
+  }
+
+  var dpr = 1, dprCap = 2;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+    var w = Math.max(1, Math.floor(window.innerWidth * dpr));
+    var h = Math.max(1, Math.floor(window.innerHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+    perspective(matProj, Math.PI / 4, w / h, 0.1, 300);
+    if (!cam.userZoom) resetCamera();
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 120); });
+
+  /* ============================================================
+   * 音频引擎
+   * ============================================================ */
+  var Audio = (function () {
+    var ctx = null, master = null, comp = null, verbSend = null;
+    var noiseBuf = null, playerBus = null;
+
+    function makeIR(dur, decay) {
+      var rate = ctx.sampleRate;
+      var len = Math.max(1, Math.floor(rate * dur));
+      var buf = ctx.createBuffer(2, len, rate);
+      for (var ch = 0; ch < 2; ch++) {
+        var d = buf.getChannelData(ch);
+        for (var i = 0; i < len; i++) {
+          var t = i / len;
+          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, decay) * (i < 32 ? i / 32 : 1);
+        }
+      }
+      return buf;
+    }
+    function makeNoise(dur) {
+      var rate = ctx.sampleRate, len = Math.floor(rate * dur);
+      var buf = ctx.createBuffer(1, len, rate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      return buf;
+    }
+
+    function ensure() {
+      if (!ctx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) throw new Error('Web Audio 不可用');
+        ctx = new AC();
+        master = ctx.createGain();
+        master.gain.value = 0.72;
+        comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -16;
+        comp.knee.value = 24;
+        comp.ratio.value = 6;
+        comp.attack.value = 0.004;
+        comp.release.value = 0.25;
+        master.connect(comp);
+        comp.connect(ctx.destination);
+
+        var conv = ctx.createConvolver();
+        conv.buffer = makeIR(2.6, 2.6);
+        var wet = ctx.createGain();
+        wet.gain.value = 0.5;
+        verbSend = ctx.createGain();
+        verbSend.gain.value = 0.9;
+        verbSend.connect(conv);
+        conv.connect(wet);
+        wet.connect(master);
+
+        noiseBuf = makeNoise(1.0);
+      }
+      if (ctx.state === 'suspended') ctx.resume().catch(function () {});
+      return ctx;
+    }
+
+    function outBus(wet) {
+      var g = ctx.createGain();
+      g.gain.value = 1;
+      g.connect(master);
+      if (wet > 0) {
+        var s = ctx.createGain();
+        s.gain.value = wet;
+        g.connect(s);
+        s.connect(verbSend);
+      }
+      return g;
+    }
+
+    function note(midi, opts) {
+      opts = opts || {};
+      var c = ensure();
+      var t = Math.max(c.currentTime + 0.006, opts.when || 0);
+      var f = midiToFreq(midi);
+      var vel = opts.vel == null ? 1 : opts.vel;
+      var inst = opts.inst || state.instrument;
+      var out = outBus(inst === 'flute' ? 0.55 : 0.34);
+      var o, g, o2, g2, lp, lfo, lfoG;
+
+      if (inst === 'musicbox') {
+        o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f * 2, t);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.16 * vel, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0004, t + 1.3);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + 1.4);
+
+        o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 3.02, t);
+        g2 = c.createGain();
+        g2.gain.setValueAtTime(0.0001, t);
+        g2.gain.linearRampToValueAtTime(0.05 * vel, t + 0.003);
+        g2.gain.exponentialRampToValueAtTime(0.0002, t + 0.32);
+        o2.connect(g2); g2.connect(out); o2.start(t); o2.stop(t + 0.36);
+      } else if (inst === 'piano') {
+        o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(3200, t);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.19 * vel, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0004, t + 1.9);
+        o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + 2.0);
+
+        o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2, t);
+        g2 = c.createGain();
+        g2.gain.setValueAtTime(0.0001, t);
+        g2.gain.linearRampToValueAtTime(0.06 * vel, t + 0.01);
+        g2.gain.exponentialRampToValueAtTime(0.0002, t + 0.7);
+        o2.connect(g2); g2.connect(out); o2.start(t); o2.stop(t + 0.8);
+      } else if (inst === 'flute') {
+        o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+        lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5.2;
+        lfoG = c.createGain(); lfoG.gain.value = f * 0.006;
+        lfo.connect(lfoG); lfoG.connect(o.frequency);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.15 * vel, t + 0.09);
+        g.gain.setValueAtTime(0.15 * vel, t + 0.6);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 1.9);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + 2.0);
+        lfo.start(t); lfo.stop(t + 2.0);
+      } else {
+        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.005, t);
+        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 5;
+        lp.frequency.setValueAtTime(Math.min(9000, f * 8), t);
+        lp.frequency.exponentialRampToValueAtTime(Math.max(120, f), t + 0.9);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.085 * vel, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0004, t + 1.5);
+        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 1.6); o2.stop(t + 1.6);
+      }
+    }
+
+    function kick(when, vel) {
+      var c = ensure();
+      var t = Math.max(c.currentTime + 0.006, when || 0);
+      var o = c.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(135, t);
+      o.frequency.exponentialRampToValueAtTime(42, t + 0.18);
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.5 * (vel || 1), t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0004, t + 0.4);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + 0.42);
+
+      var n = c.createBufferSource(); n.buffer = noiseBuf;
+      var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 0.8;
+      var ng = c.createGain();
+      ng.gain.setValueAtTime(0.09 * (vel || 1), t);
+      ng.gain.exponentialRampToValueAtTime(0.0002, t + 0.05);
+      n.connect(bp); bp.connect(ng); ng.connect(master);
+      n.start(t); n.stop(t + 0.06);
+    }
+
+    function hat(when, vel) {
+      var c = ensure();
+      var t = Math.max(c.currentTime + 0.006, when || 0);
+      var n = c.createBufferSource(); n.buffer = noiseBuf;
+      var hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7200;
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.055 * (vel || 1), t);
+      g.gain.exponentialRampToValueAtTime(0.0002, t + 0.055);
+      n.connect(hp); hp.connect(g); g.connect(master);
+      n.start(t); n.stop(t + 0.07);
+    }
+
+    function bass(when, midi, vel) {
+      var c = ensure();
+      var t = Math.max(c.currentTime + 0.006, when || 0);
+      var f = midiToFreq(midi) / 2;
+      var o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.2 * (vel || 1), t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0003, t + 1.1);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + 1.2);
+    }
+
+    function pad(when, midis, vel) {
+      var c = ensure();
+      var t = Math.max(c.currentTime + 0.006, when || 0);
+      var out = outBus(0.75);
+      var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1900;
+      lp.connect(out);
+      for (var i = 0; i < midis.length; i++) {
+        var f = midiToFreq(midis[i]);
+        var o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+        var o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2.002, t);
+        var g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.05 * (vel || 1), t + 0.7);
+        g.gain.linearRampToValueAtTime(0.032 * (vel || 1), t + 2.3);
+        g.gain.exponentialRampToValueAtTime(0.0002, t + 4.2);
+        o.connect(g); o2.connect(g); g.connect(lp);
+        o.start(t); o.stop(t + 4.3); o2.start(t); o2.stop(t + 4.3);
+      }
+    }
+
+    function player() {
+      ensure();
+      if (!playerBus) {
+        playerBus = ctx.createGain();
+        playerBus.gain.value = 0.9;
+        playerBus.connect(master);
+      }
+      return playerBus;
+    }
+
+    return {
+      ensure: ensure,
+      ctx: function () { return ctx; },
+      now: function () { return ctx ? ctx.currentTime : 0; },
+      player: player,
+      note: note, kick: kick, hat: hat, bass: bass, pad: pad
+    };
+  })();
+
+  /* ============================================================
+   * 天籁演算：120 BPM 生成式节拍
+   * ============================================================ */
+  var PENTA = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84];
+  var BPM = 120;
+  var seq = { on: false, timer: 0, next: 0, step: 0 };
+  var visQueue = [];
+
+  function pump() {
+    var c = Audio.ctx();
+    if (!c || !seq.on) return;
+    var stepDur = 60 / BPM / 4; // 十六分音符
+    var guard = 0;
+    while (seq.next < c.currentTime + 0.3 && guard++ < 40) {
+      scheduleStep(seq.step, seq.next);
+      seq.next += stepDur;
+      seq.step = (seq.step + 1) % 32;
+    }
+  }
+
+  function scheduleStep(i, t) {
+    if (i % 8 === 0) { Audio.kick(t, 1); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
+    if (i === 6 || i === 22) { Audio.kick(t, 0.4); visQueue.push({ t: t, kind: 'beat', amt: 0.4 }); }
+    if (i % 2 === 1 && Math.random() < 0.8) Audio.hat(t, i % 4 === 3 ? 0.5 : 0.26);
+    if (i % 16 === 0) Audio.bass(t, 45, 0.8);
+    if (i % 2 === 0 && Math.random() < 0.42) {
+      var midi = PENTA[(Math.random() * PENTA.length) | 0];
+      Audio.note(midi, { when: t, vel: 0.75, wet: 0.45 });
+      visQueue.push({ t: t, kind: 'note', midi: midi });
+    }
+    if (i % 32 === 0) Audio.pad(t, [48, 55, 60], 0.9);
+  }
+
+  function startSeq() {
+    Audio.ensure();
+    if (seq.timer) clearInterval(seq.timer);
+    seq.on = true;
+    seq.step = 0;
+    seq.next = Audio.now() + 0.12;
+    seq.timer = setInterval(pump, 40);
+    pump();
+  }
+  function stopSeq() {
+    seq.on = false;
+    clearInterval(seq.timer);
+    seq.timer = 0;
+    visQueue.length = 0;
+  }
+
+  /* ============================================================
+   * 音频输入源：外音监听 / 本地音乐 / 天籁演算
+   * ============================================================ */
+  var micStream = null, analyser = null, audioData = null;
+  var musicEl = null, musicNode = null, musicURL = null;
+  var micBtn = $('micBtn'), autoBtn = $('autoBtn'), musicBtn = $('musicBtn');
+  var musicFile = $('musicFile'), bpmTag = $('bpmTag');
+
+  function newAnalyser(c) {
+    var an = c.createAnalyser();
+    an.fftSize = 2048;
+    an.smoothingTimeConstant = 0.62;
+    return an;
+  }
+
+  function bandEnergy(arr, binHz, lo, hi) {
+    var i0 = Math.max(1, Math.floor(lo / binHz));
+    var i1 = Math.min(arr.length - 1, Math.ceil(hi / binHz));
+    var sum = 0, n = 0, i;
+    for (i = i0; i <= i1; i++) { sum += arr[i]; n++; }
+    return n ? sum / n / 255 : 0;
+  }
+
+  function micErrorHint(err) {
+    var name = (err && err.name) || '';
+    var msg = (err && err.message) || '';
+    if (isWeChat) return '微信内置浏览器禁用了麦克风。<br>请点右上角「⋯ → 在浏览器中打开」，或改用 🎵 放首歌 / ✨ 天籁。';
+    if (/security origin|insecure|not allowed/i.test(msg)) {
+      return '当前页面处在受限的预览/沙盒环境，浏览器禁止调用麦克风。<br>请把文件存到手机，用系统浏览器打开。';
+    }
+    if (name === 'NotAllowedError' || name === 'SecurityError') {
+      return '麦克风权限被拒绝。<br>请在浏览器权限里允许麦克风，并确认是 https 或本地文件。';
+    }
+    if (name === 'NotFoundError' || name === 'OverconstrainedError') return '没有检测到可用的麦克风设备。';
+    if (name === 'NotReadableError') return '麦克风被其它应用占用，请关闭后重试。';
+    return '麦克风开启失败：' + (name || msg) + '<br>提示：微信 / 内置浏览器通常不支持，请用系统浏览器。';
+  }
+
+  function startMic() {
+    if (window.self !== window.top) {
+      toast('⚠️ 页面正被嵌套在预览/沙盒里，浏览器会拒绝麦克风。<br>请把 .html 存到手机，用系统浏览器打开。', 8000);
+      return Promise.resolve(false);
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast('⚠️ 当前浏览器不支持麦克风。<br>请换用系统自带的 Chrome / Safari，或改用 🎵 放首歌。', 6000);
+      return Promise.resolve(false);
+    }
+    if (!window.isSecureContext) {
+      toast('⚠️ 当前不是安全环境（需要 https 或本地文件），浏览器会拒绝麦克风。<br>可先用 🎵 放首歌。', 6000);
+      return Promise.resolve(false);
+    }
+    var c = Audio.ensure();
+    return navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    }).then(function (stream) {
+      var an = newAnalyser(c);
+      var sink = c.createGain();
+      sink.gain.value = 0;                 // 麦克风不发声，只保证分析节点被处理
+      sink.connect(Audio.player());
+      micStream = stream;
+      c.createMediaStreamSource(stream).connect(an);
+      an.connect(sink);
+      analyser = an;
+      audioData = new Uint8Array(an.frequencyBinCount);
+      state.micOn = true;
+      state.gainPeak = 0.08;
+      state.bassHist.length = 0;
+      state.beatTimes.length = 0;
+      state.silent = 0;
+      state.silentHinted = false;
+      state.manualFreq = state.freq;
+      state.audioHz = 0;
+      state.lastFreqPush = 0;
+      micBtn.classList.add('on');
+      micBtn.textContent = '🔴 收音中';
+      if (bpmTag) bpmTag.hidden = false;
+      return true;
+    }).then(null, function (err) {
+      console.warn('[mic]', err);
+      toast('❌ ' + micErrorHint(err), 7000);
+      return false;
+    });
+  }
+
+  function stopMic() {
+    if (micStream) {
+      try { micStream.getTracks().forEach(function (tr) { tr.stop(); }); } catch (e) {}
+      micStream = null;
+    }
+    state.micOn = false;
+    state.level = 0;
+    state.bpm = 0;
+    analyser = null;
+    audioData = null;
+    setFreq(state.manualFreq || 345);
+    if (bpmTag) bpmTag.hidden = true;
+    micBtn.classList.remove('on');
+    micBtn.textContent = '🎤 外音';
+  }
+
+  function stopMusic() {
+    if (musicEl) { try { musicEl.pause(); } catch (e) {} }
+    if (musicURL) { try { URL.revokeObjectURL(musicURL); } catch (e) {} musicURL = null; }
+    if (musicNode) { try { musicNode.disconnect(); } catch (e) {} musicNode = null; }
+    musicEl = null;
+    state.musicOn = false;
+    state.level = 0;
+    state.bpm = 0;
+    analyser = null;
+    audioData = null;
+    setFreq(state.manualFreq || 345);
+    if (bpmTag) bpmTag.hidden = true;
+    musicBtn.classList.remove('on');
+    musicBtn.textContent = '🎵 放首歌';
+  }
+
+  function startMusic(file) {
+    var c = Audio.ensure();
+    stopMusic();
+    var el = document.createElement('audio');
+    el.loop = true;
+    el.volume = 0.85;
+    musicURL = URL.createObjectURL(file);
+    el.src = musicURL;
+    var an = newAnalyser(c);
+    try {
+      musicNode = c.createMediaElementSource(el);
+      musicNode.connect(an);
+      an.connect(Audio.player());          // 音乐经分析节点后进播放总线
+      analyser = an;
+      audioData = new Uint8Array(an.frequencyBinCount);
+    } catch (e) {
+      console.warn('[music]', e);
+      musicEl = el;
+      state.musicOn = true;
+      musicBtn.classList.add('on');
+      musicBtn.textContent = '⏹ 停播';
+      try { el.play(); } catch (err) {}
+      toast('⚠️ 这个浏览器无法分析音乐频谱，只能单纯播放', 5000);
+      return;
+    }
+    musicEl = el;
+    state.musicOn = true;
+    state.gainPeak = 0.08;
+    state.bassHist.length = 0;
+    state.beatTimes.length = 0;
+    state.silent = 0;
+    state.silentHinted = false;
+    state.manualFreq = state.freq;
+    state.audioHz = 0;
+    state.lastFreqPush = 0;
+    musicBtn.classList.add('on');
+    musicBtn.textContent = '⏹ 停播';
+    if (bpmTag) bpmTag.hidden = false;
+    var pr = null;
+    try { pr = el.play(); } catch (err) {}
+    if (pr && pr['catch']) {
+      pr['catch'](function () {
+        toast('点一下画面开始播放', 4200);
+        var once = function () {
+          try { el.play(); } catch (e) {}
+          window.removeEventListener('pointerdown', once);
+        };
+        window.addEventListener('pointerdown', once);
+      });
+    }
+    toast('🎵 正在播放：' + String(file.name || '本地音乐').slice(0, 36) + '<br>波纹跟着频谱舞动', 4200);
+  }
+
+  function toggleMic() {
+    if (state.micOn) { stopMic(); toast('麦克风已关闭'); return; }
+    if (state.seqOn) toggleSeq();
+    if (state.musicOn) stopMusic();
+    startMic().then(function (ok) {
+      if (ok) toast('🎤 已开始收音<br>外放音乐，波纹会跟着低音节拍呼吸', 5200);
+    });
+  }
+
+  function toggleSeq() {
+    if (state.seqOn) {
+      stopSeq();
+      state.seqOn = false;
+      autoBtn.textContent = '✨ 天籁';
+      autoBtn.classList.remove('on');
+      return;
+    }
+    if (state.micOn) stopMic();
+    if (state.musicOn) stopMusic();
+    state.seqOn = true;
+    autoBtn.textContent = '⏹ 停演';
+    autoBtn.classList.add('on');
+    startSeq();
+  }
+
+  micBtn.addEventListener('click', toggleMic);
+  autoBtn.addEventListener('click', toggleSeq);
+  musicBtn.addEventListener('click', function () {
+    if (state.musicOn) { stopMusic(); toast('已停止播放'); return; }
+    if (state.seqOn) toggleSeq();
+    if (state.micOn) stopMic();
+    try { musicFile.click(); } catch (e) { toast('当前浏览器不支持选择本地音乐'); }
+  });
+  musicFile.addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (f) startMusic(f);
+    e.target.value = '';
+  });
+  $('instSelect').addEventListener('change', function (e) {
+    state.instrument = e.target.value;
+  });
+
+  /* ============================================================
+   * 频率 / 模式
+   * ============================================================ */
+  var freqInput = $('freqInput'), freqSlider = $('freqSlider'), modeTag = $('modeTag');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+
+  function sliderToFreq(v) {
+    if (v <= 0) return 0;
+    if (v >= 1000) return 1000000;                // 最右端 = 无上限
+    return Math.pow(10, (v / 1000) * 6) - 1;
+  }
+  function freqToSlider(f) {
+    if (!(f > 0)) return 0;
+    if (f >= 1000000) return 1000;
+    return clamp(Math.log10(f + 1) / 6 * 1000, 0, 1000);
+  }
+
+  function setFreq(f, opts) {
+    opts = opts || {};
+    f = parseFloat(f);
+    if (!isFinite(f) || f < 0) f = 0;
+    f = clamp(Math.round(f), 0, 1000000);
+    state.freq = f;
+
+    if (opts.input !== false) freqInput.value = (f >= 1000000 ? '∞' : f);
+    if (opts.slider !== false) freqSlider.value = freqToSlider(f);
+
+    var mn = modeForFreq(f);
+    var z = ZEROS[mn[0]][mn[1] - 1];
+    if (mn[0] !== state.m || mn[1] !== state.n) {
+      state.m = mn[0];
+      state.n = mn[1];
+      state.z = z;
+      state.modeDirty = true;
+      modeTag.textContent = 'm' + mn[0] + ' · n' + mn[1];
+    }
+    state.hueTarget = hueForFreq(f);
+
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('on', +chips[i].dataset.freq === f);
+    }
+  }
+
+  freqInput.addEventListener('change', function () {
+    var raw = String(freqInput.value || '').trim();
+    var v;
+    if (raw === '∞' || raw === 'inf' || raw === 'Infinity') v = 1000000;
+    else v = parseFloat(raw);
+    if (isNaN(v) || v < 0) v = 0;
+    setFreq(v);
+  });
+  freqInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') freqInput.blur(); });
+  freqSlider.addEventListener('input', function () {
+    setFreq(sliderToFreq(+freqSlider.value), { slider: false });
+  });
+  chips.forEach(function (ch) {
+    ch.addEventListener('click', function () { setFreq(+ch.dataset.freq); });
+  });
+
+  /* ============================================================
+   * 钢琴键盘
+   * ============================================================ */
+  var pianoDrawer = $('piano-drawer'), pianoInner = $('pianoInner'), pianoBtn = $('pianoBtn');
+  function flashKey(node, ms) {
+    if (!node) return;
+    node.classList.add('active');
+    clearTimeout(node._t);
+    node._t = setTimeout(function () { node.classList.remove('active'); }, ms);
+  }
+
+  function pressKey(midi) {
+    setFreq(midiToFreq(midi));
+    Audio.note(midi, { vel: 0.95, when: 0 });
+    state.beatEnv = Math.min(1.6, state.beatEnv + 0.5);
+    state.wave = 0;
+    state.waveAmp = Math.min(1.3, state.waveAmp + 0.7);
+    flashKey(keyEls[midi], 280);
+  }
+
+  var RANGES = { '13': [60, 72], '25': [48, 72], '49': [36, 84], '88': [21, 108] };
+  var NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  var WHITE_PC = [0, 2, 4, 5, 7, 9, 11];
+  var keyEls = {};
+
+  function isWhiteKey(midi) { return WHITE_PC.indexOf(((midi % 12) + 12) % 12) >= 0; }
+
+  function buildPiano(rangeKey) {
+    var range = RANGES[rangeKey] || RANGES['13'];
+    var notes = [];
+    for (var m = range[0]; m <= range[1]; m++) notes.push(m);
+    var whites = notes.filter(isWhiteKey).length;
+    var scrollMode = whites > 18;
+    var kw = rangeKey === '88' ? 24 : 30;
+
+    pianoInner.innerHTML = '';
+    pianoInner.className = 'piano-inner' + (scrollMode ? ' scroll' : '');
+    if (scrollMode) pianoInner.style.setProperty('--kw', kw + 'px');
+    keyEls = {};
+
+    var whiteIdx = 0;
+    notes.forEach(function (midi) {
+      var el = document.createElement('div');
+      var white = isWhiteKey(midi);
+      el.className = 'key ' + (white ? 'white' : 'black');
+      var pc = midi % 12;
+      var octave = Math.floor(midi / 12) - 1;
+      if (white) {
+        if (rangeKey === '13') el.textContent = (pc === 0 ? 'C' + octave : NOTE_NAMES[pc]);
+        else if (pc === 0) el.textContent = 'C' + octave;
+        whiteIdx++;
+      } else if (scrollMode) {
+        el.style.left = (whiteIdx * kw - kw * 0.31) + 'px';
+      } else {
+        var ww = 100 / whites;
+        el.style.left = (whiteIdx * ww - 3.1) + '%';
+      }
+      el.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        pressKey(midi);
+      });
+      keyEls[midi] = el;
+      pianoInner.appendChild(el);
+    });
+    state.keyRange = rangeKey;
+    try { localStorage.setItem('cz_keys', rangeKey); } catch (e) {}
+  }
+
+  pianoBtn.addEventListener('click', function () {
+    var open = pianoDrawer.classList.toggle('open');
+    document.body.classList.toggle('piano-open', open);
+    pianoBtn.textContent = open ? '⬇ 收起' : '🎹 键盘';
+    pianoBtn.classList.toggle('primary', open);
+    pianoBtn.classList.toggle('on', open);
+    if (open) buildPiano(state.keyRange || '13');
+  });
+
+  /* ============================================================
+   * 配色 · 琴键数二级面板
+   * ============================================================ */
+  var THEMES = [
+    { id: 'cyan',   name: '极光青', accent: '#00e5ff', accent2: '#b6fbff', hue: 0.55, bg: [0.000, 0.010, 0.014] },
+    { id: 'violet', name: '紫霞',   accent: '#b388ff', accent2: '#eadcff', hue: 0.75, bg: [0.008, 0.004, 0.014] },
+    { id: 'amber',  name: '熔金',   accent: '#ffb74d', accent2: '#ffe6b8', hue: 0.09, bg: [0.014, 0.008, 0.000] },
+    { id: 'rose',   name: '樱粉',   accent: '#ff6fa5', accent2: '#ffd2e3', hue: 0.95, bg: [0.014, 0.004, 0.008] },
+    { id: 'jade',   name: '翡翠',   accent: '#36f1a1', accent2: '#c9ffe9', hue: 0.42, bg: [0.000, 0.012, 0.006] }
+  ];
+  var theme = THEMES[0];
+
+  function hexToRgba(hex, a) {
+    var h = String(hex).replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  function applyTheme(id, save) {
+    var t = THEMES.filter(function (x) { return x.id === id; })[0] || THEMES[0];
+    theme = t;
+    state.themeId = t.id;
+    state.themeHue = t.hue;
+    state.hueTarget = hueForFreq(state.freq);
+    var root = document.documentElement;
+    root.style.setProperty('--accent', t.accent);
+    root.style.setProperty('--accent-2', t.accent2);
+    root.style.setProperty('--accent-soft', hexToRgba(t.accent, 0.10));
+    root.style.setProperty('--accent-line', hexToRgba(t.accent, 0.34));
+    root.style.setProperty('--accent-glow', hexToRgba(t.accent, 0.55));
+    if (typeof gl !== 'undefined' && gl) gl.clearColor(t.bg[0], t.bg[1], t.bg[2], 1);
+    var btns = document.querySelectorAll('.swatch');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('on', btns[i].getAttribute('data-theme') === t.id);
+    }
+    if (save) { try { localStorage.setItem('cz_theme', t.id); } catch (e) {} }
+  }
+
+  (function buildSheet() {
+    var sw = $('swatches'), sz = $('sizes');
+    if (!sw || !sz) return;
+    THEMES.forEach(function (t) {
+      var b = document.createElement('button');
+      b.className = 'swatch';
+      b.setAttribute('data-theme', t.id);
+      b.title = t.name;
+      b.style.background = 'radial-gradient(circle at 35% 30%,' + t.accent2 + ',' + t.accent + ' 72%)';
+      b.addEventListener('click', function () { applyTheme(t.id, true); });
+      sw.appendChild(b);
+    });
+    ['13', '25', '49', '88'].forEach(function (k) {
+      var b = document.createElement('button');
+      b.className = 'size-btn';
+      b.setAttribute('data-keys', k);
+      b.textContent = k + ' 键';
+      b.addEventListener('click', function () { selectKeys(k); });
+      sz.appendChild(b);
+    });
+    markSizeBtns(state.keyRange);
+  })();
+
+  function markSizeBtns(k) {
+    var all = document.querySelectorAll('.size-btn');
+    for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].getAttribute('data-keys') === k);
+  }
+  function selectKeys(k) {
+    if (!RANGES[k]) return;
+    buildPiano(k);
+    markSizeBtns(k);
+  }
+
+  var sheet = $('sheet');
+  $('styleBtn').addEventListener('click', function () { sheet.classList.add('on'); });
+  $('sheetClose').addEventListener('click', function () { sheet.classList.remove('on'); });
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.classList.remove('on'); });
+
+
+  /* 电脑键盘也能弹 */
+  var KEYCODE = { KeyA: 60, KeyW: 61, KeyS: 62, KeyE: 63, KeyD: 64, KeyF: 65, KeyT: 66, KeyG: 67, KeyY: 68, KeyH: 69, KeyU: 70, KeyJ: 71, KeyK: 72 };
+  window.addEventListener('keydown', function (e) {
+    if (e.repeat) return;
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    var midi = KEYCODE[e.code];
+    if (midi != null) { e.preventDefault(); pressKey(midi); }
+  });
+
+  /* ============================================================
+   * 交互：旋转 / 缩放 / 轻点隐藏
+   * ============================================================ */
+  var pointers = new Map();
+  var pinchDist = 0, dragDist = 0, dragStart = 0;
+
+  canvas.addEventListener('pointerdown', function (e) {
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    dragDist = 0;
+    dragStart = performance.now();
+    if (pointers.size === 2) {
+      var p = [];
+      pointers.forEach(function (v) { p.push(v); });
+      pinchDist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+    }
+    lastInteract = performance.now();
+  });
+
+  canvas.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    var prev = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    lastInteract = performance.now();
+
+    if (pointers.size === 1) {
+      var dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+      dragDist += Math.abs(dx) + Math.abs(dy);
+      cam.tTheta -= dx * 0.0055;
+      cam.tPhi = clamp(cam.tPhi + dy * 0.0045, 0.1, 1.4);
+    } else if (pointers.size === 2) {
+      var p = [];
+      pointers.forEach(function (v) { p.push(v); });
+      var d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      if (pinchDist > 0) { cam.tDist = clamp(cam.tDist * (pinchDist / d), 10, 120); cam.userZoom = true; }
+      pinchDist = d;
+      dragDist += 20;
+    }
+  });
+
+  function endPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinchDist = 0;
+    if (pointers.size === 0) {
+      var isTap = dragDist < 9 && performance.now() - dragStart < 380;
+      if (isTap) togglePin();
+    }
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    cam.tDist = clamp(cam.tDist * Math.exp(e.deltaY * 0.0012), 10, 120);
+    cam.userZoom = true;
+    lastInteract = performance.now();
+  }, { passive: false });
+
+  /* ============================================================
+   * 界面显隐
+   * ============================================================ */
+  var uiTimer = 0, pinned = false;
+  var meterFill = $('meterFill');
+  function showUI(auto) {
+    document.body.classList.remove('ui-hidden');
+    clearTimeout(uiTimer);
+    if (auto !== false && !pinned) {
+      uiTimer = setTimeout(function () {
+        if (!pinned) document.body.classList.add('ui-hidden');
+      }, 4500);
+    }
+  }
+  function togglePin() {
+    pinned = !pinned;
+    if (pinned) showUI(false);
+    else showUI(true);
+    toast(pinned ? '面板已固定 · 再轻点画面恢复' : '面板将自动隐藏', 1800);
+  }
+  showUI(true);
+
+  var hintEl = $('hint');
+  setTimeout(function () { hintEl.classList.add('gone'); }, 6500);
+
+  /* ============================================================
+   * 说明面板
+   * ============================================================ */
+  var help = $('help');
+  $('helpBtn').addEventListener('click', function () { help.classList.add('on'); });
+  $('helpClose').addEventListener('click', function () { help.classList.remove('on'); });
+  help.addEventListener('click', function (e) { if (e.target === help) help.classList.remove('on'); });
+  window.addEventListener('keydown', function (e) { if (e.key === 'Escape') help.classList.remove('on'); });
+
+  /* ============================================================
+   * 兼容性 · 性能自适应 · 分享
+   * ============================================================ */
+  var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  if (isWeChat) {
+    var wxTip = $('wxTip');
+    if (wxTip) {
+      wxTip.classList.add('on');
+      wxTip.innerHTML = '微信内音频/麦克风受限 · 点右上角「⋯」→「在浏览器中打开」体验完整效果';
+    }
+  }
+
+  var fullBtn = $('fullBtn');
+  var fsEl = document.documentElement;
+  var reqFS = fsEl.requestFullscreen || fsEl.webkitRequestFullscreen || fsEl.mozRequestFullScreen;
+  if (!reqFS) {
+    fullBtn.style.display = 'none';
+  } else {
+    fullBtn.addEventListener('click', function () {
+      try {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          var ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+          ex.call(document);
+        } else {
+          var pr = reqFS.call(fsEl);
+          if (pr && pr['catch']) pr['catch'](function () { toast('这个浏览器不支持全屏'); });
+        }
+      } catch (e) {
+        toast('这个浏览器不支持全屏');
+      }
+    });
+  }
+
+  /* 帧率掉下去时自动减负：先关辉光，再降分辨率 */
+  var quality = 2, fpsAcc = 0, fpsN = 0, lowFps = 0;
+  function adaptQuality(dt) {
+    fpsAcc += dt; fpsN++;
+    if (fpsAcc < 1.2) return;
+    var fps = fpsN / fpsAcc;
+    fpsAcc = 0; fpsN = 0;
+    if (fps < 42) {
+      lowFps++;
+      if (lowFps >= 2 && quality > 0) {
+        lowFps = 0;
+        quality--;
+        if (quality === 1) HALO = false;
+        else if (quality === 0) { dprCap = 1.4; resize(); }
+      }
+    } else {
+      lowFps = 0;
+    }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    var c = Audio.ctx();
+    if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+  });
+
+  $('shareBtn').addEventListener('click', function () {
+    var url = location.href;
+    if (location.protocol === 'file:' || location.protocol === 'data:') {
+      toast('本地文件不能直接变成分享链接。<br>把 .html 上传到 GitHub Pages / Netlify Drop 拿到 https 链接，就能分享到微信打开了。', 9000);
+      return;
+    }
+    if (navigator.share) {
+      var pr = navigator.share({ title: '432Hz 音流学 · 万物共振', text: '会跟着音乐共振的克拉尼图形', url: url });
+      if (pr && pr['catch']) pr['catch'](function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        toast('链接已复制，粘贴到微信即可');
+      }, function () { toast(url, 9000); });
+      return;
+    }
+    toast(url, 9000);
+  });
+
+  /* ============================================================
+   * 渲染循环
+   * ============================================================ */
+  var rgb = [0, 0.9, 1];
+  var lastT = 0;
+
+  function tick(dt) {
+    state.time += dt;
+    var t = state.time;
+
+    if (state.modeDirty) {
+      state.modeDirty = false;
+      setMode(state.m, state.z);
+    }
+    if (state.transMix < 1) {
+      var mixSpeed = (state.micOn || state.musicOn) ? dt * 7.0 : dt * 3.2;
+      state.transMix = Math.min(1, state.transMix + mixSpeed);
+    }
+
+    /* ---- 音频分析：麦克风 / 本地音乐 ---- */
+    var live = (state.micOn || state.musicOn) && analyser && audioData;
+    if (live) {
+      var liveCtx = Audio.ctx();
+      if (liveCtx && liveCtx.state === 'suspended') { try { liveCtx.resume(); } catch (e) {} }
+      analyser.getByteFrequencyData(audioData);
+      var ac = Audio.ctx();
+      var binHz = (ac ? ac.sampleRate : 44100) / analyser.fftSize;
+      var bass = bandEnergy(audioData, binHz, 40, 250);
+      var mid = bandEnergy(audioData, binHz, 250, 2000);
+      var high = bandEnergy(audioData, binHz, 2000, 9000);
+      var pi0 = Math.max(1, Math.floor(40 / binHz));
+      var pi1 = Math.min(audioData.length - 1, Math.ceil(250 / binHz));
+      var peak = 0, pi;
+      for (pi = pi0; pi <= pi1; pi++) { var pv = audioData[pi] / 255; if (pv > peak) peak = pv; }
+      var bassEnergy = Math.max(peak * 0.85, bass);
+      var raw = bassEnergy * 0.95 + mid * 0.3 + high * 0.12;
+
+      /* 自动增益：小声外放也能跟上，大声不爆 */
+      state.gainPeak = Math.max(raw, state.gainPeak * Math.exp(-dt * 0.4), 0.02);
+      var gain = clamp(0.9 / state.gainPeak, 0.8, 25);
+      var lvl = clamp(raw * gain, 0, 1.3);
+      state.level += (lvl - state.level) * Math.min(1, dt * 16);
+
+      /* 节拍检测：低频能量突增（onset）+ BPM 估算 */
+      var flux = Math.max(0, bassEnergy - state.prevBass);
+      state.prevBass = bassEnergy;
+      state.fluxHist.push(flux);
+      if (state.fluxHist.length > 32) state.fluxHist.shift();
+      var avgFlux = 0, bi;
+      for (bi = 0; bi < state.fluxHist.length; bi++) avgFlux += state.fluxHist[bi];
+      avgFlux /= state.fluxHist.length;
+      var nowMs = performance.now();
+      if (flux > Math.max(0.012, avgFlux * 1.55) && flux > 0.03 && nowMs - state.lastBeat > 185) {
+        state.lastBeat = nowMs;
+        state.beatEnv = Math.min(1.7, state.beatEnv + 0.9);
+        state.wave = 0;
+        state.waveAmp = Math.min(1.3, state.waveAmp + 1.0);
+        state.beatTimes.push(nowMs);
+        if (state.beatTimes.length > 9) state.beatTimes.shift();
+        if (state.beatTimes.length >= 4) {
+          var sumGap = 0, nGap = 0, gi;
+          for (gi = 1; gi < state.beatTimes.length; gi++) {
+            var gp = state.beatTimes[gi] - state.beatTimes[gi - 1];
+            if (gp > 260 && gp < 1400) { sumGap += gp; nGap++; }
+          }
+          if (nGap) {
+            var est = 60000 / (sumGap / nGap);
+            if (est > 55 && est < 200) state.bpm = state.bpm ? state.bpm * 0.65 + est * 0.35 : est;
+          }
+        }
+      }
+
+      /* 声音 → 频率：频谱质心（按能量加权）换算成 Hz，平滑后直接驱动图形 */
+      var cenNum = 0, cenDen = 0, kk;
+      for (kk = 1; kk < audioData.length; kk++) {
+        var mm = audioData[kk];
+        if (mm <= 1) continue;
+        cenNum += kk * mm;
+        cenDen += mm;
+      }
+      if (cenDen > 0) {
+        var hz = (cenNum / cenDen) * binHz * 1.15;
+        hz = clamp(hz, 0, 1000000);
+        if (!state.audioHz) state.audioHz = hz;
+        state.audioHz += (hz - state.audioHz) * Math.min(1, dt * 6);
+        var nowF = performance.now();
+        if (nowF - state.lastFreqPush > 110 && Math.abs(state.audioHz - state.freq) > Math.max(0.6, state.freq * 0.025)) {
+          state.lastFreqPush = nowF;
+          setFreq(state.audioHz);
+        }
+      }
+
+      /* 高频占比 → 色相偏移（声音越亮，颜色越暖） */
+      var highRatio = clamp(((mid * 0.6 + high * 0.6) / (bass + 0.002)) * 0.35, 0, 1);
+      state.centroid += (highRatio - state.centroid) * Math.min(1, dt * 3.5);
+
+      /* 长时间没信号就提示一次 */
+      if (raw < 0.006) state.silent += dt; else state.silent = 0;
+      if (state.silent > 3.2 && !state.silentHinted) {
+        state.silentHinted = true;
+        toast('没有检测到音频信号：<br>外音请把手机音量调大、别戴耳机；或改用 🎵 放首歌', 7000);
+      }
+    } else {
+      state.level *= Math.exp(-dt * 6);
+      state.centroid *= Math.exp(-dt * 2);
+      if (state.bassHist.length) state.bassHist.length = 0;
+      if (state.beatTimes.length) state.beatTimes.length = 0;
+      state.bpm = state.seqOn ? 120 : 0;
+      if (state.seqOn) state.level = Math.max(state.level, state.beatEnv * 0.7);
+    }
+    state.beatEnv *= Math.exp(-dt * 4.0);
+    if (meterFill) meterFill.style.width = (clamp(state.level, 0, 1) * 100).toFixed(0) + '%';
+    if (bpmTag) {
+      if (state.seqOn) { bpmTag.hidden = false; bpmTag.textContent = '120 BPM'; }
+      else if (state.micOn || state.musicOn) {
+        bpmTag.hidden = false;
+        bpmTag.textContent = state.bpm ? Math.round(state.bpm) + ' BPM' : '— BPM';
+      } else { bpmTag.hidden = true; }
+    }
+
+    /* 视觉事件队列（按音频时钟对齐） */
+    var c = Audio.ctx();
+    var nowT = c ? c.currentTime : 0;
+    while (visQueue.length && visQueue[0].t <= nowT + 0.02) {
+      var ev = visQueue.shift();
+      if (ev.kind === 'beat') {
+        state.beatEnv = Math.min(1.6, state.beatEnv + ev.amt * 1.15);
+        state.wave = 0;
+        state.waveAmp = Math.min(1.3, state.waveAmp + 0.9 * ev.amt + 0.25);
+      } else if (ev.kind === 'note') {
+        setFreq(midiToFreq(ev.midi));
+        state.beatEnv = Math.min(1.6, state.beatEnv + 0.4);
+        flashKey(keyEls[ev.midi], 420);
+      }
+    }
+
+    state.energy = Math.max(state.beatEnv * 0.95, state.level * 0.95);
+    var vEnergy = Math.min(1.35, state.energy);
+    var zoom = 1 - 0.055 * vEnergy;
+
+    /* ---- 色调 ---- */
+    var hd = state.hueTarget - state.hue;
+    if (hd > 0.5) hd -= 1;
+    if (hd < -0.5) hd += 1;
+    state.hue += hd * Math.min(1, dt * 3.2);
+    state.hue = ((state.hue % 1) + 1) % 1;
+    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.95, 0.58);
+    rgb[0] = col[0]; rgb[1] = col[1]; rgb[2] = col[2];
+
+    /* 让钢琴键/面板颜色跟随音流图案的实时色相 */
+    if (!state.lastPatT || t - state.lastPatT > 0.09) {
+      state.lastPatT = t;
+      var pc = hslToRgb(state.hue, 0.9, 0.62);
+      var pr = Math.round(pc[0] * 255), pg = Math.round(pc[1] * 255), pb = Math.round(pc[2] * 255);
+      var rstyle = document.documentElement.style;
+      rstyle.setProperty('--pat', 'rgb(' + pr + ',' + pg + ',' + pb + ')');
+      rstyle.setProperty('--pat-soft', 'rgba(' + pr + ',' + pg + ',' + pb + ',0.20)');
+      rstyle.setProperty('--pat-line', 'rgba(' + pr + ',' + pg + ',' + pb + ',0.38)');
+      rstyle.setProperty('--pat-glow', 'rgba(' + pr + ',' + pg + ',' + pb + ',0.55)');
+    }
+
+    /* ---- 相机 ---- */
+    if (performance.now() - lastInteract > 2800) cam.tTheta += dt * 0.1;
+    var ks = 1 - Math.exp(-dt * 7);
+    cam.theta += (cam.tTheta - cam.theta) * ks;
+    cam.phi += (cam.tPhi - cam.phi) * ks;
+    cam.dist += (cam.tDist - cam.dist) * ks;
+
+    var dist = cam.dist * zoom;
+    if (DEBUG) { window.__dz = dist; window.__zo = zoom; }
+    var sp = Math.sin(cam.phi), cp = Math.cos(cam.phi);
+    eye[0] = dist * sp * Math.sin(cam.theta);
+    eye[1] = dist * cp;
+    eye[2] = dist * sp * Math.cos(cam.theta);
+    lookAt(matView, eye, [0, 0, 0], [0, 1, 0]);
+
+    /* ---- 绘制 ---- */
+    if (state.waveAmp > 0.01) {
+      state.wave += dt * 1.7;
+      state.waveAmp *= Math.exp(-dt * 3.4);
+      if (state.wave > 1.45) state.waveAmp = 0;
+    }
+    var pulse = 0.85 + 1.7 * vEnergy + 0.035 * Math.sin(t * 1.3);
+    var sharp = 14.0 - 7.0 * vEnergy;
+
+    gl.clearColor(0, 0, 0, 1);
+    if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (DEBUG === '2') return;
+    gl.useProgram(prog);
+    gl.uniformMatrix4fv(U.uProj, false, matProj);
+    gl.uniformMatrix4fv(U.uView, false, matView);
+    gl.uniform1f(U.uMix, state.transMix);
+    gl.uniform1f(U.uSharp, sharp);
+    gl.uniform1f(U.uDpr, dpr);
+    gl.uniform1f(U.uPulse, pulse);
+    gl.uniform1f(U.uR, R_WORLD);
+    gl.uniform1f(U.uTime, t % 1000);
+    gl.uniform1f(U.uWave, state.waveAmp > 0.01 ? state.wave : -1);
+    gl.uniform1f(U.uWaveAmp, state.waveAmp);
+    gl.uniform1f(U.uDbg, DEBUG ? (parseFloat(DEBUG) || 0) : 0);
+    gl.uniform3f(U.uColor, rgb[0], rgb[1], rgb[2]);
+
+    if (HALO) {
+      gl.uniform1f(U.uPx, POINT_SIZE * 3.1);
+      gl.uniform1f(U.uGain, 0.085);
+      gl.drawArrays(gl.POINTS, 0, COUNT);
+    }
+    gl.uniform1f(U.uPx, POINT_SIZE * (1 + 0.5 * vEnergy));
+    gl.uniform1f(U.uGain, 1.15);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+
+    if (DEBUG && dbgFrames % 20 === 0) {
+      try {
+        var rbuf = new Uint8Array(4), mx = 0, sx, sy;
+        for (sx = 1; sx <= 5; sx++) {
+          for (sy = 1; sy <= 5; sy++) {
+            gl.readPixels(Math.floor(canvas.width * sx / 6), Math.floor(canvas.height * sy / 6), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rbuf);
+            mx = Math.max(mx, rbuf[0], rbuf[1], rbuf[2]);
+          }
+        }
+        dbgPix = 'px' + mx;
+      } catch (e) { dbgPix = 'pxERR'; }
+    }
+  }
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!lastT) lastT = now;
+    var dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    if (dt > 0) adaptQuality(dt);
+    dbgFrames++;
+    tick(dt);
+  }
+
+  canvas.addEventListener('webglcontextlost', function (e) {
+    e.preventDefault();
+    toast('图形上下文丢失，请刷新页面', 6000);
+  });
+
+  /* ============================================================
+   * 启动
+   * ============================================================ */
+  /* Netlify 免费版会注入 "Powered by Netlify" 角标：按它的实际位置动态抬高底部控制条，避免挡住按键 */
+  function syncNetlifyBadge() {
+    if (!document.body) return;
+    var shown = false;
+    var frame = document.getElementById('nl-badge-frame');
+    var h = 0;
+    if (frame) {
+      var r = frame.getBoundingClientRect();
+      if (r && r.height > 10 && r.height < 200 && r.width > 10) {
+        h = Math.ceil(r.height) + 14;
+        shown = true;
+      }
+    }
+    if (!shown && document.querySelector('script[data-netlify-site-id]')) { h = 84; shown = true; }
+    document.body.classList.toggle('nf-hud', shown);
+    h = Math.max(0, Math.min(180, h));
+    document.documentElement.style.setProperty('--nf', h + 'px');
+  }
+  syncNetlifyBadge();
+  [200, 600, 1500, 3000, 5000].forEach(function (t) { setTimeout(syncNetlifyBadge, t); });
+  try {
+    new MutationObserver(syncNetlifyBadge).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
+  window.addEventListener('resize', syncNetlifyBadge);
+  window.addEventListener('orientationchange', function () { setTimeout(syncNetlifyBadge, 150); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncNetlifyBadge);
+    window.visualViewport.addEventListener('scroll', syncNetlifyBadge);
+  }
+
+  /* 调试浮层：?debug=1 时显示 */
+  var dbgEl = $('dbg');
+  var DEBUG = ((location.search.match(/[?&]debug=([^&]+)/) || [])[1] || '');
+  var dbgLost = false, dbgFrames = 0, dbgErr = 0, dbgPix = 'px?', dbgMsg = '';
+  window.addEventListener('error', function (e) {
+    dbgMsg = String((e && e.message) || 'err').slice(0, 56);
+  });
+  canvas.addEventListener('webglcontextlost', function () { dbgLost = true; });
+  function mat4MulVec(m, v) {
+    return [
+      m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12]*v[3],
+      m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13]*v[3],
+      m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]*v[3],
+      m[3]*v[0]+m[7]*v[1]+m[11]*v[2]+m[15]*v[3]
+    ];
+  }
+  function dbgNdc(x, y, z) {
+    var v = mat4MulVec(matView, [x, y, z, 1]);
+    var c = mat4MulVec(matProj, v);
+    if (!c[3]) return 'inf';
+    return (c[0]/c[3]).toFixed(2) + ',' + (c[1]/c[3]).toFixed(2);
+  }
+  function dbgUpdate() {
+    if (!DEBUG || !dbgEl) return;
+    dbgEl.style.display = 'block';
+    try { dbgErr = gl.getError(); } catch (e) { dbgErr = -999; }
+    var isGL2 = (typeof WebGL2RenderingContext !== 'undefined') && (gl instanceof WebGL2RenderingContext);
+    var lines = [
+      'gl' + (isGL2 ? 2 : 1) + ' err' + dbgErr + ' lost' + (dbgLost ? 1 : 0),
+      'px ' + dbgPix + ' ' + canvas.width + 'x' + canvas.height,
+      'mix ' + state.transMix.toFixed(2) + ' f' + dbgFrames,
+      'e ' + state.energy + ' lvl ' + state.level,
+      'beat ' + state.beatEnv + ' mix2 ' + state.transMix,
+      'P11 ' + matProj[11] + ' V14 ' + matView[14],
+      'eye0 ' + eye[0] + ' eye1 ' + eye[1] + ' eye2 ' + eye[2],
+      'dist ' + cam.dist + ' zoom ' + window.__zo,
+      'd2 ' + window.__dz + ' tD ' + cam.tDist + ' tP ' + cam.tPhi,
+      'phi ' + cam.phi + ' th ' + cam.theta,
+      'm' + state.m + 'n' + state.n + ' hz' + Math.round(state.freq),
+      'msg ' + dbgMsg
+    ];
+    dbgEl.innerHTML = lines.map(function (x) { return '<div>' + x + '</div>'; }).join('');
+  }
+  setInterval(dbgUpdate, 800);
+
+  /* 调试钩子：便于自动化测试（不影响正常使用） */
+  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lut: lut, lutIdx: lutIdx } };
+
+  resize();
+  cam.theta = cam.tTheta;
+  cam.phi = cam.tPhi;
+  cam.dist = cam.tDist;
+  try {
+    var savedTheme = localStorage.getItem('cz_theme') || 'cyan';
+    var savedKeys = localStorage.getItem('cz_keys') || '13';
+    applyTheme(savedTheme, false);
+    buildPiano(RANGES[savedKeys] ? savedKeys : '13');
+    var szAll = document.querySelectorAll('.size-btn');
+    for (var si = 0; si < szAll.length; si++) {
+      szAll[si].classList.toggle('on', szAll[si].getAttribute('data-keys') === state.keyRange);
+    }
+  } catch (e) {
+    applyTheme('cyan', false);
+    buildPiano('13');
+  }
+
+  (function () {
+    var q = location.search;
+    var mt = q.match(/[?&]theme=([a-z]+)/);
+    if (mt) applyTheme(mt[1], false);
+    var mk = q.match(/[?&]keys=(\d+)/);
+    if (mk) selectKeys(mk[1]);
+    if (/[?&]panel=1/.test(q)) sheet.classList.add('on');
+  })();
+
+  setFreq(345);
+  /* 支持 ?f=345 / ?f=∞ / ?f=0 指定初始频率 */
+  (function () {
+    var raw = (location.search.match(/[?&]f=([^&]+)/) || [])[1];
+    if (!raw) return;
+    var q = raw;
+    try { q = decodeURIComponent(raw); } catch (e) {}
+    var v;
+    if (q === '∞' || q === 'inf' || q === 'Infinity') v = 1000000;
+    else v = parseFloat(q);
+    if (!isNaN(v)) setFreq(v);
+  })();
+  state.transMix = 0;
+  requestAnimationFrame(frame);
+
+  /* 首次触摸解锁音频（iOS Safari 需要手势内 resume） */
+  window.addEventListener('pointerdown', function unlock() {
+    try { Audio.ensure(); } catch (e) {}
+    window.removeEventListener('pointerdown', unlock);
+  }, { once: true });
+  window.addEventListener('touchstart', function unlockTouch() {
+    try { Audio.ensure(); } catch (e) {}
+    window.removeEventListener('touchstart', unlockTouch);
+  }, { once: true, passive: true });
+})();
+</script>
+</body>
+</html>
