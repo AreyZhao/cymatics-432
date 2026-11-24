@@ -280,7 +280,6 @@
     <button id="fullBtn" class="btn icon sm" aria-label="全屏">⛶</button>
     <button id="helpBtn" class="btn icon sm" aria-label="说明">?</button>
     <div class="meter" id="meter" aria-hidden="true"><i id="meterFill"></i></div>
-    <div class="tip-row" id="wxTip"></div>
   </div>
 </header>
 <input id="musicFile" type="file" accept="audio/*" hidden>
@@ -345,7 +344,7 @@
     <h3>浏览器兼容</h3>
     <ul>
       <li>Chrome / Edge / Safari / 三星浏览器：全部功能。</li>
-      <li>微信内置浏览器：能看效果、能放歌、能用天籁；麦克风被微信禁用，请点右上角「⋯ → 在浏览器中打开」。</li>
+      <li>微信内置浏览器：能看、能放歌、能开外音（首次会弹麦克风授权，允许即可）。</li>
       <li>老设备：不支持 WebGL 时会给出提示；帧率偏低时自动降低渲染量。</li>
     </ul>
     <h3>分享到微信</h3>
@@ -1050,7 +1049,6 @@
   function micErrorHint(err) {
     var name = (err && err.name) || '';
     var msg = (err && err.message) || '';
-    if (isWeChat) return '微信内置浏览器禁用了麦克风。<br>请点右上角「⋯ → 在浏览器中打开」，或改用 🎵 放首歌 / ✨ 天籁。';
     if (/security origin|insecure|not allowed/i.test(msg)) {
       return '当前页面处在受限的预览/沙盒环境，浏览器禁止调用麦克风。<br>请把文件存到手机，用系统浏览器打开。';
     }
@@ -1556,15 +1554,6 @@
   /* ============================================================
    * 兼容性 · 性能自适应 · 分享
    * ============================================================ */
-  var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-  if (isWeChat) {
-    var wxTip = $('wxTip');
-    if (wxTip) {
-      wxTip.classList.add('on');
-      wxTip.innerHTML = '微信内音频/麦克风受限 · 点右上角「⋯」→「在浏览器中打开」体验完整效果';
-    }
-  }
-
   var fullBtn = $('fullBtn');
   var fsEl = document.documentElement;
   var reqFS = fsEl.requestFullscreen || fsEl.webkitRequestFullscreen || fsEl.mozRequestFullScreen;
