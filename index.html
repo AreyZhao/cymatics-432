@@ -427,7 +427,7 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：电脑 Chrome/Edge 共享标签页时勾选「分享音频」，可只听系统声、不拾取麦克风；手机浏览器抓不到系统声，会自动切换成「页面内部声音」分析（放歌/天籁照样能驱动画面）。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：随机播放 7 首精选之一（星雾 / 潮下 / 露白 / 雷纹 / 涌流 / 沉沙 / 风隙），每首的编乐、调式、配器都不同；「🎛 设置 → 创作 → 换一首」可按选定风格生成新曲。风格仍是 5 种：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。</li>
+      <li>✨ <b>天籁</b>：随机即兴；「🎛 设置 → 创作 → 换一首」按选定风格生成新曲并存进曲库。5 种风格：🌌 极光·空灵 / 🌃 夜色·心动 / 🌈 霓虹·律动 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
       <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 双簧管 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 圆号 / 马林巴 / 单簧管 / 合成器。每首曲只用 1–3 件乐器，独奏时只用一种。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
@@ -1284,13 +1284,13 @@
   };
   var PRESET_PIECES = [
     { name: '夜潮', styleId: 'aurora', engine: 'original', seed: 20260501, bpm: 120, root: 0, instrument: 'musicbox' },
-    { name: '流沙', styleId: 'deep', engine: 'original', seed: 88112233, bpm: 108, root: 0, instrument: 'musicbox' }
+    { name: '流沙', styleId: 'night', engine: 'original', seed: 88112233, bpm: 104, root: 0, instrument: 'ep' }
   ];
 
   var STYLES = [
     { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [70, 76], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 66, bpmRange: [64, 70], scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false, school: 'part', soloChance: 0.35, altScales: ['minorPenta', 'major'], palette: { lead: ['handpan', 'marimba'], comp: ['bell', 'ep'] } },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 88, bpmRange: [84, 92], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, school: 'schubert', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['oboe', 'clarinet'], comp: ['clarinet', 'bell', 'ep'] } },
+    { id: 'night',  name: '夜色 · 心动', icon: '🌃', mood: '优美', bpm: 104, bpmRange: [100, 110], scale: 'major', drums: 'soft', wet: 0.45, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, altScales: ['penta'], palette: { lead: ['ep', 'piano'], comp: ['bell', 'piano', 'musicbox'] } },
+    { id: 'neon',   name: '霓虹 · 律动', icon: '🌈', mood: '律动', bpm: 126, bpmRange: [120, 134], scale: 'penta', drums: 'epic', wet: 0.35, octave: 24, bright: true, school: 'reich', soloChance: 0.2, altScales: ['minorPenta'], palette: { lead: ['synth', 'marimba'], comp: ['marimba', 'bell', 'ep'] } },
     { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 92, bpmRange: [88, 96], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, altScales: ['minorPenta', 'dorian'], palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
     { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 104, bpmRange: [100, 110], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
   ];
@@ -1301,9 +1301,9 @@
 
   var promptAurora = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 72, layers: flute lead, french horn sustained pad, marimba soft accents, subtle glockenspiel sparkle, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
 
-  var promptDeepSea = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, meditative ambient minimalism, slow static harmonic field, reference Arvo Pärt tintinnabuli style, BPM 66, layers: handpan deep pad, marimba slow motif, glockenspiel distant accents, soft bass drone, slow overtone resonance, very gradual harmonic movement, minimal melodic motion, deep underwater diffused reverb, soft beating interference tones, no sharp attacks, quiet and inward`;
+  var promptNight = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, modern city-pop and R&B instrumental, warm electric piano chords, soft bell and piano colour, brushed groove, BPM 104, smooth voice-leading, gentle syncopation, warm room reverb, intimate night city mood, instrumental only, no vocals, no singing`;
 
-  var promptDawn = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, romantic chamber lyric, Schubert aesthetic, BPM 88, layers: oboe lead, clarinet counterline, soft glockenspiel occasional highlights, warm string pad implied, diatonic elegant counterpoint, singing legato melody, warm voice leading, moderate room reverb, calm luminous morning mood, balanced phrasing, avoid overly sweet trivial melody`;
+  var promptNeon = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, bright modern pop / EDM instrumental, synthesizer lead with marimba and bell accents, steady four-on-the-floor groove, BPM 126, uplifting cadence, wide stereo, bright but not harsh, festival night energy, instrumental only, no vocals, no singing`;
 
   var promptPulse = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, restrained cinematic orchestral, late romantic aesthetic, reference Bruckner and Tan Dun, BPM 92, layers: french horn primary theme, soft timpani resonant low accents, clarinet supporting line, low brass drone, subtle cymbal swell, slow rising harmonic tension and gradual resolution, deep fundamental resonance, grand hall reverb, noble solemn, controlled dynamic range, no explosive percussive hits`;
 
@@ -1316,8 +1316,8 @@
 
   var TTA_STYLE_PROMPTS = {
     aurora: { bpm: [70, 76], instruments: ['flute', 'french horn', 'marimba', 'glockenspiel'], composers: 'Claude Debussy, Maurice Ravel', prompt: promptAurora },
-    deep:   { bpm: [64, 70], instruments: ['handpan', 'marimba', 'glockenspiel'], composers: 'Arvo Pärt', prompt: promptDeepSea },
-    dawn:   { bpm: [84, 92], instruments: ['oboe', 'clarinet', 'glockenspiel'], composers: 'Franz Schubert', prompt: promptDawn },
+    night:  { bpm: [100, 110], instruments: ['electric piano', 'piano', 'bells'], composers: 'modern city-pop / R&B', prompt: promptNight },
+    neon:   { bpm: [120, 134], instruments: ['synth', 'marimba', 'bells'], composers: 'modern pop / EDM', prompt: promptNeon },
     pulse:  { bpm: [88, 96], instruments: ['french horn', 'clarinet', 'timpani'], composers: 'Anton Bruckner, Tan Dun', prompt: promptPulse },
     grow:   { bpm: [100, 110], instruments: ['marimba', 'vibraphone', 'handpan'], composers: 'Steve Reich, Keiko Abe', prompt: promptTide }
   };
@@ -1525,8 +1525,8 @@
 
   var TITLE_POOLS = {
     aurora: [['极光', '星河', '月蚀', '霜降', '萤火', '雾岛', '光隙', '风隙'], ['之梦', '低语', '漫游', '呼吸', '倒影', '余波']],
-    deep:   [['深海', '潮汐', '砂时', '回声', '深蓝', '暗流'], ['沉浮', '低语', '暗涌', '倒影', '回旋']],
-    dawn:   [['晨光', '曙光', '鎏金', '微光', '初霞', '浅岸'], ['序曲', '苏醒', '初照', '呼吸', '漫游']],
+    night:  [['夜色', '霓虹', '街灯', '晚风', '车窗', '月色'], ['心动', '漫游', '低语', '回旋', '余温', '倒影']],
+    neon:   [['霓虹', '脉冲', '星火', '光速', '电光', '斑斓'], ['律动', '轨迹', '派对', '回声', '闪烁', '脉冲']],
     pulse:  [['脉冲', '涟漪', '鎏光', '光隙', '雷纹', '星火'], ['轨迹', '回旋', '序曲', '脉冲', '光晕']],
     grow:   [['潮生', '蔓长', '涌流', '回环', '星涌', '渐强', '生长'], ['律动', '之潮', '上行', '渐变', '回声', '涌动']]
   };
@@ -1599,7 +1599,13 @@
   };
   var CONTOURS = [[0, 1, 2, 1, 0, 1], [1, 2, 1, 0, 1, 2], [0, 1, 0, -1, 0, 1], [2, 1, 0, 1, 2, 1]];
 
+  function aliasStyleId(id) {
+    if (id === 'deep') return 'night';
+    if (id === 'dawn') return 'neon';
+    return id;
+  }
   function styleById(id) {
+    id = aliasStyleId(id);
     for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === id) return STYLES[i];
     return STYLES[0];
   }
@@ -1695,14 +1701,15 @@
 
   var ORIG_STYLE_PARAMS = {
     aurora: { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 120, density: 0.34, drums: 'lite', inst: 'musicbox', comp: 'marimba' },
-    deep:   { scale: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24], bpm: 108, density: 0.28, drums: 'sparse', inst: 'handpan', comp: 'bell' },
-    dawn:   { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 118, density: 0.4, drums: 'lite', inst: 'piano', comp: 'ep' },
+    night:  { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 104, density: 0.46, drums: 'lite', inst: 'ep', comp: 'piano' },
+    neon:   { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 126, density: 0.55, drums: 'strong', inst: 'synth', comp: 'marimba' },
     pulse:  { scale: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24], bpm: 126, density: 0.36, drums: 'strong', inst: 'horn', comp: 'marimba' },
     grow:   { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 132, density: 0.5, drums: 'groove', inst: 'marimba', comp: 'bell' }
   };
   function resolveStyleId() {
     if (state.genStyle && state.genStyle !== 'auto') {
-      for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === state.genStyle) return state.genStyle;
+      var want = aliasStyleId(state.genStyle);
+      for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === want) return want;
     }
     return STYLES[Math.floor(Math.random() * STYLES.length)].id;
   }
@@ -1710,7 +1717,8 @@
   /* 最初的即兴生成器（固定成曲）：风格化五声/调式 + 逐段演化 */
   function composeOriginalPiece(opts) {
     opts = opts || {};
-    var sid = opts.styleId && ORIG_STYLE_PARAMS[opts.styleId] ? opts.styleId : 'aurora';
+    var sid0 = aliasStyleId(opts.styleId);
+    var sid = (opts.styleId && ORIG_STYLE_PARAMS[sid0]) ? sid0 : 'aurora';
     var sp = ORIG_STYLE_PARAMS[sid];
     var bpm = opts.bpm || sp.bpm;
     var seed = (opts.seed == null ? 1234567 : opts.seed) >>> 0;
@@ -5557,7 +5565,7 @@
       body.appendChild(rowg);
       var ng = document.createElement('div');
       ng.className = 'sheet-note';
-      ng.textContent = '空灵：极光/深海；优美：晨光；震撼：脉冲。选好后点「换一首」按这个气质生成。';
+      ng.textContent = '夜色·心动：都市 R&B；霓虹·律动：明亮流行/电子；极光·空灵、脉冲·震撼、潮生·律动照旧。选好后点「换一首」按这个气质生成。';
       body.appendChild(ng);
     } else if (id === 'recdur') {
       var rowd = document.createElement('div');
