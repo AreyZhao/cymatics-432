@@ -425,7 +425,7 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：5 种风格 × 7 首 = 35 首精选，纯器乐、每首最多 3 件乐器（独奏 1 件）。参考德彪西 / 拉威尔 / 史蒂夫·莱奇（空灵）、舒伯特 / 勃拉姆斯（深情）、贝多芬 / 谭盾（震撼）、安倍圭子（律动）。「🎛 设置 → 创作 → 换一首」走 text-to-audio 生成（英文 prompt + negative prompt，锁定各风格 BPM 区间），服务不可用时自动回退本地合成。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。</li>
+      <li>✨ <b>天籁</b>：随机播放 7 首精选之一（星雾 / 潮下 / 露白 / 雷纹 / 涌流 / 沉沙 / 风隙），每首的编乐、调式、配器都不同；「🎛 设置 → 创作 → 换一首」可按选定风格生成新曲。风格仍是 5 种：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
       <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 双簧管 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 圆号 / 马林巴 / 单簧管 / 合成器。每首曲只用 1–3 件乐器，独奏时只用一种。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
@@ -1281,64 +1281,36 @@
     major: [0, 2, 4, 5, 7, 9, 11]
   };
   var PRESET_PIECES = [
-    { name: '雾里星尘', styleId: 'aurora', seed: 774553834, bpm: 74, root: 46, instrument: 'flute' },
-    { name: '极光低语', styleId: 'aurora', seed: 1070406884, bpm: 74, root: 49, instrument: 'bell' },
-    { name: '霜降之息', styleId: 'aurora', seed: 831056492, bpm: 74, root: 45, instrument: 'flute' },
-    { name: '星河漫游', styleId: 'aurora', seed: 3485492253, bpm: 74, root: 48, instrument: 'bell' },
-    { name: '月蚀倒影', styleId: 'aurora', seed: 1218333409, bpm: 74, root: 47, instrument: 'flute' },
-    { name: '萤火微光', styleId: 'aurora', seed: 3246141861, bpm: 74, root: 45, instrument: 'bell' },
-    { name: '风隙流光', styleId: 'aurora', seed: 2232237635, bpm: 74, root: 47, instrument: 'flute' },
-    { name: '深海回声', styleId: 'deep', seed: 1218333409, bpm: 80, root: 47, instrument: 'bell' },
-    { name: '暗流沉浮', styleId: 'deep', seed: 978983017, bpm: 80, root: 48, instrument: 'flute' },
-    { name: '潮汐低语', styleId: 'deep', seed: 295853050, bpm: 80, root: 49, instrument: 'bell' },
-    { name: '深蓝倒影', styleId: 'deep', seed: 3633418778, bpm: 80, root: 47, instrument: 'flute' },
-    { name: '海雾漫漫', styleId: 'deep', seed: 1070406884, bpm: 80, root: 49, instrument: 'bell' },
-    { name: '沉沙', styleId: 'deep', seed: 4260046087, bpm: 80, root: 47, instrument: 'bell' },
-    { name: '月半回环', styleId: 'deep', seed: 3576916120, bpm: 80, root: 45, instrument: 'flute' },
-    { name: '晨光初照', styleId: 'dawn', seed: 1401181143, bpm: 92, root: 45, instrument: 'piano' },
-    { name: '浅岸拾光', styleId: 'dawn', seed: 4055616904, bpm: 92, root: 46, instrument: 'bell' },
-    { name: '风过铃兰', styleId: 'dawn', seed: 2175734977, bpm: 92, root: 43, instrument: 'piano' },
-    { name: '初霞', styleId: 'dawn', seed: 1936384585, bpm: 92, root: 45, instrument: 'bell' },
-    { name: '微光序曲', styleId: 'dawn', seed: 295853050, bpm: 92, root: 47, instrument: 'piano' },
-    { name: '露白', styleId: 'dawn', seed: 56502658, bpm: 92, root: 43, instrument: 'bell' },
-    { name: '早潮', styleId: 'dawn', seed: 2858864944, bpm: 92, root: 47, instrument: 'piano' },
-    { name: '脉冲星河', styleId: 'pulse', seed: 774553834, bpm: 112, root: 44, instrument: 'synth' },
-    { name: '光之洪流', styleId: 'pulse', seed: 1457683801, bpm: 112, root: 43, instrument: 'synth' },
-    { name: '雷纹', styleId: 'pulse', seed: 387276917, bpm: 112, root: 44, instrument: 'synth' },
-    { name: '星火', styleId: 'pulse', seed: 3576916120, bpm: 112, root: 43, instrument: 'synth' },
-    { name: '光隙轨迹', styleId: 'pulse', seed: 3668339987, bpm: 112, root: 45, instrument: 'synth' },
-    { name: '裂空', styleId: 'pulse', seed: 535203442, bpm: 112, root: 46, instrument: 'synth' },
-    { name: '潮爆', styleId: 'pulse', seed: 443779575, bpm: 112, root: 43, instrument: 'synth' },
-    { name: '初潮', styleId: 'grow', seed: 535203442, bpm: 96, root: 46, instrument: 'piano' },
-    { name: '渐强', styleId: 'grow', seed: 2802362286, bpm: 96, root: 47, instrument: 'bell' },
-    { name: '星涌', styleId: 'grow', seed: 3816266512, bpm: 96, root: 47, instrument: 'piano' },
-    { name: '生长', styleId: 'grow', seed: 978983017, bpm: 96, root: 46, instrument: 'piano' },
-    { name: '涌流', styleId: 'grow', seed: 352355708, bpm: 96, root: 44, instrument: 'bell' },
-    { name: '蔓长', styleId: 'grow', seed: 1218333409, bpm: 96, root: 45, instrument: 'piano' },
-    { name: '回环', styleId: 'grow', seed: 147926525, bpm: 96, root: 43, instrument: 'bell' }
+    { name: '星雾', styleId: 'aurora', seed: 408858366, bpm: 72, root: 49, instrument: 'flute' },
+    { name: '潮下', styleId: 'deep', seed: 295853050, bpm: 66, root: 49, instrument: 'handpan' },
+    { name: '露白', styleId: 'dawn', seed: 4020695695, bpm: 88, root: 47, instrument: 'oboe' },
+    { name: '雷纹', styleId: 'pulse', seed: 1957966034, bpm: 92, root: 46, instrument: 'horn' },
+    { name: '涌流', styleId: 'grow', seed: 1457683801, bpm: 104, root: 43, instrument: 'marimba' },
+    { name: '沉沙', styleId: 'deep', seed: 3176299443, bpm: 66, root: 48, instrument: 'marimba' },
+    { name: '风隙', styleId: 'aurora', seed: 3541994911, bpm: 72, root: 46, instrument: 'horn' }
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 58, bpmRange: [56, 60], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.5, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 54, bpmRange: [52, 56], scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false, school: 'part', soloChance: 0.5, altScales: ['minorPenta', 'major'], palette: { lead: ['handpan', 'marimba'], comp: ['bell', 'ep'] } },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 72, bpmRange: [70, 74], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, altScales: ['penta', 'dorian'], palette: { lead: ['oboe', 'clarinet'], comp: ['clarinet', 'bell', 'ep'] } },
-    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 76, bpmRange: [74, 78], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, altScales: ['minorPenta', 'dorian'], palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
-    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 88, bpmRange: [86, 90], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [70, 76], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 66, bpmRange: [64, 70], scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false, school: 'part', soloChance: 0.35, altScales: ['minorPenta', 'major'], palette: { lead: ['handpan', 'marimba'], comp: ['bell', 'ep'] } },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 88, bpmRange: [84, 92], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, school: 'schubert', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['oboe', 'clarinet'], comp: ['clarinet', 'bell', 'ep'] } },
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 92, bpmRange: [88, 96], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, altScales: ['minorPenta', 'dorian'], palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
+    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 104, bpmRange: [100, 110], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
   ];
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
   var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, elegant layered arrangement, 3-5 instruments in clear harmonic layers: lead melody, harmonic pad, rhythmic or colour accents, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, wide stereo, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture, 60-90 seconds duration`;
 
   var INTRO_DIRECTIVE = `with a 15-20 seconds atmospheric intro: sustained low pad and sparse single-note accents only, main melody enters gradually after the intro, instruments add layer by layer, gradual fade-out ending`;
 
-  var promptAurora = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 58, layers: flute lead, french horn sustained pad, marimba soft accents, subtle glockenspiel sparkle, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
+  var promptAurora = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 72, layers: flute lead, french horn sustained pad, marimba soft accents, subtle glockenspiel sparkle, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
 
-  var promptDeepSea = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, meditative ambient minimalism, slow static harmonic field, reference Arvo Pärt tintinnabuli style, BPM 54, layers: handpan deep pad, marimba slow motif, glockenspiel distant accents, soft bass drone, slow overtone resonance, very gradual harmonic movement, minimal melodic motion, deep underwater diffused reverb, soft beating interference tones, no sharp attacks, quiet and inward`;
+  var promptDeepSea = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, meditative ambient minimalism, slow static harmonic field, reference Arvo Pärt tintinnabuli style, BPM 66, layers: handpan deep pad, marimba slow motif, glockenspiel distant accents, soft bass drone, slow overtone resonance, very gradual harmonic movement, minimal melodic motion, deep underwater diffused reverb, soft beating interference tones, no sharp attacks, quiet and inward`;
 
-  var promptDawn = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, romantic chamber lyric, Schubert aesthetic, BPM 72, layers: oboe lead, clarinet counterline, soft glockenspiel occasional highlights, warm string pad implied, diatonic elegant counterpoint, singing legato melody, warm voice leading, moderate room reverb, calm luminous morning mood, balanced phrasing, avoid overly sweet trivial melody`;
+  var promptDawn = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, romantic chamber lyric, Schubert aesthetic, BPM 88, layers: oboe lead, clarinet counterline, soft glockenspiel occasional highlights, warm string pad implied, diatonic elegant counterpoint, singing legato melody, warm voice leading, moderate room reverb, calm luminous morning mood, balanced phrasing, avoid overly sweet trivial melody`;
 
-  var promptPulse = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, restrained cinematic orchestral, late romantic aesthetic, reference Bruckner and Tan Dun, BPM 76, layers: french horn primary theme, soft timpani resonant low accents, clarinet supporting line, low brass drone, subtle cymbal swell, slow rising harmonic tension and gradual resolution, deep fundamental resonance, grand hall reverb, noble solemn, controlled dynamic range, no explosive percussive hits`;
+  var promptPulse = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, restrained cinematic orchestral, late romantic aesthetic, reference Bruckner and Tan Dun, BPM 92, layers: french horn primary theme, soft timpani resonant low accents, clarinet supporting line, low brass drone, subtle cymbal swell, slow rising harmonic tension and gradual resolution, deep fundamental resonance, grand hall reverb, noble solemn, controlled dynamic range, no explosive percussive hits`;
 
-  var promptTide = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, phasing minimalist music, Steve Reich phasing technique, Keiko Abe marimba writing, BPM 88, layers: marimba main pattern, quiet vibraphone phasing layer, soft hand percussion pulse, occasional glockenspiel colour, gradual slow phasing shift, consonant cyclic harmony, clean precise articulation, light natural reverb, hypnotic slow evolution, no abrupt rhythmic jumps`;
+  var promptTide = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, phasing minimalist music, Steve Reich phasing technique, Keiko Abe marimba writing, BPM 104, layers: marimba main pattern, quiet vibraphone phasing layer, soft hand percussion pulse, occasional glockenspiel colour, gradual slow phasing shift, consonant cyclic harmony, clean precise articulation, light natural reverb, hypnotic slow evolution, no abrupt rhythmic jumps`;
 
   var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic overcrowded layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music, abrupt start without intro, short clip, looped repetition`;
 
@@ -1346,11 +1318,11 @@
   var TTA_NEGATIVE_PROMPT = NEG_PROMPT;
 
   var TTA_STYLE_PROMPTS = {
-    aurora: { bpm: [56, 60], instruments: ['flute', 'french horn', 'marimba', 'glockenspiel'], composers: 'Claude Debussy, Maurice Ravel', prompt: promptAurora },
-    deep:   { bpm: [52, 56], instruments: ['handpan', 'marimba', 'glockenspiel'], composers: 'Arvo Pärt', prompt: promptDeepSea },
-    dawn:   { bpm: [70, 74], instruments: ['oboe', 'clarinet', 'glockenspiel'], composers: 'Franz Schubert', prompt: promptDawn },
-    pulse:  { bpm: [74, 78], instruments: ['french horn', 'clarinet', 'timpani'], composers: 'Anton Bruckner, Tan Dun', prompt: promptPulse },
-    grow:   { bpm: [86, 90], instruments: ['marimba', 'vibraphone', 'handpan'], composers: 'Steve Reich, Keiko Abe', prompt: promptTide }
+    aurora: { bpm: [70, 76], instruments: ['flute', 'french horn', 'marimba', 'glockenspiel'], composers: 'Claude Debussy, Maurice Ravel', prompt: promptAurora },
+    deep:   { bpm: [64, 70], instruments: ['handpan', 'marimba', 'glockenspiel'], composers: 'Arvo Pärt', prompt: promptDeepSea },
+    dawn:   { bpm: [84, 92], instruments: ['oboe', 'clarinet', 'glockenspiel'], composers: 'Franz Schubert', prompt: promptDawn },
+    pulse:  { bpm: [88, 96], instruments: ['french horn', 'clarinet', 'timpani'], composers: 'Anton Bruckner, Tan Dun', prompt: promptPulse },
+    grow:   { bpm: [100, 110], instruments: ['marimba', 'vibraphone', 'handpan'], composers: 'Steve Reich, Keiko Abe', prompt: promptTide }
   };
 
   function clampBpm(style, bpm) {
@@ -1760,8 +1732,8 @@
     var totalBars = Math.max(12, Math.min(40, Math.round(targetSec / secPerBar)));
     totalBars += totalBars % 2;
     var sections = totalBars / 2;
-    var introEnd = Math.max(8, Math.round(((15 + rnd() * 2) * bpm / 60) / 8) * 8);
-    if (introEnd * 60 / bpm < 15) introEnd += 8;   // 保证前奏 ≥15 秒
+    var introEnd = Math.max(8, Math.round(((10 + rnd() * 4) * bpm / 60) / 8) * 8);
+    var introTex = Math.floor(rnd() * 4);          // 0 铺底 1 零星色彩 2 低音分解 3 轻脉冲
     var midStart = introEnd + 16;
     var outroStart = Math.max(midStart + 8, (sections - 2) * 8);
     bars = totalBars;
@@ -1797,7 +1769,7 @@
       var sus4 = scale[(((deg + 3) % sl) + sl) % sl];
       var ninth = scale[(((deg + 1) % sl) + sl) % sl];
       var padTop = school.wide ? 24 : 12;
-      if (!(variant === 3 && phrase > 1 && rnd() < 0.35)) {
+      if (!(isIntro && introTex === 1) && !(variant === 3 && phrase > 1 && rnd() < 0.35)) {
         chords.push({
           t: base,
           midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop],
@@ -1815,6 +1787,7 @@
           var bNext = variant === 2 ? bassMidi + 12 : (phrase % 2 === 0 ? bassMidi + 7 : bassMidi + 5);
           bassline.push({ t: base + 4, midi: bNext, vel: 0.33 * env });
           if (variant === 1) bassline.push({ t: base + 6, midi: bassMidi + 3, vel: 0.24 * env });
+          if (layer >= 1) bassline.push({ t: base + 2, midi: bassMidi, vel: 0.18 * env });
         }
       }
 
@@ -1823,6 +1796,20 @@
         var sparkN = isIntro ? (ci % 2 === 0 ? 1 : 0) : 1;
         for (var spk = 0; spk < sparkN; spk++) {
           sparkles.push({ t: base + 2 + rnd() * 4, midi: chord[2] + 24, vel: (0.05 + rnd() * 0.05) * env });
+        }
+      }
+      if (isIntro) {
+        if (introTex === 1) {
+          for (var it1 = 0; it1 < 3; it1++) {
+            sparkles.push({ t: base + 1 + it1 * 2 + rnd(), midi: chord[it1 % 3] + 24, vel: 0.06 + rnd() * 0.05 });
+          }
+        } else if (introTex === 2) {
+          for (var it2 = 0; it2 < 8; it2 += 2) {
+            arp.push({ t: base + it2, midi: chord[it2 % 3] + 12, vel: it2 % 4 ? 0.08 : 0.12 });
+          }
+        } else if (introTex === 3 && mode === 'ensemble') {
+          drums.push({ kind: 'kick', t: base, vel: 0.3 }, { kind: 'kick', t: base + 4, vel: 0.22 });
+          drums.push({ kind: 'hat', t: base + 2, vel: 0.06 });
         }
       }
       if (mode === 'solo' && isIntro) {
@@ -1852,6 +1839,10 @@
             melody.push({ t: base + rhy[pi] + (rnd() - 0.5) * 0.03, midi: midi, vel: vel });
             if (school.grace && (isLast || pi === 0) && rnd() < 0.4) {
               melody.push({ t: base + rhy[pi] - 0.09, midi: midi + (scale[1] || 2), vel: vel * 0.38, grace: true });
+            }
+            if (variant === 2 && rnd() < 0.55) {
+              var passNote = midi + (rnd() < 0.5 ? (scale[1] || 2) : -(scale[1] || 2));
+              melody.push({ t: base + rhy[pi] + 0.5, midi: passNote, vel: vel * 0.6 });
             }
           }
         }
@@ -1885,6 +1876,12 @@
       }
 
       /* 层 6：轻柔打击（仅全编制、中段后，前奏与收尾都没有） */
+      if (mode === 'duo' && layer >= 1 && !isIntro && !isOutro) {
+        drums.push({ kind: 'hat', t: base + 2, vel: 0.05 * env }, { kind: 'hat', t: base + 6, vel: 0.05 * env });
+      }
+      if (mode === 'ensemble' && layer === 1 && !isIntro && !isOutro) {
+        drums.push({ kind: 'hat', t: base + 2, vel: 0.06 * env }, { kind: 'hat', t: base + 6, vel: 0.06 * env });
+      }
       if (mode === 'ensemble' && layer >= 2 && !isIntro && !isOutro && variant !== 3) {
         if (style.drums === 'epic') {
           [0, 4].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: 0.45 * env }); });
@@ -1906,7 +1903,7 @@
       sparkles.length = 0;
       counter.length = 0;
     } else if (mode === 'duo') {
-      drums.length = 0;
+      drums = drums.filter(function (d) { return d.kind === 'hat'; });
     }
     return {
       id: 't' + seed.toString(36) + '-' + style.id,
@@ -2150,10 +2147,10 @@
     renderLibrary();
   }
   function seedPresets() {
-    var flag = 'cz_presets_v7';
+    var flag = 'cz_presets_v8';
     try { if (localStorage.getItem(flag)) return; } catch (e) {}
     try {
-      library = library.filter(function (it) { return !it.preset; });
+      library = [];                       // 清空旧曲库（含之前生成的曲目）
       for (var i = 0; i < PRESET_PIECES.length; i++) {
         var cfg = PRESET_PIECES[i];
         var pc = composePiece(cfg);
