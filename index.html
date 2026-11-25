@@ -1239,7 +1239,7 @@
         var o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2.002, t);
         var g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.05 * (vel || 1), t + 0.7);
+        g.gain.linearRampToValueAtTime(0.085 * (vel || 1), t + 0.7);
         g.gain.linearRampToValueAtTime(0.032 * (vel || 1), t + 2.3);
         g.gain.exponentialRampToValueAtTime(0.0002, t + 4.2);
         o.connect(g); o2.connect(g); g.connect(lp);
@@ -1784,7 +1784,7 @@
       chords.push({
         t: base,
         midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop],
-        vel: (isIntro ? 0.5 : 0.58) * env
+        vel: (isIntro ? 0.72 : 0.58) * env
       });
 
       /* 层 2：低音持续音 */
@@ -1792,7 +1792,7 @@
       if (school.ostinato && layer >= 2) {
         for (var bo = 0; bo < 8; bo += 2) bassline.push({ t: base + bo, midi: bassMidi + (bo % 4 ? 7 : 0), vel: (bo % 4 ? 0.22 : 0.34) * env });
       } else {
-        bassline.push({ t: base, midi: bassMidi, vel: (isIntro ? 0.5 : 0.56) * env });
+        bassline.push({ t: base, midi: bassMidi, vel: (isIntro ? 0.66 : 0.56) * env });
         if (!isIntro) bassline.push({ t: base + 4, midi: bassMidi + 7, vel: 0.34 * env });
       }
 
@@ -1803,8 +1803,11 @@
           sparkles.push({ t: base + 2 + rnd() * 4, midi: chord[2] + 24, vel: (0.05 + rnd() * 0.05) * env });
         }
       }
-      if (isIntro && mode === 'solo') {
-        melody.push({ t: base + (rnd() < 0.5 ? 0 : 4), midi: chord[0] + style.octave, vel: 0.26 * env, intro: true });
+      if (mode === 'solo' && isIntro) {
+        for (var si2 = 0; si2 < 8; si2 += 2) {
+          arp.push({ t: base + si2, midi: chord[si2 % 3] + 12, vel: (si2 % 4 ? 0.11 : 0.16) * env });
+        }
+        melody.push({ t: base + 2, midi: chord[1] + style.octave, vel: 0.24 * env, intro: true });
       }
 
       /* 层 4：主旋律（前奏之后才进入，收尾前淡出） */
@@ -1915,6 +1918,7 @@
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'arp') {
       Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: p.arpInst || 'ep', bus: bus });
+      visQueue.push({ t: when, kind: 'note', midi: ev.midi });
     } else if (ev.kind === 'counter') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: p.counterInst || 'handpan', bus: bus });
     } else if (ev.kind === 'kick') {
@@ -1930,7 +1934,7 @@
     var p = player.piece;
     if (!player.on || !p || !player.events) return;
     var now = Audio.now();
-    if (player.bus) {
+    if (player.bus && player.dur > 0) {
       var remain = (player.loopStart + player.dur) - now;
       var target = remain < 2 ? Math.max(0.2, remain / 2) : 1;
       try { player.bus.gain.setTargetAtTime(target, now, 0.12); } catch (e) {}
@@ -1964,6 +1968,8 @@
     autoBtn.classList.add('on');
     var c = Audio.ctx();
     player.bus = Audio.bus();
+    player.bus.gain.value = 1;
+    player.dur = piece.bars * 4 * (60 / piece.bpm);
     player.events = buildSeqEvents(piece);
     player.idx = 0;
     player.loopStart = c.currentTime + 0.12;
@@ -3805,7 +3811,7 @@
   setInterval(dbgUpdate, 800);
 
   /* 调试钩子：便于自动化测试（不影响正常使用） */
-  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lutCache: lutCache, lutIdx: lutIdx }, compose: composePiece, styles: STYLES, musicPrompt: buildMusicPrompt, tta: TTA_CONFIG };
+  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lutCache: lutCache, lutIdx: lutIdx }, compose: composePiece, styles: STYLES, musicPrompt: buildMusicPrompt, tta: TTA_CONFIG, player: player, visQueue: visQueue };
 
   resize();
   cam.theta = cam.tTheta;
