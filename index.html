@@ -230,6 +230,7 @@
   .lib-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
   .lib-list{flex:1;min-height:80px;overflow:auto;display:flex;flex-direction:column;gap:6px}
   .lib-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--stroke);border-radius:10px;background:rgba(255,255,255,.03)}
+  .lib-item.preset{border-color:rgba(255,205,110,.35);background:rgba(255,205,110,.05)}
   .lib-item .t{flex:1;min-width:0}
   .lib-item .nm{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lib-item .meta{font-size:10px;color:var(--muted);margin-top:2px}
@@ -1165,6 +1166,19 @@
     dorian: [0, 2, 3, 5, 7, 9, 10],
     major: [0, 2, 4, 5, 7, 9, 11]
   };
+  var PRESET_PIECES = [
+    { name: '雾里星尘', styleId: 'aurora', seed: 3724842667, bpm: 62, root: 46, instrument: 'flute' },
+    { name: '极光低语', styleId: 'aurora', seed: 1401181147, bpm: 62, root: 46, instrument: 'flute' },
+    { name: '霜降之息', styleId: 'aurora', seed: 2415085374, bpm: 62, root: 45, instrument: 'flute' },
+    { name: '深海回声', styleId: 'deep', seed: 3428989601, bpm: 70, root: 49, instrument: 'bell' },
+    { name: '月蚀倒影', styleId: 'deep', seed: 1401181147, bpm: 70, root: 46, instrument: 'bell' },
+    { name: '晨光初照', styleId: 'dawn', seed: 1788458067, bpm: 84, root: 45, instrument: 'piano' },
+    { name: '浅岸拾光', styleId: 'dawn', seed: 387276920, bpm: 84, root: 43, instrument: 'piano' },
+    { name: '风过铃兰', styleId: 'dawn', seed: 2415085374, bpm: 84, root: 43, instrument: 'piano' },
+    { name: '脉冲星河', styleId: 'pulse', seed: 1788458067, bpm: 112, root: 45, instrument: 'synth' },
+    { name: '光之洪流', styleId: 'pulse', seed: 774553840, bpm: 112, root: 47, instrument: 'synth' }
+  ];
+
   var STYLES = [
     { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 62, scale: 'minorPenta', drums: 'none', wet: 0.62, octave: 24, bright: true },
     { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 70, scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false },
@@ -1273,7 +1287,7 @@
         if (rnd() < 0.72) midi = chord[Math.floor(rnd() * chord.length)] + (style.octave - 12);
         else midi = root + scale[Math.floor(rnd() * sl)] + style.octave;
         if (style.mood === '空灵' && rnd() < 0.22) midi += 12;
-        melody.push({ t: t, midi: midi, vel: 0.5 + rnd() * 0.3 });
+        melody.push({ t: t + (rnd() - 0.5) * 0.035, midi: midi, vel: 0.5 + rnd() * 0.3 });
       }
 
       /* 节奏 */
@@ -1291,7 +1305,7 @@
       }
     }
     return {
-      id: 't' + seed.toString(36),
+      id: 't' + seed.toString(36) + '-' + style.id,
       name: opts.name || autoName,
       styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: style.scale,
       instrument: inst, seed: seed, bars: bars, created: opts.created || Date.now(),
@@ -1347,6 +1361,7 @@
     Audio.ensure();
     player.piece = piece;
     state.currentPiece = piece;
+    state.mood = piece.mood || '优美';
     state.seqOn = true;
     autoBtn.textContent = '⏹ 停演';
     autoBtn.classList.add('on');
@@ -1464,6 +1479,27 @@
     saveLibrary();
     renderLibrary();
   }
+  function seedPresets() {
+    var flag = 'cz_presets_v2';
+    try { if (localStorage.getItem(flag)) return; } catch (e) {}
+    try {
+      for (var i = 0; i < PRESET_PIECES.length; i++) {
+        var cfg = PRESET_PIECES[i];
+        var pc = composePiece(cfg);
+        pc.preset = true;
+        var exists = false;
+        for (var j = 0; j < library.length; j++) if (library[j].id === pc.id) { exists = true; break; }
+        if (exists) continue;
+        library.push({
+          id: pc.id, name: pc.name, styleId: pc.styleId, bpm: pc.bpm,
+          root: pc.root, scaleName: pc.scaleName, instrument: pc.instrument,
+          seed: pc.seed, created: pc.created, bars: pc.bars, preset: true
+        });
+      }
+      saveLibrary();
+      localStorage.setItem(flag, '1');
+    } catch (e) {}
+  }
   function pieceFromSaved(item) {
     return composePiece({
       seed: item.seed, styleId: item.styleId, bpm: item.bpm,
@@ -1481,7 +1517,7 @@
     var box = $('libFilters');
     if (!box) return;
     box.innerHTML = '';
-    var all = [{ id: 'all', name: '全部', icon: '♪' }].concat(STYLES);
+    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }].concat(STYLES);
     all.forEach(function (st) {
       var b = document.createElement('button');
       b.className = 'lib-btn' + (libFilter === st.id ? ' primary' : '');
@@ -1496,6 +1532,7 @@
     if (!list) return;
     var q = (libQuery || '').trim().toLowerCase();
     var items = library.filter(function (it) {
+      if (libFilter === 'preset') return !!it.preset;
       if (libFilter !== 'all' && it.styleId !== libFilter) return false;
       if (!q) return true;
       return (it.name + ' ' + styleById(it.styleId).name + ' ' + styleById(it.styleId).id).toLowerCase().indexOf(q) >= 0;
@@ -1508,10 +1545,10 @@
     items.forEach(function (it) {
       var st = styleById(it.styleId);
       var row = document.createElement('div');
-      row.className = 'lib-item';
+      row.className = 'lib-item' + (it.preset ? ' preset' : '');
       var t = document.createElement('div');
       t.className = 't';
-      t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
+      t.innerHTML = '<div class="nm">' + (it.preset ? '⭐ ' : '') + esc(it.name) + '</div>' +
         '<div class="meta">' + st.icon + ' ' + st.name + ' · ' + it.bpm + ' BPM · ' + fmtDate(it.created) + '</div>';
       var play = document.createElement('button');
       play.className = 'lib-btn primary';
@@ -2420,6 +2457,7 @@
         renderSheet();
       }));
       body.appendChild(mkItem('⏱', '录音时长', state.recSecs ? state.recSecs + ' 秒' : '手动', function () { sheetGo('recdur'); }));
+      body.appendChild(mkItem('⭐', '精选曲目', '10 首', function () { libFilter = 'preset'; closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('📚', '曲库', (library.length || 0) + ' 首', function () { closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
     } else if (id === 'genstyle') {
@@ -2899,14 +2937,21 @@
         state.wave = 0;
         state.waveAmp = Math.min(1.3, state.waveAmp + 0.9 * ev.amt + 0.25);
       } else if (ev.kind === 'note') {
-        setFreq(midiToFreq(ev.midi));
-        state.beatEnv = Math.min(1.6, state.beatEnv + 0.4);
+        var nowVis = performance.now();
+        var gap = state.seqOn ? (state.mood === '空灵' ? 520 : (state.mood === '震撼' ? 300 : 400)) : 0;
+        if (nowVis - (state.lastVisFreq || 0) >= gap) {
+          state.lastVisFreq = nowVis;
+          setFreq(midiToFreq(ev.midi));
+        }
+        state.beatEnv = Math.min(1.6, state.beatEnv + (state.mood === '空灵' ? 0.18 : 0.28));
         flashKey(keyEls[ev.midi], 420);
       }
     }
 
     state.energy = Math.max(state.beatEnv * 0.95, state.level * 0.95);
-    var vEnergy = Math.min(1.35, state.energy);
+    var visMood = state.seqOn ? (state.mood || '优美') : '优美';
+    var moodGain = visMood === '空灵' ? 0.68 : (visMood === '震撼' ? 1.12 : 0.9);
+    var vEnergy = Math.min(1.35, state.energy * moodGain);
     var zoom = 1 - 0.055 * vEnergy;
 
     /* ---- 色调 ---- */
@@ -2930,8 +2975,10 @@
       rstyle.setProperty('--pat-glow', 'rgba(' + pr + ',' + pg + ',' + pb + ',0.55)');
     }
 
-    /* ---- 相机 ---- */
-    if (performance.now() - lastInteract > 2800) cam.tTheta += dt * 0.1;
+    /* ---- 相机（按气质放慢/加快） ---- */
+    var mood = state.seqOn ? (state.mood || '优美') : '优美';
+    var autoSpeed = mood === '空灵' ? 0.05 : (mood === '震撼' ? 0.09 : 0.07);
+    if (performance.now() - lastInteract > 2800) cam.tTheta += dt * autoSpeed;
     var ks = 1 - Math.exp(-dt * 7);
     cam.theta += (cam.tTheta - cam.theta) * ks;
     cam.phi += (cam.tPhi - cam.phi) * ks;
@@ -3089,7 +3136,7 @@
   setInterval(dbgUpdate, 800);
 
   /* 调试钩子：便于自动化测试（不影响正常使用） */
-  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lutCache: lutCache, lutIdx: lutIdx } };
+  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lutCache: lutCache, lutIdx: lutIdx }, compose: composePiece, styles: STYLES };
 
   resize();
   cam.theta = cam.tTheta;
@@ -3097,6 +3144,7 @@
   cam.dist = cam.tDist;
   try {
     loadLibrary();
+    seedPresets();
     renderLibrary();
     var savedTheme = localStorage.getItem('cz_theme') || 'cyan';
     var savedKeys = localStorage.getItem('cz_keys') || '13';
