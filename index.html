@@ -1326,54 +1326,31 @@
     { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 88, bpmRange: [86, 90], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
   ];
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
-  var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, sparse elegant arrangement, maximum 2-3 instruments sounding simultaneously, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, soft stereo width, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture`;
+  var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, elegant layered arrangement, 3-5 instruments in clear harmonic layers: lead melody, harmonic pad, rhythmic or colour accents, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, wide stereo, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture, 60-90 seconds duration`;
 
-  var promptAurora = `${SYSTEM_PREFIX}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 58, flute and french horn with subtle marimba accents, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
+  var INTRO_DIRECTIVE = `with a 15-20 seconds atmospheric intro: sustained low pad and sparse single-note accents only, main melody enters gradually after the intro, instruments add layer by layer, gradual fade-out ending`;
 
-  var promptDeepSea = `${SYSTEM_PREFIX}, meditative ambient minimalism, slow static harmonic field, reference Arvo Pärt tintinnabuli style, BPM 54, handpan, marimba and glockenspiel, slow overtone resonance, very gradual harmonic movement, minimal melodic motion, deep underwater diffused reverb, soft beating interference tones, no sharp attacks, quiet and inward`;
+  var promptAurora = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 58, layers: flute lead, french horn sustained pad, marimba soft accents, subtle glockenspiel sparkle, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
 
-  var promptDawn = `${SYSTEM_PREFIX}, romantic chamber lyric, Schubert aesthetic, BPM 72, oboe lead with subtle clarinet counterline, soft glockenspiel occasional highlights, diatonic elegant counterpoint, singing legato melody, warm voice leading, moderate room reverb, calm luminous morning mood, balanced phrasing, avoid overly sweet trivial melody`;
+  var promptDeepSea = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, meditative ambient minimalism, slow static harmonic field, reference Arvo Pärt tintinnabuli style, BPM 54, layers: handpan deep pad, marimba slow motif, glockenspiel distant accents, soft bass drone, slow overtone resonance, very gradual harmonic movement, minimal melodic motion, deep underwater diffused reverb, soft beating interference tones, no sharp attacks, quiet and inward`;
 
-  var promptPulse = `${SYSTEM_PREFIX}, restrained cinematic orchestral, late romantic aesthetic, reference Bruckner and Tan Dun, BPM 76, french horn primary, low soft timpani resonant accents, clarinet supporting line, slow rising harmonic tension and gradual resolution, deep fundamental resonance, grand hall reverb, noble solemn, dynamic range controlled, no explosive percussive hits`;
+  var promptDawn = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, romantic chamber lyric, Schubert aesthetic, BPM 72, layers: oboe lead, clarinet counterline, soft glockenspiel occasional highlights, warm string pad implied, diatonic elegant counterpoint, singing legato melody, warm voice leading, moderate room reverb, calm luminous morning mood, balanced phrasing, avoid overly sweet trivial melody`;
 
-  var promptTide = `${SYSTEM_PREFIX}, phasing minimalist music, Steve Reich phasing technique, Keiko Abe marimba writing, BPM 88, marimba main pattern with quiet vibraphone phasing layer, gradual slow phasing shift, consonant cyclic harmony, clean precise articulation, light natural reverb, hypnotic slow evolution, no abrupt rhythmic jumps`;
+  var promptPulse = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, restrained cinematic orchestral, late romantic aesthetic, reference Bruckner and Tan Dun, BPM 76, layers: french horn primary theme, soft timpani resonant low accents, clarinet supporting line, low brass drone, subtle cymbal swell, slow rising harmonic tension and gradual resolution, deep fundamental resonance, grand hall reverb, noble solemn, controlled dynamic range, no explosive percussive hits`;
 
-  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music`;
+  var promptTide = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, phasing minimalist music, Steve Reich phasing technique, Keiko Abe marimba writing, BPM 88, layers: marimba main pattern, quiet vibraphone phasing layer, soft hand percussion pulse, occasional glockenspiel colour, gradual slow phasing shift, consonant cyclic harmony, clean precise articulation, light natural reverb, hypnotic slow evolution, no abrupt rhythmic jumps`;
+
+  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic overcrowded layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music, abrupt start without intro, short clip, looped repetition`;
 
   var TTA_SYSTEM_PREFIX = SYSTEM_PREFIX;
   var TTA_NEGATIVE_PROMPT = NEG_PROMPT;
 
   var TTA_STYLE_PROMPTS = {
-    aurora: {
-      bpm: [56, 60],
-      instruments: ['flute', 'french horn', 'marimba'],
-      composers: 'Claude Debussy, Maurice Ravel',
-      prompt: promptAurora
-    },
-    deep: {
-      bpm: [52, 56],
-      instruments: ['handpan', 'marimba', 'bells'],
-      composers: 'Arvo Pärt',
-      prompt: promptDeepSea
-    },
-    dawn: {
-      bpm: [70, 74],
-      instruments: ['oboe', 'clarinet', 'bells'],
-      composers: 'Franz Schubert',
-      prompt: promptDawn
-    },
-    pulse: {
-      bpm: [74, 78],
-      instruments: ['french horn', 'clarinet', 'handpan', 'marimba'],
-      composers: 'Anton Bruckner, Tan Dun',
-      prompt: promptPulse
-    },
-    grow: {
-      bpm: [86, 90],
-      instruments: ['marimba', 'bells', 'electric piano'],
-      composers: 'Steve Reich, Keiko Abe',
-      prompt: promptTide
-    }
+    aurora: { bpm: [56, 60], instruments: ['flute', 'french horn', 'marimba', 'glockenspiel'], composers: 'Claude Debussy, Maurice Ravel', prompt: promptAurora },
+    deep:   { bpm: [52, 56], instruments: ['handpan', 'marimba', 'glockenspiel'], composers: 'Arvo Pärt', prompt: promptDeepSea },
+    dawn:   { bpm: [70, 74], instruments: ['oboe', 'clarinet', 'glockenspiel'], composers: 'Franz Schubert', prompt: promptDawn },
+    pulse:  { bpm: [74, 78], instruments: ['french horn', 'clarinet', 'timpani'], composers: 'Anton Bruckner, Tan Dun', prompt: promptPulse },
+    grow:   { bpm: [86, 90], instruments: ['marimba', 'vibraphone', 'handpan'], composers: 'Steve Reich, Keiko Abe', prompt: promptTide }
   };
 
   function clampBpm(style, bpm) {
@@ -1386,15 +1363,16 @@
     var st = styleById(styleId);
     var def = TTA_STYLE_PROMPTS[styleId] || TTA_STYLE_PROMPTS.aurora;
     var arr = sanitizeInstruments(def.instruments);
-    var duration = clampDuration(24);
+    var duration = clampDuration(60 + Math.round(Math.random() * 25));  // 60-85s
     var bpm = clampBpm(st, st.bpm || Math.round((def.bpm[0] + def.bpm[1]) / 2));
     var body = def.prompt.indexOf(SYSTEM_PREFIX) === 0
       ? def.prompt.slice(SYSTEM_PREFIX.length).replace(/^,\s*/, '')
       : def.prompt;
     var prompt = body
       + " (max three instruments: " + arr.join(', ') + "; solo sections may use one)."
-      + " Render as a seamless " + duration + "-second loop, clean instrument separation, long natural reverb tails, "
-      + "spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
+      + " Total duration " + duration + " seconds (60-90s), with a 15-20 seconds atmospheric intro (pad and sparse accents only, "
+      + "main melody enters gradually), layered build-up and a gradual fade-out ending. Clean instrument separation, "
+      + "long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
     return {
       styleId: styleId,
       title: genTitleFromStyle(styleId),
@@ -1409,6 +1387,10 @@
       instrument_separation: true,
       seed: (Date.now() % 2147483647) >>> 0,
       duration: duration,
+      intro_seconds: [15, 20],
+      structure: 'atmospheric_intro_15_20s -> melody_enters -> layers_build -> fade_out',
+      crossfade_seconds: 2,
+      layer_roles: ['lead_melody', 'harmonic_pad', 'colour_accents', 'low_drone', 'soft_percussion'],
       pitch_shift_cents: A4_SHIFT_CENTS,
       tuning: 'A4=' + CYMATICS_A4_HZ + 'Hz'
     };
@@ -1422,7 +1404,7 @@
 
   var CYMATICS_A4_HZ = 432;
   var A4_SHIFT_CENTS = 1200 * Math.log2(CYMATICS_A4_HZ / 440);  // ≈ -31.8 cents
-  var TTA_DURATION = { min: 16, max: 30, target: 24 };
+  var TTA_DURATION = { min: 60, max: 90, target: 75 };
   var TTA_MAX_INSTRUMENTS = 3;
   var TTA_ALLOWED_INSTRUMENTS = ['music box', 'electric keyboard', 'oboe', 'electric piano', 'flute', 'bells',
     'handpan', 'french horn', 'marimba', 'clarinet', 'synth'];
@@ -1451,6 +1433,7 @@
   function stopTTA() {
     if (!tta.on) return;
     tta.on = false;
+    clearInterval(tta.fadeTimer);
     try { tta.src.stop(); } catch (e) {}
     try { tta.src.disconnect(); } catch (e) {}
     tta.src = null;
@@ -1477,7 +1460,11 @@
         max_instruments: 3,
         instrument_separation: true,
         pitch_shift_cents: req.pitch_shift_cents,
-        tuning: req.tuning
+        tuning: req.tuning,
+        intro_seconds: req.intro_seconds,
+        structure: req.structure,
+        crossfade_seconds: req.crossfade_seconds,
+        layer_roles: req.layer_roles
       })
     }).then(function (res) {
       if (!res.ok) throw new Error('TTA HTTP ' + res.status);
@@ -1506,11 +1493,27 @@
     sink.gain.value = 0.85;
     an.connect(sink);
     sink.connect(Audio.master());
+    var ttaGain = c.createGain();
+    ttaGain.gain.value = 1;
+    try { src.disconnect(an); } catch (e) {}
+    src.connect(ttaGain);
+    ttaGain.connect(an);
     analyser = an;
     audioData = new Uint8Array(an.frequencyBinCount);
     tta.src = src;
     tta.on = true;
     src.start();
+    tta.startTime = c.currentTime;
+    tta.dur = buffer.duration || 60;
+    clearInterval(tta.fadeTimer);
+    tta.fadeTimer = setInterval(function () {
+      if (!tta.on) return;
+      var t2 = c.currentTime;
+      var pos = (t2 - tta.startTime) % tta.dur;
+      var remain = tta.dur - pos;
+      var tg = remain < 2 ? Math.max(0.2, remain / 2) : (pos < 1.5 ? Math.min(1, 0.2 + pos / 1.5) : 1);
+      try { ttaGain.gain.setTargetAtTime(tg, t2, 0.12); } catch (e) {}
+    }, 200);
     state.musicOn = true;
     state.seqOn = true;
     state.currentPiece = { name: req.title, styleId: req.styleId, bpm: req.bpm };
@@ -1656,51 +1659,61 @@
     var melody = [], chords = [], drums = [], sparkles = [], bassline = [];
     var prog = PROGS['律动'][Math.floor(rnd() * PROGS['律动'].length)];
     var contour = CONTOURS[Math.floor(rnd() * CONTOURS.length)];
+    var secPerBar = 240 / (style.bpm || 88);
+    var targetSec = 62 + Math.floor(rnd() * 24);
+    var totalBars = Math.max(20, Math.min(40, Math.round(targetSec / secPerBar)));
+    totalBars += totalBars % 4;
+    var phases = totalBars / 4;
     var phasePats = [[0, 3, 6], [0, 1.5, 4, 6, 10], [0, 1.5, 2.5, 4, 6, 9, 12], [0, 1.5, 2.5, 4, 5.5, 6, 8, 9.5, 12, 14]];
 
-    for (var ph = 0; ph < 4; ph++) {
+    for (var ph = 0; ph < phases; ph++) {
       var base = ph * 16;
+      var isIntro = ph < Math.max(1, Math.ceil(15 / (4 * secPerBar)));
+      var isOutro = ph >= phases - 1;
+      var layer = isIntro ? 0 : (ph < phases - 2 ? 1 : 2);
+      var env = isIntro ? 0.5 : (isOutro ? 0.35 : 1);
       var deg = prog[ph % prog.length];
       var chord = [];
       for (var off = 0; off < 3; off++) {
         var di = deg + off * 2;
         chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
-      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: 0.5 + ph * 0.1 });
+      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: (isIntro ? 0.5 : 0.56) * env });
 
       var bassMidi = root - 12 + scale[deg % sl];
-      if (ph >= 1) {
+      if (isIntro) {
+        bassline.push({ t: base, midi: bassMidi, vel: 0.5 });
+        bassline.push({ t: base + 8, midi: bassMidi, vel: 0.32 });
+      } else if (!isOutro) {
         for (var bt = 0; bt < 16; bt++) {
-          bassline.push({ t: base + bt, midi: bassMidi + (bt % 4 === 2 ? 7 : 0), vel: bt % 2 ? 0.2 : 0.32 });
+          bassline.push({ t: base + bt, midi: bassMidi + (bt % 4 === 2 ? 7 : 0), vel: (bt % 2 ? 0.2 : 0.32) * env });
         }
       }
-      if (ph >= 2) {
-        for (var sp = 0; sp < 2; sp++) sparkles.push({ t: base + 4 + sp * 6 + rnd() * 2, midi: chord[2] + 24, vel: 0.05 + rnd() * 0.04 });
+      if (style.bright && (isIntro ? ph % 1 === 0 : true)) {
+        sparkles.push({ t: base + 4 + rnd() * 8, midi: chord[2] + 24, vel: (isIntro ? 0.04 : 0.06) * env });
       }
 
-      var pat = phasePats[ph];
-      for (var pi = 0; pi < pat.length; pi++) {
-        var cv = contour[pi % contour.length];
-        var idxc = Math.max(0, Math.min(2, cv));
-        var midi = chord[idxc] + 24 + (cv >= 2 ? 12 : 0);
-        if (ph === 3 && pi === pat.length - 1) midi = chord[0] + 24;
-        melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: 0.45 + ph * 0.06 + (pi % 2 === 0 ? 0.12 : 0) + rnd() * 0.08 });
+      if (!isIntro && !isOutro) {
+        var pat = phasePats[Math.min(3, layer + 1)];
+        for (var pi = 0; pi < pat.length; pi++) {
+          var cv = contour[pi % contour.length];
+          var idxc = Math.max(0, Math.min(2, cv));
+          var midi = chord[idxc] + 24 + (cv >= 2 ? 12 : 0);
+          if (ph === phases - 2 && pi === pat.length - 1) midi = chord[0] + 24 - 12;
+          melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: (0.42 + layer * 0.08 + (pi % 2 === 0 ? 0.1 : 0)) * env });
+        }
+      } else if (isOutro) {
+        melody.push({ t: base + 4, midi: chord[0] + 24, vel: 0.16 });
       }
 
-      if (ph === 0) {
-        [0, 4, 8, 12].forEach(function (bt2) { drums.push({ kind: 'hat', t: base + bt2, vel: 0.08 }); });
-      } else if (ph === 1) {
-        [0, 4, 8, 12].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: 0.45 }); });
-        for (var h1 = 0; h1 < 16; h1 += 2) drums.push({ kind: 'hat', t: base + h1, vel: 0.09 });
-      } else if (ph === 2) {
-        [0, 2, 4, 6, 8, 10, 12, 14].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: bt2 % 4 === 0 ? 0.55 : 0.38 }); });
-        for (var h2 = 0; h2 < 16; h2++) drums.push({ kind: 'hat', t: base + h2 + 0.5, vel: h2 % 2 ? 0.1 : 0.13 });
-      } else {
-        [0, 2, 4, 6, 8, 10, 12, 14].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: bt2 % 4 === 0 ? 0.72 : 0.5 }); });
-        for (var h3 = 0; h3 < 16; h3++) drums.push({ kind: 'hat', t: base + h3 + (h3 % 2 ? 0 : 0.5), vel: h3 % 4 === 0 ? 0.14 : 0.1 });
+      if (layer >= 2 && !isIntro && !isOutro) {
+        [0, 2, 4, 6, 8, 10, 12, 14].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: (bt2 % 4 === 0 ? 0.5 : 0.34) * env }); });
+        for (var h3 = 0; h3 < 16; h3++) drums.push({ kind: 'hat', t: base + h3 + (h3 % 2 ? 0 : 0.5), vel: (h3 % 4 === 0 ? 0.1 : 0.07) * env });
+      } else if (layer >= 1 && !isIntro && !isOutro) {
+        for (var h1 = 0; h1 < 16; h1 += 4) drums.push({ kind: 'hat', t: base + h1, vel: 0.07 * env });
       }
     }
-    return { bars: 16, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: [], counter: [] };
+    return { bars: totalBars, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: [], counter: [] };
   }
 
   /* 作曲：8 小节 / 4 个和弦段落；三种气质（空灵 / 优美 / 震撼） */
@@ -1739,95 +1752,120 @@
     var pat = school.pats[Math.floor(rnd() * school.pats.length)];
     var contour = CONTOURS[Math.floor(rnd() * CONTOURS.length)];
 
-    for (var ci = 0; ci < 4; ci++) {
+    /* ===== 60–90 秒结构：15–20s 前奏 → 主题进入 → 逐层叠加 → 渐弱收尾 ===== */
+    var secPerBar = 240 / bpm;
+    var targetSec = 62 + Math.floor(rnd() * 24);
+    var totalBars = Math.max(12, Math.min(40, Math.round(targetSec / secPerBar)));
+    totalBars += totalBars % 2;
+    var sections = totalBars / 2;
+    var introEnd = Math.max(8, Math.round(((15 + rnd() * 2) * bpm / 60) / 8) * 8);
+    if (introEnd * 60 / bpm < 15) introEnd += 8;   // 保证前奏 ≥15 秒
+    var midStart = introEnd + 16;
+    var outroStart = Math.max(midStart + 8, (sections - 2) * 8);
+    bars = totalBars;
+
+    for (var ci = 0; ci < sections; ci++) {
       var base = ci * 8;
+      var isIntro = base < introEnd;
+      var isOutro = base >= outroStart;
+      var layer = isIntro ? 0 : (base < midStart ? 1 : 2);
+      var env = isIntro ? 0.55 : (isOutro ? Math.max(0.22, 1 - (base - outroStart) / ((sections * 8) - outroStart)) : 1);
       var deg = prog[ci % prog.length];
       var chord = [];
       for (var off = 0; off < 3; off++) {
         var di = deg + off * 2;
         chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
+
+      /* 层 1：和声铺底（前奏最突出，全程都在） */
       var sus4 = scale[(((deg + 3) % sl) + sl) % sl];
       var ninth = scale[(((deg + 1) % sl) + sl) % sl];
       var padTop = school.wide ? 24 : 12;
-      chords.push({ t: base, midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop], vel: style.mood === '震撼' ? 0.85 : 0.58 });
+      chords.push({
+        t: base,
+        midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop],
+        vel: (isIntro ? 0.5 : 0.58) * env
+      });
 
-      /* 低音：巴赫级进 / 莫扎特根音五音 / 巴托克固定音型 */
+      /* 层 2：低音持续音 */
       var bassMidi = root - 12 + scale[deg % sl];
-      if (school.ostinato) {
-        for (var bo = 0; bo < 8; bo++) {
-          bassline.push({ t: base + bo, midi: bassMidi + (bo % 2 ? 7 : 0), vel: bo % 2 ? 0.26 : 0.4 });
-        }
-      } else if (style.school === 'bach') {
-        var stepDown = root - 12 + scale[(((deg - 1) % sl) + sl) % sl];
-        bassline.push({ t: base, midi: stepDown, vel: 0.58 });
-        bassline.push({ t: base + 4, midi: bassMidi, vel: 0.52 });
+      if (school.ostinato && layer >= 2) {
+        for (var bo = 0; bo < 8; bo += 2) bassline.push({ t: base + bo, midi: bassMidi + (bo % 4 ? 7 : 0), vel: (bo % 4 ? 0.22 : 0.34) * env });
       } else {
-        bassline.push({ t: base, midi: bassMidi, vel: 0.58 });
-        bassline.push({ t: base + 4, midi: bassMidi + 7, vel: 0.38 });
+        bassline.push({ t: base, midi: bassMidi, vel: (isIntro ? 0.5 : 0.56) * env });
+        if (!isIntro) bassline.push({ t: base + 4, midi: bassMidi + 7, vel: 0.34 * env });
       }
 
-      /* 旋律：2 小节一句，问答式收尾 */
-      for (var pi = 0; pi < pat.length; pi++) {
-        var cv = contour[pi % contour.length];
-        var idxc = Math.max(0, Math.min(2, cv));
-        var midi = chord[idxc] + style.octave + (cv >= 2 ? 12 : 0);
-        var isLast = pi === pat.length - 1;
-        if (isLast && ci === 1) midi = root + scale[(((deg + 1) % sl) + sl) % sl] + style.octave;
-        if (isLast && ci === 3) midi = chord[0] + style.octave - 12;
-        var vel = 0.55 + (pi % 2 === 0 ? 0.14 : 0.02) + rnd() * 0.08;
-        melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: vel });
-
-        if (school.grace && (isLast || pi === 0) && rnd() < 0.5) {
-          melody.push({ t: base + pat[pi] - 0.09, midi: midi + (scale[1] || 2), vel: vel * 0.45, grace: true });
-        }
-        if (school.counter && pi % 2 === 0) {
-          counter.push({ t: base + pat[pi] + 0.02, midi: chord[(idxc + 2) % 3] + style.octave - 12, vel: vel * 0.45 });
+      /* 层 3：色彩点缀（前奏只有零星单音） */
+      if (style.bright) {
+        var sparkN = isIntro ? (ci % 2 === 0 ? 1 : 0) : 1;
+        for (var spk = 0; spk < sparkN; spk++) {
+          sparkles.push({ t: base + 2 + rnd() * 4, midi: chord[2] + 24, vel: (0.05 + rnd() * 0.05) * env });
         }
       }
-
-      /* Reich 相位：主图案与一条错开 3/8 拍的重复声部 */
-      if (school.phase) {
-        for (var phI = 0; phI < arp.length; phI++) {
-          if (arp[phI].t >= base) counter.push({ t: arp[phI].t + 0.375, midi: arp[phI].midi + 12, vel: arp[phI].vel * 0.55 });
-        }
+      if (isIntro && mode === 'solo') {
+        melody.push({ t: base + (rnd() < 0.5 ? 0 : 4), midi: chord[0] + style.octave, vel: 0.26 * env, intro: true });
       }
 
-      /* 莫扎特式阿尔贝蒂伴奏 */
-      if (school.alberti) {
-        var alb = [chord[0], chord[1], chord[2], chord[1]];
-        for (var ab = 0; ab < 8; ab++) {
-          arp.push({ t: base + ab, midi: alb[ab % 4], vel: ab % 2 ? 0.1 : 0.15 });
+      /* 层 4：主旋律（前奏之后才进入，收尾前淡出） */
+      if (!isIntro && !isOutro) {
+        for (var pi = 0; pi < pat.length; pi++) {
+          if (layer === 1 && pi > 3) continue;
+          var cv = contour[pi % contour.length];
+          var idxc = Math.max(0, Math.min(2, cv));
+          var midi = chord[idxc] + style.octave + (cv >= 2 ? 12 : 0);
+          var isLast = pi === pat.length - 1;
+          if (isLast && ci === Math.floor(introEnd / 8) + 1) midi = root + scale[(((deg + 1) % sl) + sl) % sl] + style.octave;
+          if (isLast && ci === sections - 1) midi = chord[0] + style.octave - 12;
+          var vel = (0.5 + (pi % 2 === 0 ? 0.14 : 0.02) + rnd() * 0.08) * env;
+          melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: vel });
+          if (school.grace && (isLast || pi === 0) && rnd() < 0.45) {
+            melody.push({ t: base + pat[pi] - 0.09, midi: midi + (scale[1] || 2), vel: vel * 0.4, grace: true });
+          }
         }
       }
 
-      if (mode === 'solo') {
-        for (var sa = 0; sa < 8; sa++) {
-          arp.push({ t: base + sa, midi: chord[sa % 3] + 12, vel: sa % 2 ? 0.09 : 0.13 });
+      if (mode === 'solo' && !isIntro) {
+        for (var sa = 0; sa < 8; sa++) arp.push({ t: base + sa, midi: chord[sa % 3] + 12, vel: (sa % 2 ? 0.08 : 0.12) * env });
+      }
+
+      /* 层 5：对位 / 相位 / 分解和弦（中段才加入） */
+      if (!isIntro && !isOutro && layer >= 1) {
+        if (school.alberti) {
+          var alb = [chord[0], chord[1], chord[2], chord[1]];
+          for (var ab = 0; ab < 8; ab++) arp.push({ t: base + ab, midi: alb[ab % 4], vel: (ab % 2 ? 0.08 : 0.12) * env });
+        } else if (!school.counter) {
+          var balb = [chord[0], chord[2], chord[1]];
+          for (var ba = 0; ba < 8; ba += 2) arp.push({ t: base + ba, midi: balb[ba % 3] + 12, vel: 0.09 * env });
         }
-      } else if (!school.alberti && !school.counter) {
-        var balb = [chord[0], chord[2], chord[1], chord[2]];
-        for (var ba = 0; ba < 8; ba++) {
-          arp.push({ t: base + ba, midi: balb[ba % 4] + 12, vel: ba % 2 ? 0.07 : 0.1 });
+        if (school.counter) {
+          for (var cpi = 0; cpi < pat.length; cpi += 2) {
+            var ccv = contour[cpi % contour.length];
+            var cidx = Math.max(0, Math.min(2, ccv));
+            counter.push({ t: base + pat[cpi] + 0.02, midi: chord[(cidx + 2) % 3] + style.octave - 12, vel: 0.22 * env });
+          }
+        }
+        if (school.phase) {
+          for (var phI = 0; phI < arp.length; phI++) {
+            if (arp[phI].t >= base) counter.push({ t: arp[phI].t + 0.375, midi: arp[phI].midi + 12, vel: arp[phI].vel * 0.5 });
+          }
         }
       }
 
-      if (style.bright && mode !== 'solo') {
-        sparkles.push({ t: base + 2 + rnd() * 2, midi: chord[2] + 24, vel: 0.05 + rnd() * 0.04 });
+      /* 层 6：轻柔打击（仅全编制、中段后，前奏与收尾都没有） */
+      if (mode === 'ensemble' && layer >= 2 && !isIntro && !isOutro) {
+        if (style.drums === 'epic') {
+          [0, 4].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: 0.45 * env }); });
+          drums.push({ kind: 'hat', t: base + 2, vel: 0.08 * env }, { kind: 'hat', t: base + 6, vel: 0.07 * env });
+        } else if (style.drums === 'soft') {
+          drums.push({ kind: 'kick', t: base, vel: 0.4 * env }, { kind: 'kick', t: base + 4, vel: 0.28 * env });
+          drums.push({ kind: 'hat', t: base + 2, vel: 0.06 * env });
+        } else {
+          drums.push({ kind: 'kick', t: base, vel: 0.32 * env });
+        }
       }
-
-      /* 鼓：克制 */
-      if (style.drums === 'epic') {
-        [0, 2, 4, 6].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: bt % 4 === 0 ? 0.8 : 0.5 }); });
-        for (var h = 0; h < 8; h++) drums.push({ kind: 'hat', t: base + h, vel: h % 2 ? 0.1 : 0.16 });
-      } else if (style.drums === 'soft') {
-        drums.push({ kind: 'kick', t: base, vel: 0.55 }, { kind: 'kick', t: base + 4, vel: 0.38 });
-        drums.push({ kind: 'hat', t: base + 2, vel: 0.09 }, { kind: 'hat', t: base + 6, vel: 0.08 });
-      } else if (style.drums === 'pulse') {
-        drums.push({ kind: 'kick', t: base, vel: 0.45 }, { kind: 'kick', t: base + 4, vel: 0.32 });
-        drums.push({ kind: 'hat', t: base + 2, vel: 0.09 }, { kind: 'hat', t: base + 6, vel: 0.08 });
-      } else {
-        drums.push({ kind: 'kick', t: base, vel: 0.4 });
+      if (isOutro) {
+        melody.push({ t: base + 2, midi: chord[0] + style.octave, vel: 0.2 * env });
       }
     }
     if (mode === 'solo') {
@@ -1892,6 +1930,11 @@
     var p = player.piece;
     if (!player.on || !p || !player.events) return;
     var now = Audio.now();
+    if (player.bus) {
+      var remain = (player.loopStart + player.dur) - now;
+      var target = remain < 2 ? Math.max(0.2, remain / 2) : 1;
+      try { player.bus.gain.setTargetAtTime(target, now, 0.12); } catch (e) {}
+    }
     var spb = 60 / p.bpm;
     var loopDur = p.bars * 4 * spb;
     var guard = 0;
