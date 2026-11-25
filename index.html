@@ -425,7 +425,7 @@
     <h3>五种驱动方式</h3>
     <ul>
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
-      <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
+      <li>🎧 <b>系统声</b>：电脑 Chrome/Edge 共享标签页时勾选「分享音频」，可只听系统声、不拾取麦克风；手机浏览器抓不到系统声，会自动切换成「页面内部声音」分析（放歌/天籁照样能驱动画面）。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
       <li>✨ <b>天籁</b>：随机播放 7 首精选之一（星雾 / 潮下 / 露白 / 雷纹 / 涌流 / 沉沙 / 风隙），每首的编乐、调式、配器都不同；「🎛 设置 → 创作 → 换一首」可按选定风格生成新曲。风格仍是 5 种：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
@@ -5020,7 +5020,10 @@
     if (except !== 'music') {
       if (state.musicOn || musicEl || musicNode) { try { stopMusic(); } catch (e) {} }
     }
-    if (except !== 'sys' && state.sysOn) { try { stopSys(); } catch (e) {} }
+    if (except !== 'sys' && state.sysOn) {
+      var keepInternal = sysTap && (except === 'seq' || except === 'music' || except === 'tta');
+      if (!keepInternal) { try { stopSys(); } catch (e) {} }
+    }
     if (except !== 'mic') {
       if (state.humOn) { try { stopHum(); } catch (e) {} }
       else if (state.micOn) { try { stopMic(); } catch (e) {} }
@@ -5028,10 +5031,18 @@
   }
 
   var sysStream = null;
+  var sysTap = null;
   function stopSys() {
     if (sysStream) {
       try { sysStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
       sysStream = null;
+    }
+    if (sysTap) {
+      try { Audio.master().disconnect(sysTap.dest); } catch (e) {}
+      try { sysTap.src.disconnect(); } catch (e) {}
+      try { sysTap.sink.disconnect(); } catch (e) {}
+      try { sysTap.dest.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+      sysTap = null;
     }
     state.sysOn = false;
     analyser = null;
@@ -5040,21 +5051,51 @@
     if (aiLine) aiLine.textContent = '';
   }
 
+  function sysFallback(reason) {
+    Audio.ensure();
+    var c = Audio.ctx();
+    var dest = c.createMediaStreamDestination();
+    try { Audio.master().connect(dest); } catch (e) {}
+    var an = newAnalyser(c);
+    var src = c.createMediaStreamSource(dest.stream);
+    src.connect(an);
+    var sink = c.createGain();
+    sink.gain.value = 0;
+    sink.connect(Audio.player());
+    an.connect(sink);
+    analyser = an;
+    audioData = new Uint8Array(an.frequencyBinCount);
+    sysTap = { dest: dest, src: src, sink: sink, an: an };
+    state.sysOn = true;
+    state.gainPeak = 0.08;
+    state.bassHist.length = 0;
+    state.beatTimes.length = 0;
+    if (sysBtn) sysBtn.classList.add('on');
+    toast('🎧 直接抓系统声音不可用（' + reason + '）。<br>已切换为「页面内部声音」：播放 🎵 放歌 或 ✨ 天籁，画面就会跟着舞动。', 7500);
+  }
+
   function startSys() {
     stopAllAudio('sys');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      toast('这个浏览器不支持抓系统声音。<br>手机浏览器普遍不支持；电脑 Chrome/Edge 共享「标签页/屏幕」并勾选「分享音频」才行，也可以先用 🎵 放首歌。', 9000);
-      return;
-    }
     if (state.humOn) stopHum();
     if (state.micOn) stopMic();
     if (state.musicOn) stopMusic();
     if (state.seqOn) toggleSeq();
-    navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then(function (stream) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      sysFallback('这个浏览器没有屏幕/标签页音频采集接口');
+      return;
+    }
+    var constraints = {
+      video: { width: { max: 320 }, height: { max: 180 }, frameRate: { max: 5 } },
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 },
+      systemAudio: 'include',
+      selfBrowserSurface: 'exclude',
+      surfaceSwitching: 'include'
+    };
+    navigator.mediaDevices.getDisplayMedia(constraints).then(function (stream) {
       var at = stream.getAudioTracks();
       if (!at.length) {
         stream.getTracks().forEach(function (t) { t.stop(); });
-        toast('没拿到声音轨道：共享窗口/标签页时请勾选「分享音频」。<br>手机浏览器不支持抓系统声音。', 8000);
+        sysFallback('共享时没有勾选「分享音频」，或当前平台不支持');
         return;
       }
       stream.getVideoTracks().forEach(function (t) { t.stop(); });
@@ -5077,7 +5118,12 @@
       toast('🎧 正在分析系统声音（不经过麦克风）', 3500);
     }).catch(function (err) {
       console.warn('[sys]', err);
-      toast('系统声获取失败：' + ((err && err.name) || '') + '<br>手机浏览器普遍不支持；请用电脑 Chrome 共享音频。', 8000);
+      var name = (err && err.name) || '';
+      if (name === 'NotAllowedError') {
+        toast('你取消了共享，或浏览器拒绝了系统声权限。<br>请再点一次「系统声」，在弹出的窗口里选择带「分享音频」的标签页/屏幕。', 7000);
+        return;
+      }
+      sysFallback(name || '获取失败');
     });
   }
 
@@ -5143,7 +5189,7 @@
   function toggleSeq() {
     if (state.seqOn) { stopSeq(); return; }
     if (state.humOn) stopHum();
-    if (state.sysOn) stopSys();
+    if (state.sysOn && !sysTap) stopSys();
     if (state.micOn) stopMic();
     if (state.musicOn) stopMusic();
     startSeq();
@@ -5154,7 +5200,7 @@
   musicBtn.addEventListener('click', function () {
     if (state.musicOn) { stopMusic(); toast('已停止播放'); return; }
     if (state.humOn) stopHum();
-    if (state.sysOn) stopSys();
+    if (state.sysOn && !sysTap) stopSys();
     if (state.seqOn) toggleSeq();
     if (state.micOn) stopMic();
     try { musicFile.click(); } catch (e) { toast('当前浏览器不支持选择本地音乐'); }
