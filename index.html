@@ -1673,6 +1673,7 @@
 
   function playPiece(piece) {
     stopSeq();
+    stopAllAudio('seq');
     Audio.ensure();
     player.piece = piece;
     state.currentPiece = piece;
@@ -1719,7 +1720,7 @@
           bus.gain.linearRampToValueAtTime(0, cc.currentTime + 0.05);
         }
       } catch (e) { try { bus.gain.value = 0; } catch (e2) {} }
-      setTimeout(function () { try { bus.disconnect(); } catch (e) {} }, 320);
+      setTimeout(function () { try { bus.disconnect(); } catch (e) {} }, 120);
     }
     if (Audio.dampReverb) Audio.dampReverb(0.32);
     state.seqOn = false;
@@ -2204,6 +2205,7 @@
   }
 
   function startMic(useAec) {
+    stopAllAudio('mic');
     if (window.self !== window.top) {
       toast('⚠️ 页面正被嵌套在预览/沙盒里，浏览器会拒绝麦克风。<br>请把 .html 存到手机，用系统浏览器打开。', 8000);
       return Promise.resolve(false);
@@ -2283,6 +2285,7 @@
   }
 
   function startMusic(file) {
+    stopAllAudio('music');
     var c = Audio.ensure();
     stopMusic();
     var el = document.createElement('audio');
@@ -2335,6 +2338,18 @@
     toast('🎵 正在播放：' + String(file.name || '本地音乐').slice(0, 36) + '<br>波纹跟着频谱舞动', 4200);
   }
 
+  function stopAllAudio(except) {
+    if (except !== 'seq') { try { stopSeq(); } catch (e) {} }
+    if (except !== 'music') {
+      if (state.musicOn || musicEl || musicNode) { try { stopMusic(); } catch (e) {} }
+    }
+    if (except !== 'sys' && state.sysOn) { try { stopSys(); } catch (e) {} }
+    if (except !== 'mic') {
+      if (state.humOn) { try { stopHum(); } catch (e) {} }
+      else if (state.micOn) { try { stopMic(); } catch (e) {} }
+    }
+  }
+
   var sysStream = null;
   function stopSys() {
     if (sysStream) {
@@ -2349,6 +2364,7 @@
   }
 
   function startSys() {
+    stopAllAudio('sys');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
       toast('这个浏览器不支持抓系统声音。<br>手机浏览器普遍不支持；电脑 Chrome/Edge 共享「标签页/屏幕」并勾选「分享音频」才行，也可以先用 🎵 放首歌。', 9000);
       return;
