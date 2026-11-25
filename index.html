@@ -424,7 +424,7 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：自动作曲（4 种风格、随机曲名），播放时曲名浮在画面上可拖动；「📚 曲库」里能搜索、试听、重命名、改风格、删除。</li>
+      <li>✨ <b>天籁</b>：自动作曲，三种气质——🌌 空灵（极光/深海）、🌅 优美（晨光）、⚡ 震撼（脉冲）。在「🎛 设置 → 创作 → 生成风格」里选，点「换一首」按该气质生成；播放时曲名浮在画面上可拖动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
       <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
@@ -765,6 +765,7 @@
     sysOn: false,
     humOn: false,
     currentPiece: null,
+    genStyle: 'auto',
     humNotes: [],
     humLastMidi: 0,
     humLastStart: 0,
@@ -1165,13 +1166,27 @@
     major: [0, 2, 4, 5, 7, 9, 11]
   };
   var STYLES = [
-    { id: 'aurora', name: '极光氛围', icon: '🌌', bpm: 76, scale: 'minorPenta', drums: 'soft' },
-    { id: 'pulse', name: '脉冲电子', icon: '⚡', bpm: 124, scale: 'penta', drums: 'four' },
-    { id: 'deep', name: '深海梦境', icon: '🌊', bpm: 88, scale: 'dorian', drums: 'sparse' },
-    { id: 'dawn', name: '晨光五声', icon: '🌅', bpm: 104, scale: 'penta', drums: 'light' }
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 62, scale: 'minorPenta', drums: 'none', wet: 0.62, octave: 24, bright: true },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 70, scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 84, scale: 'penta', drums: 'soft', wet: 0.46, octave: 24, bright: true },
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false }
   ];
-  var TITLE_A = ['极光', '潮汐', '星河', '脉冲', '涟漪', '砂时', '回声', '雾岛', '霜降', '萤火', '鎏光', '深蓝', '月蚀', '风隙', '光隙'];
-  var TITLE_B = ['之梦', '轨迹', '低语', '回旋', '序曲', '余波', '沉浮', '漫游', '呼吸', '倒影'];
+  var TITLE_POOLS = {
+    aurora: [['极光', '星河', '月蚀', '霜降', '萤火', '雾岛', '光隙', '风隙'], ['之梦', '低语', '漫游', '呼吸', '倒影', '余波']],
+    deep:   [['深海', '潮汐', '砂时', '回声', '深蓝', '暗流'], ['沉浮', '低语', '暗涌', '倒影', '回旋']],
+    dawn:   [['晨光', '曙光', '鎏金', '微光', '初霞', '浅岸'], ['序曲', '苏醒', '初照', '呼吸', '漫游']],
+    pulse:  [['脉冲', '涟漪', '鎏光', '光隙', '雷纹', '星火'], ['轨迹', '回旋', '序曲', '脉冲', '光晕']]
+  };
+  var PROGS = {
+    '空灵': [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 3, 5], [0, 5, 6, 4]],
+    '优美': [[0, 3, 5, 4], [0, 4, 5, 3], [0, 5, 3, 4], [0, 2, 3, 4]],
+    '震撼': [[0, 4, 5, 3], [0, 3, 4, 5], [0, 6, 5, 4], [0, 5, 4, 3]]
+  };
+  var RHYTHMS = {
+    '空灵': [[0, 3, 5], [0, 4, 6.5], [0, 2.5, 6], [1, 4, 7]],
+    '优美': [[0, 1.5, 3, 5], [0, 2, 3.5, 6], [0, 1, 2.5, 4, 6], [0, 2, 4, 5.5, 7]],
+    '震撼': [[0, 1, 2, 3, 4, 5, 6, 7], [0, 0.5, 1, 2, 3, 4, 4.5, 5, 6], [0, 1, 2, 2.5, 3, 4, 5, 6, 7]]
+  };
 
   function styleById(id) {
     for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === id) return STYLES[i];
@@ -1186,56 +1201,101 @@
     };
   }
   function genTitle(rnd, style) {
-    return TITLE_A[Math.floor(rnd() * TITLE_A.length)] + '·' + TITLE_B[Math.floor(rnd() * TITLE_B.length)];
+    var pool = TITLE_POOLS[style.id] || TITLE_POOLS.aurora;
+    return pool[0][Math.floor(rnd() * pool[0].length)] + '·' + pool[1][Math.floor(rnd() * pool[1].length)];
+  }
+  function pickStyleId() {
+    var g = state.genStyle;
+    if (g && g !== 'auto' && styleById(g).id === g) return g;
+    return STYLES[Math.floor(Math.random() * STYLES.length)].id;
   }
 
-  /* 生成一首 8 小节的曲子（同 seed + 参数 → 同结果） */
+  /* 作曲：8 小节 / 4 个和弦段落；三种气质（空灵 / 优美 / 震撼） */
   function composePiece(opts) {
     opts = opts || {};
-    var style = styleById(opts.styleId);
+    var style = opts.styleId ? styleById(opts.styleId) : STYLES[Math.floor(Math.random() * STYLES.length)];
     var seed = (opts.seed == null ? Math.floor(Math.random() * 4294967295) : opts.seed) >>> 0;
     var rnd = mulberry32(seed);
     var autoName = genTitle(rnd, style);
     var bpm = opts.bpm || style.bpm;
-    var root = opts.root == null ? 45 + Math.floor(rnd() * 8) : opts.root;
+    var root = opts.root == null ? (style.mood === '空灵' ? 45 : 43) + Math.floor(rnd() * 5) : opts.root;
     var inst = opts.instrument || state.instrument || 'musicbox';
     var scale = SCALES[style.scale] || SCALES.penta;
-    var bars = 8, melody = [], chords = [], drums = [];
+    var sl = scale.length;
+    var bars = 8, melody = [], chords = [], drums = [], sparkles = [], bassline = [];
 
-    for (var bi = 0; bi < bars; bi++) {
-      var base = bi * 4;
-      var density = style.drums === 'four' ? 0.62 : (style.drums === 'light' ? 0.5 : 0.38);
-      var steps = [0, 0.75, 1.5, 2, 2.75, 3.25];
-      for (var si = 0; si < steps.length; si++) {
-        if (rnd() > density) continue;
-        var deg = scale[Math.floor(rnd() * scale.length)];
-        var oct = rnd() < 0.55 ? 12 : 24;
-        melody.push({ t: base + steps[si], midi: root + deg + oct, vel: 0.5 + rnd() * 0.4 });
+    var progs = PROGS[style.mood] || PROGS['优美'];
+    var prog = progs[Math.floor(rnd() * progs.length)];
+    var rhySet = RHYTHMS[style.mood] || RHYTHMS['优美'];
+    var rhy = rhySet[Math.floor(rnd() * rhySet.length)];
+
+    for (var ci = 0; ci < 4; ci++) {
+      var base = ci * 8;                 /* 每段 2 小节 = 8 拍 */
+      var deg = prog[ci];
+      var chord = [];
+      for (var off = 0; off < 3; off++) {
+        var di = deg + off * 2;
+        chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
-      if (bi % 2 === 0) {
-        var d0 = scale[0], d1 = scale[Math.floor(scale.length / 2)], d2 = scale[scale.length - 1];
-        chords.push({ t: base, midis: [root + d0, root + d1, root + d2], vel: 0.8 });
-      }
-      if (style.drums === 'four') {
-        drums.push({ kind: 'kick', t: base, vel: 1 }, { kind: 'kick', t: base + 1, vel: 0.7 },
-                   { kind: 'kick', t: base + 2, vel: 1 }, { kind: 'kick', t: base + 3, vel: 0.7 });
-        for (var h = 0; h < 8; h++) drums.push({ kind: 'hat', t: base + h * 0.5, vel: h % 2 ? 0.4 : 0.28 });
-      } else if (style.drums === 'light') {
-        drums.push({ kind: 'kick', t: base, vel: 0.9 }, { kind: 'kick', t: base + 2, vel: 0.65 });
-        for (var h2 = 1; h2 < 8; h2 += 2) drums.push({ kind: 'hat', t: base + h2 * 0.5, vel: 0.28 });
-      } else if (style.drums === 'sparse') {
-        drums.push({ kind: 'kick', t: base, vel: 0.75 });
-        if (bi % 2 === 1) drums.push({ kind: 'hat', t: base + 2.5, vel: 0.22 });
+      /* 和声铺底：宽音域、慢起音 */
+      var pad = [chord[0] + 12, chord[1] + 12, chord[2] + 12];
+      if (ci === 0 || style.mood === '震撼') pad.push(chord[0] + 24);
+      chords.push({ t: base, midis: pad, vel: style.mood === '震撼' ? 0.9 : 0.62 });
+
+      /* 低音 */
+      var bassMidi = root - 12 + scale[deg % sl];
+      if (style.mood === '震撼') {
+        for (var b = 0; b < 8; b++) bassline.push({ t: base + b, midi: bassMidi, vel: b % 2 === 0 ? 0.85 : 0.5 });
+      } else if (style.mood === '优美') {
+        bassline.push({ t: base, midi: bassMidi, vel: 0.62 });
+        bassline.push({ t: base + 4, midi: bassMidi, vel: 0.4 });
       } else {
-        drums.push({ kind: 'kick', t: base, vel: 0.55 }, { kind: 'hat', t: base + 2, vel: 0.2 });
+        bassline.push({ t: base, midi: bassMidi, vel: 0.6 });
+      }
+
+      /* 空灵/优美加高频闪光层（钟琴） */
+      if (style.bright) {
+        var sparkN = style.mood === '空灵' ? 3 : 4;
+        for (var sp = 0; sp < sparkN; sp++) {
+          sparkles.push({
+            t: base + rhy[Math.floor(rnd() * rhy.length)] + rnd() * 0.4,
+            midi: chord[Math.floor(rnd() * chord.length)] + (style.mood === '空灵' ? 36 : 24),
+            vel: 0.1 + rnd() * 0.12
+          });
+        }
+      }
+
+      /* 旋律：用和弦音为主，节奏用长音型 */
+      for (var ri = 0; ri < rhy.length; ri++) {
+        if (rnd() < (style.mood === '空灵' ? 0.22 : 0.08)) continue;
+        var t = base + rhy[ri];
+        var midi;
+        if (rnd() < 0.72) midi = chord[Math.floor(rnd() * chord.length)] + (style.octave - 12);
+        else midi = root + scale[Math.floor(rnd() * sl)] + style.octave;
+        if (style.mood === '空灵' && rnd() < 0.22) midi += 12;
+        melody.push({ t: t, midi: midi, vel: 0.5 + rnd() * 0.3 });
+      }
+
+      /* 节奏 */
+      if (style.drums === 'epic') {
+        for (var e = 0; e < 8; e++) drums.push({ kind: 'kick', t: base + e, vel: e % 4 === 0 ? 1 : 0.72 });
+        for (var h = 0; h < 16; h++) drums.push({ kind: 'hat', t: base + h * 0.5, vel: h % 2 ? 0.26 : 0.18 });
+      } else if (style.drums === 'soft') {
+        drums.push({ kind: 'kick', t: base, vel: 0.62 }, { kind: 'kick', t: base + 4, vel: 0.42 });
+        for (var h2 = 1; h2 < 8; h2 += 2) drums.push({ kind: 'hat', t: base + h2, vel: 0.14 });
+      } else if (style.drums === 'pulse') {
+        drums.push({ kind: 'kick', t: base, vel: 0.5 }, { kind: 'kick', t: base + 5, vel: 0.32 });
+        drums.push({ kind: 'hat', t: base + 2.5, vel: 0.12 }, { kind: 'hat', t: base + 6.5, vel: 0.1 });
+      } else if (ci % 2 === 0) {
+        drums.push({ kind: 'kick', t: base, vel: 0.4 });
       }
     }
     return {
       id: 't' + seed.toString(36),
       name: opts.name || autoName,
-      styleId: style.id, bpm: bpm, root: root, scaleName: style.scale,
+      styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: style.scale,
       instrument: inst, seed: seed, bars: bars, created: opts.created || Date.now(),
-      melody: melody, chords: chords, drums: drums
+      wet: style.wet, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline
     };
   }
 
@@ -1246,23 +1306,40 @@
     if (!p) return;
     var spb = 60 / p.bpm;
     var now = Audio.now();
-    p.melody.forEach(function (n) {
+    var wet = p.wet == null ? 0.45 : p.wet;
+    (p.melody || []).forEach(function (n) {
       var when = t0 + n.t * spb;
       if (when < now - 0.05) return;
-      Audio.note(n.midi, { when: when, vel: n.vel, wet: 0.45, inst: p.instrument });
+      Audio.note(n.midi, { when: when, vel: n.vel, wet: wet, inst: p.instrument });
       visQueue.push({ t: when, kind: 'note', midi: n.midi });
     });
-    p.chords.forEach(function (ch) {
+    (p.sparkles || []).forEach(function (s) {
+      var when = t0 + s.t * spb;
+      if (when < now - 0.05) return;
+      Audio.note(s.midi, { when: when, vel: s.vel, wet: 0.85, inst: 'bell' });
+    });
+    (p.chords || []).forEach(function (ch) {
       var when = t0 + ch.t * spb;
       if (when < now - 0.05) return;
       Audio.pad(when, ch.midis, ch.vel);
     });
-    p.drums.forEach(function (d) {
+    (p.bassline || []).forEach(function (b) {
+      var when = t0 + b.t * spb;
+      if (when < now - 0.05) return;
+      Audio.bass(when, b.midi, b.vel);
+    });
+    (p.drums || []).forEach(function (d) {
       var when = t0 + d.t * spb;
       if (when < now - 0.05) return;
       if (d.kind === 'kick') { Audio.kick(when, d.vel); visQueue.push({ t: when, kind: 'beat', amt: d.vel }); }
       else Audio.hat(when, d.vel);
     });
+    /* 空灵段落没有鼓时，用和弦切换给画面一点呼吸 */
+    if (!p.drums || !p.drums.length) {
+      (p.chords || []).forEach(function (ch) {
+        visQueue.push({ t: t0 + ch.t * spb, kind: 'beat', amt: 0.55 });
+      });
+    }
   }
 
   function playPiece(piece) {
@@ -1292,7 +1369,7 @@
 
   function startSeq() {
     if (player.on) return;
-    if (!state.currentPiece) state.currentPiece = composePiece({});
+    if (!state.currentPiece) state.currentPiece = composePiece({ styleId: pickStyleId() });
     playPiece(state.currentPiece);
     saveLibraryPiece(state.currentPiece);
   }
@@ -1306,10 +1383,10 @@
     hideNowTitle();
   }
   function restartSeq() {
-    state.currentPiece = composePiece({});
+    state.currentPiece = composePiece({ styleId: pickStyleId() });
     playPiece(state.currentPiece);
     saveLibraryPiece(state.currentPiece);
-    toast('🎲 新曲：<b>' + esc(state.currentPiece.name) + '</b>', 4000);
+    toast('🎲 新曲：<b>' + esc(state.currentPiece.name) + '</b><br>' + styleById(state.currentPiece.styleId).icon + ' ' + styleById(state.currentPiece.styleId).name, 4500);
   }
 
   /* ---------- 浮动曲名（可拖动） ---------- */
@@ -2277,7 +2354,7 @@
     var id = sheetNav[sheetNav.length - 1] || 'root';
     var titleEl = $('sheetTitle');
     if (titleEl) {
-      titleEl.textContent = { root: '设置', sources: '音源', look: '外观', instruments: '音色', create: '创作', recdur: '录音时长', hum: '哼唱' }[id] || '设置';
+      titleEl.textContent = { root: '设置', sources: '音源', look: '外观', instruments: '音色', create: '创作', recdur: '录音时长', hum: '哼唱', genstyle: '生成风格' }[id] || '设置';
     }
     var backEl = $('sheetBack');
     if (backEl) backEl.hidden = sheetNav.length <= 1;
@@ -2337,6 +2414,7 @@
       body.appendChild(rowi);
     } else if (id === 'create') {
       body.appendChild(mkItem('🎲', '换一首', '生成新曲', function () { restartSeq(); }));
+      body.appendChild(mkItem('🎨', '生成风格', state.genStyle === 'auto' ? '自动随机' : styleById(state.genStyle).name, function () { sheetGo('genstyle'); }));
       body.appendChild(mkItem(rec.active ? '⏹' : '⏺', rec.active ? '停止并保存' : '录音', rec.active ? '录制中' : (state.recSecs ? state.recSecs + ' 秒' : '手动'), function () {
         if (rec.active) stopRec(); else startRec(state.recSecs);
         renderSheet();
@@ -2344,6 +2422,24 @@
       body.appendChild(mkItem('⏱', '录音时长', state.recSecs ? state.recSecs + ' 秒' : '手动', function () { sheetGo('recdur'); }));
       body.appendChild(mkItem('📚', '曲库', (library.length || 0) + ' 首', function () { closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
+    } else if (id === 'genstyle') {
+      var rowg = document.createElement('div');
+      rowg.className = 'sheet-sub';
+      mkSub(rowg, '自动随机', state.genStyle === 'auto' ? 'on' : '', function () {
+        state.genStyle = 'auto';
+        renderSheet();
+      });
+      STYLES.forEach(function (st) {
+        mkSub(rowg, st.icon + ' ' + st.name, state.genStyle === st.id ? 'on' : '', function () {
+          state.genStyle = st.id;
+          renderSheet();
+        });
+      });
+      body.appendChild(rowg);
+      var ng = document.createElement('div');
+      ng.className = 'sheet-note';
+      ng.textContent = '空灵：极光/深海；优美：晨光；震撼：脉冲。选好后点「换一首」按这个气质生成。';
+      body.appendChild(ng);
     } else if (id === 'recdur') {
       var rowd = document.createElement('div');
       rowd.className = 'sheet-sub';
