@@ -425,9 +425,9 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：点一下就**随机播放一首精选曲**；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。四种气质：🌌 空灵 / 🌅 优美 / ⚡ 震撼 / 🌀 律动（潮生 · 律动，16 小节逐层进化）。播放时曲名浮在画面上可拖动。</li>
+      <li>✨ <b>天籁</b>：点一下随机播放一首精选曲（5 种风格 × 7 首 = 35 首）；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
-      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器。</li>
+      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器（拨弦、弦乐、管风琴已重新调音，更柔和）。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
     </ul>
     <h3>🤖 AI 识别（本地）</h3>
@@ -1006,28 +1006,32 @@
         o.start(t); o.stop(t + 2.0);
         lfo.start(t); lfo.stop(t + 2.0);
       } else if (inst === 'pluck') {
-        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
-        o2 = c.createOscillator(); o2.type = 'square'; o2.frequency.setValueAtTime(f * 1.003, t);
-        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.2;
-        lp.frequency.setValueAtTime(Math.min(12000, f * 12), t);
-        lp.frequency.exponentialRampToValueAtTime(Math.max(180, f * 1.3), t + 0.35);
+        o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2, t);
+        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.6;
+        lp.frequency.setValueAtTime(Math.min(6500, f * 6), t);
+        lp.frequency.exponentialRampToValueAtTime(Math.max(260, f * 1.4), t + 0.55);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.2 * vel, t + 0.004);
-        g.gain.exponentialRampToValueAtTime(0.0004, t + 1.1);
+        g.gain.linearRampToValueAtTime(0.23 * vel, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0005, t + 1.0);
         o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
-        o.start(t); o2.start(t); o.stop(t + 1.2); o2.stop(t + 1.2);
+        o.start(t); o2.start(t); o.stop(t + 1.1); o2.stop(t + 1.1);
       } else if (inst === 'strings') {
         o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
-        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.006, t); o2.detune.value = 5;
-        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.8; lp.frequency.setValueAtTime(2400, t);
+        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.004, t); o2.detune.value = 4;
+        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5;
+        lp.frequency.setValueAtTime(Math.min(2200, f * 4), t);
+        lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 4.6;
+        lfoG = c.createGain(); lfoG.gain.value = f * 0.004;
+        lfo.connect(lfoG); lfoG.connect(o.frequency); lfoG.connect(o2.frequency);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.13 * vel, t + 0.16);
-        g.gain.setValueAtTime(0.13 * vel, t + 0.9);
-        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.2);
+        g.gain.linearRampToValueAtTime(0.1 * vel, t + 0.22);
+        g.gain.setValueAtTime(0.1 * vel, t + 1.0);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.4);
         o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
-        o.start(t); o2.start(t); o.stop(t + 2.3); o2.stop(t + 2.3);
+        o.start(t); o2.start(t); o.stop(t + 2.5); o2.stop(t + 2.5); lfo.start(t); lfo.stop(t + 2.5);
       } else if (inst === 'bell') {
         var parts = [[1, 0.16 * vel, 2.4], [2.76, 0.08 * vel, 1.6], [5.4, 0.045 * vel, 0.9]];
         for (var bi = 0; bi < parts.length; bi++) {
@@ -1041,16 +1045,18 @@
           po.start(t); po.stop(t + parts[bi][2] + 0.1);
         }
       } else if (inst === 'organ') {
-        var hgt = [0.12, 0.07, 0.045, 0.03];
+        var hgt = [0.1, 0.055, 0.03, 0.017];
+        var olp = c.createBiquadFilter(); olp.type = 'lowpass'; olp.frequency.value = 3800; olp.Q.value = 0.4;
+        olp.connect(out);
         for (var hi = 0; hi < hgt.length; hi++) {
           var ho = c.createOscillator(); ho.type = 'sine';
           ho.frequency.setValueAtTime(f * (hi + 1), t);
           var hg = c.createGain();
           hg.gain.setValueAtTime(0.0001, t);
-          hg.gain.linearRampToValueAtTime(hgt[hi] * vel, t + 0.05);
+          hg.gain.linearRampToValueAtTime(hgt[hi] * vel, t + 0.07);
           hg.gain.setValueAtTime(hgt[hi] * vel, t + 0.7);
           hg.gain.exponentialRampToValueAtTime(0.0002, t + 1.4);
-          ho.connect(hg); hg.connect(out);
+          ho.connect(hg); hg.connect(olp);
           ho.start(t); ho.stop(t + 1.5);
         }
       } else {
@@ -1167,29 +1173,47 @@
     major: [0, 2, 4, 5, 7, 9, 11]
   };
   var PRESET_PIECES = [
-    { name: '雾里星尘', styleId: 'aurora', seed: 3724842667, bpm: 62, root: 46, instrument: 'flute' },
-    { name: '极光低语', styleId: 'aurora', seed: 1401181147, bpm: 62, root: 46, instrument: 'flute' },
-    { name: '霜降之息', styleId: 'aurora', seed: 2415085374, bpm: 62, root: 45, instrument: 'flute' },
-    { name: '深海回声', styleId: 'deep', seed: 3428989601, bpm: 70, root: 49, instrument: 'bell' },
-    { name: '月蚀倒影', styleId: 'deep', seed: 1401181147, bpm: 70, root: 46, instrument: 'bell' },
-    { name: '晨光初照', styleId: 'dawn', seed: 1788458067, bpm: 84, root: 45, instrument: 'piano' },
-    { name: '浅岸拾光', styleId: 'dawn', seed: 387276920, bpm: 84, root: 43, instrument: 'piano' },
-    { name: '风过铃兰', styleId: 'dawn', seed: 2415085374, bpm: 84, root: 43, instrument: 'piano' },
-    { name: '脉冲星河', styleId: 'pulse', seed: 1788458067, bpm: 112, root: 45, instrument: 'synth' },
-    { name: '光之洪流', styleId: 'pulse', seed: 774553840, bpm: 112, root: 47, instrument: 'synth' },
-    { name: '初潮', styleId: 'grow', seed: 978983017, bpm: 96, root: 46, instrument: 'piano' },
-    { name: '渐强', styleId: 'grow', seed: 2767441077, bpm: 96, root: 44, instrument: 'piano' },
-    { name: '星涌', styleId: 'grow', seed: 1218333409, bpm: 96, root: 45, instrument: 'bell' },
-    { name: '生长', styleId: 'grow', seed: 113005316, bpm: 96, root: 46, instrument: 'piano' },
-    { name: '涌流', styleId: 'grow', seed: 535203442, bpm: 96, root: 46, instrument: 'bell' },
-    { name: '蔓长', styleId: 'grow', seed: 2802362286, bpm: 96, root: 47, instrument: 'piano' },
-    { name: '回环', styleId: 'grow', seed: 1549107668, bpm: 96, root: 47, instrument: 'piano' }
+    { name: '雾里星尘', styleId: 'aurora', seed: 774553834, bpm: 74, root: 46, instrument: 'flute' },
+    { name: '极光低语', styleId: 'aurora', seed: 1070406884, bpm: 74, root: 49, instrument: 'bell' },
+    { name: '霜降之息', styleId: 'aurora', seed: 831056492, bpm: 74, root: 45, instrument: 'flute' },
+    { name: '星河漫游', styleId: 'aurora', seed: 3485492253, bpm: 74, root: 48, instrument: 'bell' },
+    { name: '月蚀倒影', styleId: 'aurora', seed: 1218333409, bpm: 74, root: 47, instrument: 'flute' },
+    { name: '萤火微光', styleId: 'aurora', seed: 3246141861, bpm: 74, root: 45, instrument: 'bell' },
+    { name: '风隙流光', styleId: 'aurora', seed: 2232237635, bpm: 74, root: 47, instrument: 'flute' },
+    { name: '深海回声', styleId: 'deep', seed: 1218333409, bpm: 80, root: 47, instrument: 'bell' },
+    { name: '暗流沉浮', styleId: 'deep', seed: 978983017, bpm: 80, root: 48, instrument: 'flute' },
+    { name: '潮汐低语', styleId: 'deep', seed: 295853050, bpm: 80, root: 49, instrument: 'bell' },
+    { name: '深蓝倒影', styleId: 'deep', seed: 3633418778, bpm: 80, root: 47, instrument: 'flute' },
+    { name: '海雾漫漫', styleId: 'deep', seed: 1070406884, bpm: 80, root: 49, instrument: 'bell' },
+    { name: '沉沙', styleId: 'deep', seed: 4260046087, bpm: 80, root: 47, instrument: 'bell' },
+    { name: '月半回环', styleId: 'deep', seed: 3576916120, bpm: 80, root: 45, instrument: 'flute' },
+    { name: '晨光初照', styleId: 'dawn', seed: 1401181143, bpm: 92, root: 45, instrument: 'piano' },
+    { name: '浅岸拾光', styleId: 'dawn', seed: 4055616904, bpm: 92, root: 46, instrument: 'bell' },
+    { name: '风过铃兰', styleId: 'dawn', seed: 2175734977, bpm: 92, root: 43, instrument: 'piano' },
+    { name: '初霞', styleId: 'dawn', seed: 1936384585, bpm: 92, root: 45, instrument: 'bell' },
+    { name: '微光序曲', styleId: 'dawn', seed: 295853050, bpm: 92, root: 47, instrument: 'piano' },
+    { name: '露白', styleId: 'dawn', seed: 56502658, bpm: 92, root: 43, instrument: 'bell' },
+    { name: '早潮', styleId: 'dawn', seed: 2858864944, bpm: 92, root: 47, instrument: 'piano' },
+    { name: '脉冲星河', styleId: 'pulse', seed: 774553834, bpm: 112, root: 44, instrument: 'synth' },
+    { name: '光之洪流', styleId: 'pulse', seed: 1457683801, bpm: 112, root: 43, instrument: 'strings' },
+    { name: '雷纹', styleId: 'pulse', seed: 387276917, bpm: 112, root: 44, instrument: 'synth' },
+    { name: '星火', styleId: 'pulse', seed: 3576916120, bpm: 112, root: 43, instrument: 'synth' },
+    { name: '光隙轨迹', styleId: 'pulse', seed: 3668339987, bpm: 112, root: 45, instrument: 'strings' },
+    { name: '裂空', styleId: 'pulse', seed: 535203442, bpm: 112, root: 46, instrument: 'synth' },
+    { name: '潮爆', styleId: 'pulse', seed: 443779575, bpm: 112, root: 43, instrument: 'strings' },
+    { name: '初潮', styleId: 'grow', seed: 535203442, bpm: 96, root: 46, instrument: 'piano' },
+    { name: '渐强', styleId: 'grow', seed: 2802362286, bpm: 96, root: 47, instrument: 'bell' },
+    { name: '星涌', styleId: 'grow', seed: 3816266512, bpm: 96, root: 47, instrument: 'piano' },
+    { name: '生长', styleId: 'grow', seed: 978983017, bpm: 96, root: 46, instrument: 'piano' },
+    { name: '涌流', styleId: 'grow', seed: 352355708, bpm: 96, root: 44, instrument: 'bell' },
+    { name: '蔓长', styleId: 'grow', seed: 1218333409, bpm: 96, root: 45, instrument: 'piano' },
+    { name: '回环', styleId: 'grow', seed: 147926525, bpm: 96, root: 43, instrument: 'bell' }
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 62, scale: 'minorPenta', drums: 'none', wet: 0.62, octave: 24, bright: true },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 70, scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 84, scale: 'penta', drums: 'soft', wet: 0.46, octave: 24, bright: true },
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 74, scale: 'penta', drums: 'pulse', wet: 0.6, octave: 24, bright: true },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 80, scale: 'dorian', drums: 'pulse', wet: 0.62, octave: 24, bright: true },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 92, scale: 'penta', drums: 'soft', wet: 0.46, octave: 24, bright: true },
     { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false },
     { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 96, scale: 'major', drums: 'groove', wet: 0.38, octave: 24, bright: true, evolving: true }
   ];
@@ -1313,6 +1337,7 @@
     var prog = progs[Math.floor(rnd() * progs.length)];
     var rhySet = RHYTHMS[style.mood] || RHYTHMS['优美'];
     var rhy = rhySet[Math.floor(rnd() * rhySet.length)];
+    var prevMidi = null;
 
     for (var ci = 0; ci < 4; ci++) {
       var base = ci * 8;                 /* 每段 2 小节 = 8 拍 */
@@ -1350,14 +1375,30 @@
         }
       }
 
-      /* 旋律：用和弦音为主，节奏用长音型 */
+      /* 旋律：和弦音为骨架，级进为主，句尾回落 */
       for (var ri = 0; ri < rhy.length; ri++) {
         if (rnd() < (style.mood === '空灵' ? 0.22 : 0.08)) continue;
         var t = base + rhy[ri];
+        var pool = [];
+        for (var pc2 = 0; pc2 < chord.length; pc2++) {
+          pool.push(chord[pc2] + (style.octave - 12));
+          pool.push(chord[pc2] + style.octave);
+        }
+        for (var sc2 = 0; sc2 < sl; sc2++) pool.push(root + scale[sc2] + style.octave);
         var midi;
-        if (rnd() < 0.72) midi = chord[Math.floor(rnd() * chord.length)] + (style.octave - 12);
-        else midi = root + scale[Math.floor(rnd() * sl)] + style.octave;
-        if (style.mood === '空灵' && rnd() < 0.22) midi += 12;
+        if (prevMidi == null) {
+          midi = pool[Math.floor(rnd() * pool.length)];
+        } else {
+          midi = prevMidi;
+          for (var tryN = 0; tryN < 6; tryN++) {
+            var cand2 = pool[Math.floor(rnd() * pool.length)];
+            var dd = Math.abs(cand2 - prevMidi);
+            if (dd >= 1 && dd <= 7) { midi = cand2; break; }
+          }
+          if (ri === rhy.length - 1 && rnd() < 0.5) midi = prevMidi - Math.abs(scale[1]);
+        }
+        if (style.mood === '空灵' && rnd() < 0.18) midi += 12;
+        prevMidi = midi;
         melody.push({ t: t + (rnd() - 0.5) * 0.035, midi: midi, vel: 0.5 + rnd() * 0.3 });
       }
 
@@ -1370,7 +1411,8 @@
         for (var h2 = 1; h2 < 8; h2 += 2) drums.push({ kind: 'hat', t: base + h2, vel: 0.14 });
       } else if (style.drums === 'pulse') {
         drums.push({ kind: 'kick', t: base, vel: 0.5 }, { kind: 'kick', t: base + 5, vel: 0.32 });
-        drums.push({ kind: 'hat', t: base + 2.5, vel: 0.12 }, { kind: 'hat', t: base + 6.5, vel: 0.1 });
+        drums.push({ kind: 'hat', t: base + 2, vel: 0.14 }, { kind: 'hat', t: base + 6, vel: 0.12 });
+        drums.push({ kind: 'hat', t: base + 2.5, vel: 0.1 }, { kind: 'hat', t: base + 6.5, vel: 0.1 });
       } else if (ci % 2 === 0) {
         drums.push({ kind: 'kick', t: base, vel: 0.4 });
       }
@@ -1558,9 +1600,10 @@
     renderLibrary();
   }
   function seedPresets() {
-    var flag = 'cz_presets_v3';
+    var flag = 'cz_presets_v4';
     try { if (localStorage.getItem(flag)) return; } catch (e) {}
     try {
+      library = library.filter(function (it) { return !it.preset; });
       for (var i = 0; i < PRESET_PIECES.length; i++) {
         var cfg = PRESET_PIECES[i];
         var pc = composePiece(cfg);
