@@ -1319,67 +1319,60 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 74, bpmRange: [70, 82], scale: 'penta', drums: 'pulse', wet: 0.6, octave: 24, bright: true, school: 'debussy', soloChance: 0.45, palette: { lead: ['flute', 'clarinet', 'handpan', 'bell'], comp: ['bell', 'handpan', 'ep'] } },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 80, bpmRange: [72, 86], scale: 'dorian', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.4, palette: { lead: ['clarinet', 'oboe', 'handpan'], comp: ['ep', 'handpan', 'bell'] } },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 92, bpmRange: [84, 100], scale: 'major', drums: 'soft', wet: 0.46, octave: 24, bright: true, school: 'mozart', soloChance: 0.35, palette: { lead: ['flute', 'clarinet'], comp: ['ep', 'handpan'] } },
-    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, bpmRange: [100, 126], scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false, school: 'beethoven', soloChance: 0.15, palette: { lead: ['marimba', 'bell', 'synth'], comp: ['handpan'] } },
-    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 96, bpmRange: [88, 110], scale: 'major', drums: 'groove', wet: 0.38, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, palette: { lead: ['marimba', 'piano', 'bell'], comp: ['marimba', 'ep', 'handpan'] } },
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 58, bpmRange: [56, 60], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.5, palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 54, bpmRange: [52, 56], scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false, school: 'part', soloChance: 0.5, palette: { lead: ['handpan', 'marimba'], comp: ['bell', 'ep'] } },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 72, bpmRange: [70, 74], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, palette: { lead: ['oboe', 'clarinet'], comp: ['clarinet', 'bell', 'ep'] } },
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 76, bpmRange: [74, 78], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
+    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 88, bpmRange: [86, 90], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
   ];
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
-  var TTA_SYSTEM_PREFIX = "You are a composer rendering pure instrumental music for a real-time cymatics visualization. "
-    + "The music must be purely instrumental (no vocals, no singing, no speech, no lyrics). "
-    + "Prefer long natural reverb tails, spacious stereo field, soft transients and restrained percussion so the "
-    + "cymatics particle patterns can expand smoothly. Use at most three instruments at once; solo passages may use one. "
-    + "The result should sound acoustic, warm and coherent, never plastic, never harsh.";
+  var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, sparse elegant arrangement, maximum 2-3 instruments sounding simultaneously, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, soft stereo width, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture`;
 
-  var TTA_NEGATIVE_PROMPT = "vocals, singing, speech, lyrics, choir, vocal chops, "
-    + "noise, hiss, hum, clicks, clipping, low fidelity, "
-    + "plastic electronic tones, cheap synth presets, harsh distortion, overdriven saw leads, "
-    + "dissonant chords, atonal clusters, unresolved suspensions, "
-    + "aggressive drums, heavy kick, double-time percussion, loud abrupt cuts, "
-    + "muddy mix, boomy bass build-up";
+  var promptAurora = `${SYSTEM_PREFIX}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 58, flute and french horn with subtle marimba accents, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
+
+  var promptDeepSea = `${SYSTEM_PREFIX}, meditative ambient minimalism, slow static harmonic field, reference Arvo Pärt tintinnabuli style, BPM 54, handpan, marimba and glockenspiel, slow overtone resonance, very gradual harmonic movement, minimal melodic motion, deep underwater diffused reverb, soft beating interference tones, no sharp attacks, quiet and inward`;
+
+  var promptDawn = `${SYSTEM_PREFIX}, romantic chamber lyric, Schubert aesthetic, BPM 72, oboe lead with subtle clarinet counterline, soft glockenspiel occasional highlights, diatonic elegant counterpoint, singing legato melody, warm voice leading, moderate room reverb, calm luminous morning mood, balanced phrasing, avoid overly sweet trivial melody`;
+
+  var promptPulse = `${SYSTEM_PREFIX}, restrained cinematic orchestral, late romantic aesthetic, reference Bruckner and Tan Dun, BPM 76, french horn primary, low soft timpani resonant accents, clarinet supporting line, slow rising harmonic tension and gradual resolution, deep fundamental resonance, grand hall reverb, noble solemn, dynamic range controlled, no explosive percussive hits`;
+
+  var promptTide = `${SYSTEM_PREFIX}, phasing minimalist music, Steve Reich phasing technique, Keiko Abe marimba writing, BPM 88, marimba main pattern with quiet vibraphone phasing layer, gradual slow phasing shift, consonant cyclic harmony, clean precise articulation, light natural reverb, hypnotic slow evolution, no abrupt rhythmic jumps`;
+
+  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music`;
+
+  var TTA_SYSTEM_PREFIX = SYSTEM_PREFIX;
+  var TTA_NEGATIVE_PROMPT = NEG_PROMPT;
 
   var TTA_STYLE_PROMPTS = {
     aurora: {
-      bpm: [70, 82],
-      instruments: ['flute', 'clarinet', 'handpan', 'bell', 'electric piano'],
-      composers: 'Claude Debussy, Maurice Ravel, Steve Reich',
-      prompt: "Sparse impressionist chamber ambience. A single flute or clarinet line floats over soft handpan resonances "
-        + "and occasional bell overtones, with Debussy/Ravel colour and slow Steve Reich-like repeating cells. "
-        + "Cold, misty, translucent and weightless, with wide silence between phrases. "
-        + "Long reverb tails, distant perspective, very gentle pulse, no strong drums."
+      bpm: [56, 60],
+      instruments: ['flute', 'french horn', 'marimba'],
+      composers: 'Claude Debussy, Maurice Ravel',
+      prompt: promptAurora
     },
     deep: {
-      bpm: [72, 86],
-      instruments: ['clarinet', 'oboe', 'handpan', 'electric piano'],
-      composers: 'Maurice Ravel, Claude Debussy',
-      prompt: "Submerged, cold and blurred instrumental ambience. Oboe or clarinet soli with handpan and electric piano, "
-        + "modal Dorian colour and impressionist voicings. Distant and spacious, like sound heard underwater, "
-        + "very slow harmonic breathing, long tails and deep reverb, no aggressive rhythm."
+      bpm: [52, 56],
+      instruments: ['handpan', 'marimba', 'bells'],
+      composers: 'Arvo Pärt',
+      prompt: promptDeepSea
     },
     dawn: {
-      bpm: [84, 100],
-      instruments: ['flute', 'clarinet', 'electric piano', 'handpan'],
-      composers: 'Wolfgang Amadeus Mozart',
-      prompt: "Clean, transparent classical chamber music. Flute and clarinet melody with light electric-piano arpeggios, "
-        + "Mozart-like antecedent and consequent phrasing, balanced cadences and gentle dynamic shaping. "
-        + "Airy, bright, natural room reverb, delicate and unforced, no heavy percussion."
+      bpm: [70, 74],
+      instruments: ['oboe', 'clarinet', 'bells'],
+      composers: 'Franz Schubert',
+      prompt: promptDawn
     },
     pulse: {
-      bpm: [100, 126],
-      instruments: ['marimba', 'bell', 'synth', 'handpan'],
-      composers: 'Ludwig van Beethoven, Tan Dun, Krzysztof Penderecki',
-      prompt: "Epic but controlled instrumental ritual. Low frame-drum accents under marimba and bell patterns and a soft synth drone, "
-        + "Beethoven-like weight, Tan Dun and Penderecki-like percussive gestures, mysterious rather than violent. "
-        + "Long decay, huge reverb space, powerful but restrained, no machine-gun percussion."
+      bpm: [74, 78],
+      instruments: ['french horn', 'clarinet', 'handpan', 'marimba'],
+      composers: 'Anton Bruckner, Tan Dun',
+      prompt: promptPulse
     },
     grow: {
-      bpm: [88, 110],
-      instruments: ['marimba', 'electric piano', 'bell', 'handpan'],
+      bpm: [86, 90],
+      instruments: ['marimba', 'bells', 'electric piano'],
       composers: 'Steve Reich, Keiko Abe',
-      prompt: "Warm minimalist instrumental groove. Steve Reich / Keiko Abe marimba ostinato, additive layering that evolves "
-        + "from a single figure into a full groove, electric piano pulses and bell shimmer. "
-        + "Harmonious, flowing and human, long tails and room reverb, steady but never aggressive."
+      prompt: promptTide
     }
   };
 
@@ -1394,13 +1387,14 @@
     var def = TTA_STYLE_PROMPTS[styleId] || TTA_STYLE_PROMPTS.aurora;
     var arr = sanitizeInstruments(def.instruments);
     var duration = clampDuration(24);
-    var bpm = clampBpm(st, Math.round((def.bpm[0] + def.bpm[1]) / 2));
-    var prompt = "[" + st.name + "] " + def.prompt
-      + " Instrumentation: " + arr.join(', ') + " (max three instruments, solo sections may use one)."
-      + " Reference composers: " + def.composers + "."
-      + " Tempo: " + bpm + " BPM (" + def.bpm[0] + "-" + def.bpm[1] + " range)."
-      + " Render as a seamless " + duration + "-second loop (16-30 seconds only, never longer), clean instrument separation, "
-      + "long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
+    var bpm = clampBpm(st, st.bpm || Math.round((def.bpm[0] + def.bpm[1]) / 2));
+    var body = def.prompt.indexOf(SYSTEM_PREFIX) === 0
+      ? def.prompt.slice(SYSTEM_PREFIX.length).replace(/^,\s*/, '')
+      : def.prompt;
+    var prompt = body
+      + " (max three instruments: " + arr.join(', ') + "; solo sections may use one)."
+      + " Render as a seamless " + duration + "-second loop, clean instrument separation, long natural reverb tails, "
+      + "spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
     return {
       styleId: styleId,
       title: genTitleFromStyle(styleId),
@@ -1568,7 +1562,7 @@
     '空灵': [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 3, 5], [0, 5, 6, 4]],
     '优美': [[0, 3, 5, 4], [0, 4, 5, 3], [0, 5, 3, 4], [0, 2, 3, 4]],
     '震撼': [[0, 4, 5, 3], [0, 3, 4, 5], [0, 6, 5, 4], [0, 5, 4, 3]],
-    '律动': [[0, 3, 5, 4], [0, 5, 3, 4], [0, 2, 5, 4], [0, 4, 5, 3]]
+    '律动': [[0, 3, 3, 0], [0, 2, 0, 3]]
   };
   var RHYTHMS = {
     '空灵': [[0, 3, 5], [0, 4, 6.5], [0, 2.5, 6], [1, 4, 7]],
@@ -1594,9 +1588,9 @@
       alberti: false, counter: false, ostinato: true, grace: false
     },
     debussy: {
-      prog: [[0, 2, 3, 4], [0, 3, 2, 4], [0, 4, 2, 3]],
+      prog: [[0, 2, 3, 2], [0, 3, 1, 2], [0, 4, 2, 3]],
       pats: [[0, 2.5, 4, 6], [0, 1.5, 4, 6], [0, 3, 4, 6]],
-      alberti: false, counter: false, ostinato: false, grace: true
+      alberti: false, counter: false, ostinato: false, grace: true, suspension: true
     },
     beethoven: {
       prog: [[0, 3, 4, 0], [0, 4, 3, 0]],
@@ -1604,14 +1598,24 @@
       alberti: false, counter: false, ostinato: false, grace: false
     },
     reich: {
-      prog: [[0, 3, 4, 0], [0, 4, 3, 0]],
+      prog: [[0, 3, 3, 0], [0, 2, 0, 3]],
       pats: [[0, 1, 1.5, 2, 2.5, 3, 4, 5, 5.5, 6, 6.5, 7], [0, 1, 2, 3, 4, 5, 6]],
-      alberti: false, counter: false, ostinato: true, grace: false
+      alberti: false, counter: false, ostinato: true, grace: false, phase: true
     },
     schubert: {
-      prog: [[0, 5, 3, 4], [0, 3, 5, 4]],
-      pats: [[0, 1.5, 2, 3.5, 4, 6], [0, 2, 3, 4, 6]],
-      alberti: false, counter: false, ostinato: false, grace: true
+      prog: [[0, 5, 2, 4], [0, 3, 5, 2]],
+      pats: [[0, 1.5, 2, 3.5, 4, 6], [0, 2, 3, 5, 6]],
+      alberti: false, counter: true, ostinato: false, grace: true
+    },
+    part: {
+      prog: [[0, 0, 3, 0], [0, 2, 0, 4]],
+      pats: [[0, 3, 6], [0, 2.5, 6], [0, 4, 6]],
+      alberti: false, counter: false, ostinato: false, grace: true, static: true
+    },
+    bruckner: {
+      prog: [[0, 4, 3, 5], [0, 3, 5, 4]],
+      pats: [[0, 1.5, 2, 4, 6], [0, 2, 3.5, 5, 6]],
+      alberti: false, counter: true, ostinato: false, grace: true, wide: true
     }
   };
 
@@ -1743,7 +1747,10 @@
         var di = deg + off * 2;
         chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
-      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: style.mood === '震撼' ? 0.85 : 0.58 });
+      var sus4 = scale[(((deg + 3) % sl) + sl) % sl];
+      var ninth = scale[(((deg + 1) % sl) + sl) % sl];
+      var padTop = school.wide ? 24 : 12;
+      chords.push({ t: base, midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop], vel: style.mood === '震撼' ? 0.85 : 0.58 });
 
       /* 低音：巴赫级进 / 莫扎特根音五音 / 巴托克固定音型 */
       var bassMidi = root - 12 + scale[deg % sl];
@@ -1766,8 +1773,8 @@
         var idxc = Math.max(0, Math.min(2, cv));
         var midi = chord[idxc] + style.octave + (cv >= 2 ? 12 : 0);
         var isLast = pi === pat.length - 1;
-        if (isLast && ci === 1) midi = chord[1] + style.octave;
-        if (isLast && ci === 3) midi = chord[0] + style.octave;
+        if (isLast && ci === 1) midi = root + scale[(((deg + 1) % sl) + sl) % sl] + style.octave;
+        if (isLast && ci === 3) midi = chord[0] + style.octave - 12;
         var vel = 0.55 + (pi % 2 === 0 ? 0.14 : 0.02) + rnd() * 0.08;
         melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: vel });
 
@@ -1776,6 +1783,13 @@
         }
         if (school.counter && pi % 2 === 0) {
           counter.push({ t: base + pat[pi] + 0.02, midi: chord[(idxc + 2) % 3] + style.octave - 12, vel: vel * 0.45 });
+        }
+      }
+
+      /* Reich 相位：主图案与一条错开 3/8 拍的重复声部 */
+      if (school.phase) {
+        for (var phI = 0; phI < arp.length; phI++) {
+          if (arp[phI].t >= base) counter.push({ t: arp[phI].t + 0.375, midi: arp[phI].midi + 12, vel: arp[phI].vel * 0.55 });
         }
       }
 
