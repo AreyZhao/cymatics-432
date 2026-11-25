@@ -2166,10 +2166,17 @@
     if (autoBtn) { autoBtn.textContent = '✨ 天籁'; autoBtn.classList.remove('on'); }
     hideNowTitle();
   }
+  var NEW_TITLES = ['夜潮', '流沙', '星雾', '潮下', '风隙', '月蚀', '霜降', '回声', '涟漪', '砂时', '萤火', '雾岛', '深蓝', '光隙', '余波', '潮汐'];
   function restartSeq() {
-    stopOriginalMusic();
-    startOriginalMusic();
-    toast('🎲 换一种律动', 2200);
+    stopSeq();
+    var seed = ((Date.now() * 2654435761) >>> 0);
+    var title = NEW_TITLES[Math.floor(Math.random() * NEW_TITLES.length)];
+    var bpm = 108 + Math.floor(Math.random() * 20);
+    var p = composeOriginalPiece({ seed: seed, bpm: bpm, name: title, instrument: state.instrument || 'musicbox' });
+    state.currentPiece = p;
+    playPiece(p);
+    saveLibraryPiece(p);
+    toast('🎲 新曲已存入曲库：<b>' + esc(title) + '</b>（可导出 MIDI）', 3800);
   }
 
   /* ---------- 浮动曲名（可拖动） ---------- */
@@ -2197,16 +2204,18 @@
   function hideNowTitle() { if (nowTitle) nowTitle.hidden = true; }
   (function titleDrag() {
     if (!nowTitle) return;
-    var drag = null;
+    var drag = null, moved = false;
     nowTitle.addEventListener('pointerdown', function (e) {
       e.preventDefault();
       e.stopPropagation();
       var r = nowTitle.getBoundingClientRect();
-      drag = { dx: e.clientX - (r.left + r.width / 2), dy: e.clientY - (r.top + r.height / 2) };
+      drag = { dx: e.clientX - (r.left + r.width / 2), dy: e.clientY - (r.top + r.height / 2), x0: e.clientX, y0: e.clientY };
+      moved = false;
       try { nowTitle.setPointerCapture(e.pointerId); } catch (err) {}
     });
     nowTitle.addEventListener('pointermove', function (e) {
       if (!drag) return;
+      if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 6) moved = true;
       var x = clamp(e.clientX - drag.dx, 60, window.innerWidth - 60);
       var y = clamp(e.clientY - drag.dy, 40, window.innerHeight - 140);
       nowTitle.style.left = x + 'px';
@@ -2216,8 +2225,10 @@
     });
     nowTitle.addEventListener('pointerup', function () {
       if (!drag) return;
+      var isTap = !moved;
       drag = null;
       try { localStorage.setItem('cz_title_pos', JSON.stringify(titlePos)); } catch (err) {}
+      if (isTap) { openSheet(); sheetGo('create'); }
     });
   })();
 
@@ -2241,7 +2252,7 @@
     library.unshift({
       id: piece.id, name: piece.name, styleId: piece.styleId, bpm: piece.bpm,
       root: piece.root, scaleName: piece.scaleName, instrument: piece.instrument,
-      seed: piece.seed, created: piece.created, bars: piece.bars
+      seed: piece.seed, created: piece.created, bars: piece.bars, engine: piece.engine || ''
     });
     library = library.slice(0, 60);
     saveLibrary();
@@ -2332,6 +2343,11 @@
       edit.className = 'lib-btn';
       edit.textContent = '✎';
       edit.addEventListener('click', function () { openEdit(it); });
+      var exp = document.createElement('button');
+      exp.className = 'lib-btn';
+      exp.textContent = '⤓';
+      exp.title = '导出 MIDI';
+      exp.addEventListener('click', function () { exportPieceMidi(it); });
       var del = document.createElement('button');
       del.className = 'lib-btn danger';
       del.textContent = '🗑';
@@ -2345,6 +2361,7 @@
       row.appendChild(t);
       row.appendChild(play);
       row.appendChild(edit);
+      row.appendChild(exp);
       row.appendChild(del);
       list.appendChild(row);
     });
@@ -2512,6 +2529,68 @@
   }
 
   /* 哼唱旋律 → MIDI */
+  function midiBlobFor(tracks, bpm) {
+    var tpb = 480;
+    var secPerTick = 60 / (bpm || 120) / tpb;
+    var tempo = Math.round(60000000 / (bpm || 120));
+    var header = [0x4D, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 1, 0, tracks.length, (tpb >> 8) & 255, tpb & 255];
+    function vlq(v) {
+      var out = [v & 0x7F];
+      v >>= 7;
+      while (v > 0) { out.unshift((v & 0x7F) | 0x80); v >>= 7; }
+      return out;
+    }
+    var chunks = [];
+    tracks.forEach(function (tr, ti) {
+      var evs = [];
+      if (ti === 0) evs.push({ tick: 0, data: [0xFF, 0x51, 0x03, (tempo >> 16) & 255, (tempo >> 8) & 255, tempo & 255] });
+      if (tr.program != null) evs.push({ tick: 0, data: [0xC0 | (tr.channel || 0), tr.program] });
+      (tr.notes || []).forEach(function (n) {
+        var on = Math.max(0, Math.round(n.t / secPerTick));
+        var off = Math.max(on + 10, Math.round((n.t + Math.max(0.05, n.dur || 0.25)) / secPerTick));
+        evs.push({ tick: on, data: [0x90 | (tr.channel || 0), n.midi & 127, Math.max(1, Math.min(127, Math.round((n.vel || 0.8) * 110)))] });
+        evs.push({ tick: off, data: [0x80 | (tr.channel || 0), n.midi & 127, 0] });
+      });
+      evs.sort(function (a, b) { return a.tick - b.tick; });
+      var body = [], last = 0;
+      evs.forEach(function (e) {
+        body = body.concat(vlq(e.tick - last));
+        last = e.tick;
+        body = body.concat(e.data);
+      });
+      body = body.concat([0x00, 0xFF, 0x2F, 0x00]);
+      chunks = chunks.concat([
+        0x4D, 0x54, 0x72, 0x6B,
+        (body.length >>> 24) & 255, (body.length >>> 16) & 255, (body.length >>> 8) & 255, body.length & 255
+      ], body);
+    });
+    return new Blob([new Uint8Array(header.concat(chunks))], { type: 'audio/midi' });
+  }
+
+  var INST_PROGRAM = { musicbox: 10, piano: 0, ep: 4, flute: 73, oboe: 68, clarinet: 71, horn: 60, marimba: 12, bell: 9, handpan: 114, synth: 81 };
+
+  function exportPieceMidi(item) {
+    var p = pieceFromSaved(item);
+    var melody = (p.melody || []).map(function (n) { return { t: n.t, midi: n.midi, dur: 0.5, vel: n.vel }; });
+    var bass = (p.bassline || []).map(function (n) { return { t: n.t, midi: n.midi, dur: 0.8, vel: n.vel }; });
+    var chords = [];
+    (p.chords || []).forEach(function (ch) {
+      (ch.midis || []).forEach(function (m) { chords.push({ t: ch.t, midi: m, dur: 1.8, vel: 0.5 }); });
+    });
+    var drums = [];
+    (p.drums || []).forEach(function (d) {
+      drums.push({ t: d.t, midi: d.kind === 'kick' ? 36 : 42, dur: 0.2, vel: d.vel || 0.6 });
+    });
+    var tracks = [
+      { channel: 0, program: INST_PROGRAM[p.instrument] || 0, notes: melody },
+      { channel: 1, program: 32, notes: bass },
+      { channel: 2, program: 48, notes: chords }
+    ];
+    if (drums.length) tracks.push({ channel: 9, program: null, notes: drums });
+    downloadFile((item.name || '曲目') + '.mid', midiBlobFor(tracks, p.bpm || 120));
+    toast('💾 已导出：' + esc(item.name) + '.mid', 3000);
+  }
+
   function saveHumMidi() {
     if (!state.humNotes.length) { toast('还没有录到哼唱：先点「🎤 哼唱」，对着麦克风哼几句', 5000); return; }
     var notes = state.humNotes.slice();
@@ -3239,13 +3318,8 @@
       });
       body.appendChild(rowi);
     } else if (id === 'create') {
-      body.appendChild(mkItem('🎲', '换一首', '生成新曲', function () { restartSeq(); }));
+      body.appendChild(mkItem('🎲', '换一首', '生成并存入曲库', function () { restartSeq(); }));
       body.appendChild(mkItem('🎨', '生成风格', state.genStyle === 'auto' ? '自动随机' : styleById(state.genStyle).name, function () { sheetGo('genstyle'); }));
-      body.appendChild(mkItem(rec.active ? '⏹' : '⏺', rec.active ? '停止并保存' : '录音', rec.active ? '录制中' : (state.recSecs ? state.recSecs + ' 秒' : '手动'), function () {
-        if (rec.active) stopRec(); else startRec(state.recSecs);
-        renderSheet();
-      }));
-      body.appendChild(mkItem('⏱', '录音时长', state.recSecs ? state.recSecs + ' 秒' : '手动', function () { sheetGo('recdur'); }));
       body.appendChild(mkItem('⭐', '精选曲目', PRESET_PIECES.length + ' 首', function () { libFilter = 'preset'; closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('📚', '曲库', (library.length || 0) + ' 首', function () { closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
@@ -3289,7 +3363,13 @@
       body.appendChild(info);
       var rowh = document.createElement('div');
       rowh.className = 'sheet-sub';
+      mkSub(rowh, state.humOn ? '🎤 哼唱 · 开' : '🎤 哼唱', state.humOn ? 'on' : '', function () { toggleHum(); renderSheet(); });
       mkSub(rowh, '▶ 回放', '', function () { playHum(); });
+      mkSub(rowh, rec.active ? '⏹ 停止并保存' : '⏺ 录音', rec.active ? 'on' : '', function () {
+        if (rec.active) stopRec(); else startRec(state.recSecs);
+        renderSheet();
+      });
+      mkSub(rowh, '⏱ 录音时长', '', function () { sheetGo('recdur'); });
       mkSub(rowh, '🎼 TTA 编曲', '', function () { humTTAGenerate(); });
       mkSub(rowh, '💾 保存 MIDI', '', function () { saveHumMidi(); });
       mkSub(rowh, '🗑 清除', '', function () {
