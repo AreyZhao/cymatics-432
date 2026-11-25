@@ -199,6 +199,54 @@
   }
   #toast.on{opacity:1;transform:translate(-50%,0)}
 
+  #nowTitle{
+    position:fixed;left:50%;top:20%;transform:translate(-50%,-50%);
+    z-index:25;max-width:80vw;padding:8px 15px;border-radius:999px;
+    background:rgba(8,11,16,.74);border:1px solid var(--accent-line);
+    color:var(--pat);font-size:13px;letter-spacing:.04em;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
+    box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 20px var(--accent-soft);
+    cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  #nowTitle b{color:#fff;font-weight:600}
+  #nowTitle:active{cursor:grabbing}
+  #lib{
+    position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
+    padding:12px;background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  }
+  #lib.on{display:flex}
+  #lib .lib-panel{
+    width:min(540px,100%);max-height:88vh;display:flex;flex-direction:column;
+    padding:14px;border-radius:18px;border:1px solid var(--stroke);
+    background:rgba(9,12,17,.98);box-shadow:0 24px 70px rgba(0,0,0,.85);
+  }
+  .lib-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;letter-spacing:.12em;color:var(--accent)}
+  .lib-head button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+  .lib-search{
+    width:100%;margin:10px 0;padding:9px 11px;border-radius:9px;border:1px solid var(--stroke);
+    background:rgba(0,0,0,.5);color:#fff;font-size:13px;font-family:inherit;outline:none;
+  }
+  .lib-search:focus{border-color:var(--accent-line)}
+  .lib-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .lib-list{flex:1;min-height:80px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+  .lib-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--stroke);border-radius:10px;background:rgba(255,255,255,.03)}
+  .lib-item .t{flex:1;min-width:0}
+  .lib-item .nm{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lib-item .meta{font-size:10px;color:var(--muted);margin-top:2px}
+  .lib-btn{
+    appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);background:rgba(255,255,255,.05);
+    color:var(--muted);font-size:11px;padding:6px 9px;border-radius:7px;cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  .lib-btn:hover{background:rgba(255,255,255,.12);color:var(--text)}
+  .lib-btn.primary{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600}
+  .lib-btn.danger{color:#ff8f9c;border-color:rgba(255,90,110,.35)}
+  .lib-edit{display:none;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--stroke)}
+  .lib-edit.on{display:flex}
+  .lib-row{display:flex;gap:8px}
+  .lib-row > *{flex:1;min-width:0}
+  .lib-edit-btns{display:flex;gap:8px;margin-top:2px}
+  .lib-edit-btns .lib-btn{flex:1;padding:9px}
+  .lib-empty{font-size:12px;color:var(--muted);text-align:center;padding:18px 0}
   #sheet{
     position:fixed;left:0;right:0;bottom:0;z-index:65;display:none;
     padding:0 10px calc(10px + var(--nf) + env(safe-area-inset-bottom));
@@ -225,6 +273,21 @@
     padding:7px 12px;border-radius:8px;cursor:pointer;font-family:inherit;
   }
   .size-btn.on{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600}
+  .sheet-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .sheet-head #sheetTitle{flex:1;text-align:center;font-size:13px;letter-spacing:.12em;color:var(--accent)}
+  .sheet-head button{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 8px;line-height:1}
+  .sheet-head .sheet-x{font-size:15px}
+  #sheetBody{display:flex;flex-direction:column;gap:8px}
+  .sheet-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:11px 13px;border:1px solid var(--stroke);border-radius:11px;
+    background:rgba(255,255,255,.03);color:var(--text);font-size:13px;
+    cursor:pointer;font-family:inherit;text-align:left;width:100%;
+  }
+  .sheet-item:hover{background:rgba(255,255,255,.07)}
+  .sheet-item .v{color:var(--muted);font-size:11px;white-space:nowrap}
+  .sheet-sub{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+  .sheet-note{font-size:11px;color:var(--muted);line-height:1.6;margin:2px 0 4px}
   #sheet .sheet-done{
     display:block;width:100%;margin-top:2px;padding:10px;border-radius:10px;border:none;
     background:var(--accent);color:#00161c;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
@@ -268,6 +331,7 @@
 </div>
 
 <div id="toast"></div>
+<div id="nowTitle" hidden></div>
 <div id="dbg"></div>
 
 <header id="top-bar" class="ui-layer">
@@ -312,33 +376,36 @@
 
 <div id="piano-drawer" aria-hidden="true"><div id="pianoInner" class="piano-inner"></div></div>
 
+<div id="lib">
+  <div class="lib-panel">
+    <div class="lib-head"><b>曲库</b><button id="libClose" aria-label="关闭">✕</button></div>
+    <input id="libSearch" class="lib-search" placeholder="搜索曲名 / 风格…" aria-label="搜索曲目">
+    <div class="lib-filters" id="libFilters"></div>
+    <div class="lib-list" id="libList"></div>
+    <div class="lib-edit" id="libEdit">
+      <div class="lib-row"><input id="editName" class="lib-search" placeholder="曲名"></div>
+      <div class="lib-row">
+        <select id="editStyle" class="sheet-select" aria-label="风格"></select>
+        <select id="editInst" class="sheet-select" aria-label="音色"></select>
+      </div>
+      <div class="lib-row"><input id="editBpm" type="number" class="lib-search" min="50" max="180" placeholder="BPM"></div>
+      <div class="lib-edit-btns">
+        <button id="editSave" class="lib-btn primary">保存</button>
+        <button id="editCancel" class="lib-btn">取消</button>
+        <button id="editDel" class="lib-btn danger">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="sheet">
   <div class="sheet-inner">
-    <div class="sheet-row">
-      <span class="sheet-label">配色</span>
-      <div class="swatches" id="swatches"></div>
+    <div class="sheet-head">
+      <button id="sheetBack" class="sheet-back" aria-label="返回" hidden>‹</button>
+      <span id="sheetTitle">设置</span>
+      <button id="sheetClose" class="sheet-x" aria-label="关闭">✕</button>
     </div>
-    <div class="sheet-row">
-      <span class="sheet-label">琴键</span>
-      <div class="sizes" id="sizes"></div>
-    </div>
-    <div class="sheet-row">
-      <span class="sheet-label">音色</span>
-      <div class="sizes" id="instChips"></div>
-    </div>
-    <div class="sheet-row">
-      <span class="sheet-label">音源</span>
-      <div class="sizes" id="srcTools"></div>
-    </div>
-    <div class="sheet-row">
-      <span class="sheet-label">生成</span>
-      <div class="sizes" id="genTools"></div>
-    </div>
-    <div class="sheet-row">
-      <span class="sheet-label">时长</span>
-      <div class="sizes" id="recDur"></div>
-    </div>
-    <button class="sheet-done" id="sheetClose">完成</button>
+    <div id="sheetBody" class="sheet-body"></div>
   </div>
 </div>
 
@@ -357,9 +424,10 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：内置 120 BPM 节拍与五声音阶旋律，可「换一首」；录音时长可选 15/30/60 秒或「手动」自己点停，保存为 WAV。</li>
-      <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐，可保存成 MIDI。建议戴耳机，避免配乐被麦克风拾回。</li>
-      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器，在 🎨 面板切换。</li>
+      <li>✨ <b>天籁</b>：自动作曲（4 种风格、随机曲名），播放时曲名浮在画面上可拖动；「📚 曲库」里能搜索、试听、重命名、改风格、删除。</li>
+      <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
+      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器。</li>
+      <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
     </ul>
     <h3>🤖 AI 识别（本地）</h3>
     <ul>
@@ -696,6 +764,7 @@
     keyRange: '13',
     sysOn: false,
     humOn: false,
+    currentPiece: null,
     humNotes: [],
     humLastMidi: 0,
     humLastStart: 0,
@@ -1084,68 +1153,387 @@
     };
   })();
 
-  /* ============================================================
-   * 天籁演算：120 BPM 生成式节拍
+    /* ============================================================
+   * 自动作曲 · 曲库 · 浮动曲名
    * ============================================================ */
-  var PENTA = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84];
-  var BPM = 120;
-  var seq = { on: false, timer: 0, next: 0, step: 0 };
   var visQueue = [];
 
-  function pump() {
-    var c = Audio.ctx();
-    if (!c || !seq.on) return;
-    var stepDur = 60 / BPM / 4; // 十六分音符
-    var guard = 0;
-    while (seq.next < c.currentTime + 0.3 && guard++ < 40) {
-      scheduleStep(seq.step, seq.next);
-      seq.next += stepDur;
-      seq.step = (seq.step + 1) % 32;
-    }
+  var SCALES = {
+    penta: [0, 2, 4, 7, 9],
+    minorPenta: [0, 3, 5, 7, 10],
+    dorian: [0, 2, 3, 5, 7, 9, 10],
+    major: [0, 2, 4, 5, 7, 9, 11]
+  };
+  var STYLES = [
+    { id: 'aurora', name: '极光氛围', icon: '🌌', bpm: 76, scale: 'minorPenta', drums: 'soft' },
+    { id: 'pulse', name: '脉冲电子', icon: '⚡', bpm: 124, scale: 'penta', drums: 'four' },
+    { id: 'deep', name: '深海梦境', icon: '🌊', bpm: 88, scale: 'dorian', drums: 'sparse' },
+    { id: 'dawn', name: '晨光五声', icon: '🌅', bpm: 104, scale: 'penta', drums: 'light' }
+  ];
+  var TITLE_A = ['极光', '潮汐', '星河', '脉冲', '涟漪', '砂时', '回声', '雾岛', '霜降', '萤火', '鎏光', '深蓝', '月蚀', '风隙', '光隙'];
+  var TITLE_B = ['之梦', '轨迹', '低语', '回旋', '序曲', '余波', '沉浮', '漫游', '呼吸', '倒影'];
+
+  function styleById(id) {
+    for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === id) return STYLES[i];
+    return STYLES[0];
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function genTitle(rnd, style) {
+    return TITLE_A[Math.floor(rnd() * TITLE_A.length)] + '·' + TITLE_B[Math.floor(rnd() * TITLE_B.length)];
   }
 
-  function scheduleStep(i, t) {
-    var tr = seq.transpose || 0;
-    if (i % 8 === 0) { Audio.kick(t, 1); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
-    if (i === 6 || i === 22) { Audio.kick(t, 0.4); visQueue.push({ t: t, kind: 'beat', amt: 0.4 }); }
-    if (i % 2 === 1 && Math.random() < 0.8) Audio.hat(t, i % 4 === 3 ? 0.5 : 0.26);
-    if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8);
-    if (i % 2 === 0 && Math.random() < 0.42) {
-      var midi = PENTA[(Math.random() * PENTA.length) | 0] + tr;
-      Audio.note(midi, { when: t, vel: 0.75, wet: 0.45 });
-      visQueue.push({ t: t, kind: 'note', midi: midi });
+  /* 生成一首 8 小节的曲子（同 seed + 参数 → 同结果） */
+  function composePiece(opts) {
+    opts = opts || {};
+    var style = styleById(opts.styleId);
+    var seed = (opts.seed == null ? Math.floor(Math.random() * 4294967295) : opts.seed) >>> 0;
+    var rnd = mulberry32(seed);
+    var autoName = genTitle(rnd, style);
+    var bpm = opts.bpm || style.bpm;
+    var root = opts.root == null ? 45 + Math.floor(rnd() * 8) : opts.root;
+    var inst = opts.instrument || state.instrument || 'musicbox';
+    var scale = SCALES[style.scale] || SCALES.penta;
+    var bars = 8, melody = [], chords = [], drums = [];
+
+    for (var bi = 0; bi < bars; bi++) {
+      var base = bi * 4;
+      var density = style.drums === 'four' ? 0.62 : (style.drums === 'light' ? 0.5 : 0.38);
+      var steps = [0, 0.75, 1.5, 2, 2.75, 3.25];
+      for (var si = 0; si < steps.length; si++) {
+        if (rnd() > density) continue;
+        var deg = scale[Math.floor(rnd() * scale.length)];
+        var oct = rnd() < 0.55 ? 12 : 24;
+        melody.push({ t: base + steps[si], midi: root + deg + oct, vel: 0.5 + rnd() * 0.4 });
+      }
+      if (bi % 2 === 0) {
+        var d0 = scale[0], d1 = scale[Math.floor(scale.length / 2)], d2 = scale[scale.length - 1];
+        chords.push({ t: base, midis: [root + d0, root + d1, root + d2], vel: 0.8 });
+      }
+      if (style.drums === 'four') {
+        drums.push({ kind: 'kick', t: base, vel: 1 }, { kind: 'kick', t: base + 1, vel: 0.7 },
+                   { kind: 'kick', t: base + 2, vel: 1 }, { kind: 'kick', t: base + 3, vel: 0.7 });
+        for (var h = 0; h < 8; h++) drums.push({ kind: 'hat', t: base + h * 0.5, vel: h % 2 ? 0.4 : 0.28 });
+      } else if (style.drums === 'light') {
+        drums.push({ kind: 'kick', t: base, vel: 0.9 }, { kind: 'kick', t: base + 2, vel: 0.65 });
+        for (var h2 = 1; h2 < 8; h2 += 2) drums.push({ kind: 'hat', t: base + h2 * 0.5, vel: 0.28 });
+      } else if (style.drums === 'sparse') {
+        drums.push({ kind: 'kick', t: base, vel: 0.75 });
+        if (bi % 2 === 1) drums.push({ kind: 'hat', t: base + 2.5, vel: 0.22 });
+      } else {
+        drums.push({ kind: 'kick', t: base, vel: 0.55 }, { kind: 'hat', t: base + 2, vel: 0.2 });
+      }
     }
-    if (i % 32 === 0) Audio.pad(t, [48 + tr, 55 + tr, 60 + tr], 0.9);
+    return {
+      id: 't' + seed.toString(36),
+      name: opts.name || autoName,
+      styleId: style.id, bpm: bpm, root: root, scaleName: style.scale,
+      instrument: inst, seed: seed, bars: bars, created: opts.created || Date.now(),
+      melody: melody, chords: chords, drums: drums
+    };
   }
 
-  function restartSeq() {
-    if (state.seqOn) {
-      stopSeq();
-      startSeq();
-      toast('🎲 换了一首，重新生成中…', 2500);
-    } else {
-      toggleSeq();
-      toast('✨ 开始生成，想换一首再点这里', 3000);
-    }
+  var player = { on: false, timer: 0, loopStart: 0, dur: 0, piece: null };
+
+  function scheduleLoop(t0) {
+    var p = player.piece;
+    if (!p) return;
+    var spb = 60 / p.bpm;
+    var now = Audio.now();
+    p.melody.forEach(function (n) {
+      var when = t0 + n.t * spb;
+      if (when < now - 0.05) return;
+      Audio.note(n.midi, { when: when, vel: n.vel, wet: 0.45, inst: p.instrument });
+      visQueue.push({ t: when, kind: 'note', midi: n.midi });
+    });
+    p.chords.forEach(function (ch) {
+      var when = t0 + ch.t * spb;
+      if (when < now - 0.05) return;
+      Audio.pad(when, ch.midis, ch.vel);
+    });
+    p.drums.forEach(function (d) {
+      var when = t0 + d.t * spb;
+      if (when < now - 0.05) return;
+      if (d.kind === 'kick') { Audio.kick(when, d.vel); visQueue.push({ t: when, kind: 'beat', amt: d.vel }); }
+      else Audio.hat(when, d.vel);
+    });
   }
 
-  var TRANSPOSES = [0, 2, 3, 5, -3, -5];
-  function startSeq() {
+  function playPiece(piece) {
+    stopSeq();
     Audio.ensure();
-    seq.transpose = TRANSPOSES[Math.floor(Math.random() * TRANSPOSES.length)];
-    if (seq.timer) clearInterval(seq.timer);
-    seq.on = true;
-    seq.step = 0;
-    seq.next = Audio.now() + 0.12;
-    seq.timer = setInterval(pump, 40);
-    pump();
+    player.piece = piece;
+    state.currentPiece = piece;
+    state.seqOn = true;
+    autoBtn.textContent = '⏹ 停演';
+    autoBtn.classList.add('on');
+    var c = Audio.ctx();
+    player.dur = piece.bars * 4 * (60 / piece.bpm);
+    player.loopStart = c.currentTime + 0.12;
+    player.on = true;
+    scheduleLoop(player.loopStart);
+    player.timer = setInterval(function () {
+      var cc = Audio.ctx();
+      if (!player.on || !cc) return;
+      if (cc.currentTime > player.loopStart + player.dur - 0.8) {
+        player.loopStart += player.dur;
+        scheduleLoop(player.loopStart);
+      }
+    }, 120);
+    showNowTitle(piece);
+    if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = piece.bpm + ' BPM'; }
+  }
+
+  function startSeq() {
+    if (player.on) return;
+    if (!state.currentPiece) state.currentPiece = composePiece({});
+    playPiece(state.currentPiece);
+    saveLibraryPiece(state.currentPiece);
   }
   function stopSeq() {
-    seq.on = false;
-    clearInterval(seq.timer);
-    seq.timer = 0;
+    player.on = false;
+    clearInterval(player.timer);
+    player.timer = 0;
+    state.seqOn = false;
     visQueue.length = 0;
+    if (autoBtn) { autoBtn.textContent = '✨ 天籁'; autoBtn.classList.remove('on'); }
+    hideNowTitle();
   }
+  function restartSeq() {
+    state.currentPiece = composePiece({});
+    playPiece(state.currentPiece);
+    saveLibraryPiece(state.currentPiece);
+    toast('🎲 新曲：<b>' + esc(state.currentPiece.name) + '</b>', 4000);
+  }
+
+  /* ---------- 浮动曲名（可拖动） ---------- */
+  var nowTitle = $('nowTitle');
+  var titlePos = null;
+  try { titlePos = JSON.parse(localStorage.getItem('cz_title_pos') || 'null'); } catch (e) {}
+  function placeTitle() {
+    if (!nowTitle) return;
+    if (titlePos && typeof titlePos.left === 'number') {
+      nowTitle.style.left = titlePos.left + 'px';
+      nowTitle.style.top = titlePos.top + 'px';
+      nowTitle.style.transform = 'translate(-50%,-50%)';
+    } else {
+      nowTitle.style.left = '50%';
+      nowTitle.style.top = '20%';
+      nowTitle.style.transform = 'translate(-50%,-50%)';
+    }
+  }
+  function showNowTitle(piece) {
+    if (!nowTitle) return;
+    nowTitle.innerHTML = '♪ <b>' + esc(piece.name) + '</b> · ' + styleById(piece.styleId).name;
+    nowTitle.hidden = false;
+    placeTitle();
+  }
+  function hideNowTitle() { if (nowTitle) nowTitle.hidden = true; }
+  (function titleDrag() {
+    if (!nowTitle) return;
+    var drag = null;
+    nowTitle.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var r = nowTitle.getBoundingClientRect();
+      drag = { dx: e.clientX - (r.left + r.width / 2), dy: e.clientY - (r.top + r.height / 2) };
+      try { nowTitle.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    nowTitle.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var x = clamp(e.clientX - drag.dx, 60, window.innerWidth - 60);
+      var y = clamp(e.clientY - drag.dy, 40, window.innerHeight - 140);
+      nowTitle.style.left = x + 'px';
+      nowTitle.style.top = y + 'px';
+      nowTitle.style.transform = 'translate(-50%,-50%)';
+      titlePos = { left: x, top: y };
+    });
+    nowTitle.addEventListener('pointerup', function () {
+      if (!drag) return;
+      drag = null;
+      try { localStorage.setItem('cz_title_pos', JSON.stringify(titlePos)); } catch (err) {}
+    });
+  })();
+
+  /* ---------- 曲库 ---------- */
+  var LIB_KEY = 'cz_lib_v1';
+  var library = [];
+  function esc(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function loadLibrary() {
+    try { library = JSON.parse(localStorage.getItem(LIB_KEY) || '[]') || []; } catch (e) { library = []; }
+    if (!Array.isArray(library)) library = [];
+  }
+  function saveLibrary() {
+    try { localStorage.setItem(LIB_KEY, JSON.stringify(library.slice(0, 60))); } catch (e) {}
+  }
+  function saveLibraryPiece(piece) {
+    for (var i = 0; i < library.length; i++) if (library[i].id === piece.id) return;
+    library.unshift({
+      id: piece.id, name: piece.name, styleId: piece.styleId, bpm: piece.bpm,
+      root: piece.root, scaleName: piece.scaleName, instrument: piece.instrument,
+      seed: piece.seed, created: piece.created, bars: piece.bars
+    });
+    library = library.slice(0, 60);
+    saveLibrary();
+    renderLibrary();
+  }
+  function pieceFromSaved(item) {
+    return composePiece({
+      seed: item.seed, styleId: item.styleId, bpm: item.bpm,
+      root: item.root, instrument: item.instrument, name: item.name, created: item.created
+    });
+  }
+
+  var libFilter = 'all', libQuery = '', editingId = null;
+  function fmtDate(ts) {
+    var d = new Date(ts || Date.now());
+    function p(n) { return n < 10 ? '0' + n : '' + n; }
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function renderLibFilters() {
+    var box = $('libFilters');
+    if (!box) return;
+    box.innerHTML = '';
+    var all = [{ id: 'all', name: '全部', icon: '♪' }].concat(STYLES);
+    all.forEach(function (st) {
+      var b = document.createElement('button');
+      b.className = 'lib-btn' + (libFilter === st.id ? ' primary' : '');
+      b.textContent = (st.icon ? st.icon + ' ' : '') + st.name;
+      b.addEventListener('click', function () { libFilter = st.id; renderLibrary(); });
+      box.appendChild(b);
+    });
+  }
+  function renderLibrary() {
+    renderLibFilters();
+    var list = $('libList');
+    if (!list) return;
+    var q = (libQuery || '').trim().toLowerCase();
+    var items = library.filter(function (it) {
+      if (libFilter !== 'all' && it.styleId !== libFilter) return false;
+      if (!q) return true;
+      return (it.name + ' ' + styleById(it.styleId).name + ' ' + styleById(it.styleId).id).toLowerCase().indexOf(q) >= 0;
+    });
+    list.innerHTML = '';
+    if (!items.length) {
+      list.innerHTML = '<div class="lib-empty">还没有曲目：点「🎲 换一首」生成第一首</div>';
+      return;
+    }
+    items.forEach(function (it) {
+      var st = styleById(it.styleId);
+      var row = document.createElement('div');
+      row.className = 'lib-item';
+      var t = document.createElement('div');
+      t.className = 't';
+      t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
+        '<div class="meta">' + st.icon + ' ' + st.name + ' · ' + it.bpm + ' BPM · ' + fmtDate(it.created) + '</div>';
+      var play = document.createElement('button');
+      play.className = 'lib-btn primary';
+      play.textContent = '▶';
+      play.addEventListener('click', function () {
+        state.currentPiece = pieceFromSaved(it);
+        playPiece(state.currentPiece);
+        toast('▶ 播放：<b>' + esc(it.name) + '</b>', 2500);
+      });
+      var edit = document.createElement('button');
+      edit.className = 'lib-btn';
+      edit.textContent = '✎';
+      edit.addEventListener('click', function () { openEdit(it); });
+      var del = document.createElement('button');
+      del.className = 'lib-btn danger';
+      del.textContent = '🗑';
+      del.addEventListener('click', function () {
+        library = library.filter(function (x) { return x.id !== it.id; });
+        saveLibrary();
+        renderLibrary();
+        if (state.currentPiece && state.currentPiece.id === it.id) { stopSeq(); state.currentPiece = null; }
+        toast('已删除「' + esc(it.name) + '」', 2200);
+      });
+      row.appendChild(t);
+      row.appendChild(play);
+      row.appendChild(edit);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+  function openEdit(item) {
+    editingId = item.id;
+    if ($('editName')) $('editName').value = item.name;
+    var stSel = $('editStyle');
+    if (stSel && !stSel.options.length) {
+      STYLES.forEach(function (st) {
+        var o = document.createElement('option');
+        o.value = st.id; o.textContent = st.icon + ' ' + st.name;
+        stSel.appendChild(o);
+      });
+    }
+    if (stSel) stSel.value = item.styleId;
+    var inSel = $('editInst');
+    if (inSel && !inSel.options.length && typeof INSTRUMENTS !== 'undefined') {
+      INSTRUMENTS.forEach(function (ins) {
+        var o = document.createElement('option');
+        o.value = ins.id; o.textContent = ins.name;
+        inSel.appendChild(o);
+      });
+    }
+    if (inSel) inSel.value = item.instrument;
+    if ($('editBpm')) $('editBpm').value = item.bpm;
+    if ($('libEdit')) $('libEdit').classList.add('on');
+  }
+  function openLibrary() {
+    loadLibrary();
+    renderLibrary();
+    if ($('lib')) $('lib').classList.add('on');
+  }
+  function closeLibrary() {
+    if ($('lib')) $('lib').classList.remove('on');
+    if ($('libEdit')) $('libEdit').classList.remove('on');
+    editingId = null;
+  }
+  if ($('libClose')) $('libClose').addEventListener('click', closeLibrary);
+  if ($('lib')) $('lib').addEventListener('click', function (e) { if (e.target === $('lib')) closeLibrary(); });
+  if ($('libSearch')) $('libSearch').addEventListener('input', function () { libQuery = this.value; renderLibrary(); });
+  if ($('editCancel')) $('editCancel').addEventListener('click', function () {
+    editingId = null;
+    if ($('libEdit')) $('libEdit').classList.remove('on');
+  });
+  if ($('editSave')) $('editSave').addEventListener('click', function () {
+    var it = library.filter(function (x) { return x.id === editingId; })[0];
+    if (!it) return;
+    it.name = ($('editName') && $('editName').value.trim()) || it.name;
+    if ($('editStyle')) it.styleId = $('editStyle').value;
+    it.bpm = clamp(parseInt($('editBpm') && $('editBpm').value, 10) || it.bpm, 50, 180);
+    if ($('editInst')) it.instrument = $('editInst').value;
+    saveLibrary();
+    renderLibrary();
+    if ($('libEdit')) $('libEdit').classList.remove('on');
+    editingId = null;
+    if (state.currentPiece && state.currentPiece.id === it.id) {
+      state.currentPiece = pieceFromSaved(it);
+      if (player.on) playPiece(state.currentPiece);
+      showNowTitle(state.currentPiece);
+    }
+    toast('已保存修改', 2200);
+  });
+  if ($('editDel')) $('editDel').addEventListener('click', function () {
+    if (!editingId) return;
+    library = library.filter(function (x) { return x.id !== editingId; });
+    saveLibrary();
+    renderLibrary();
+    if ($('libEdit')) $('libEdit').classList.remove('on');
+    if (state.currentPiece && state.currentPiece.id === editingId) { stopSeq(); state.currentPiece = null; }
+    editingId = null;
+    toast('已删除', 2200);
+  });
 
   /* ============================================================
    * 音频输入源：外音监听 / 本地音乐 / 天籁演算
@@ -1613,20 +2001,11 @@
   }
 
   function toggleSeq() {
-    if (state.seqOn) {
-      stopSeq();
-      state.seqOn = false;
-      autoBtn.textContent = '✨ 天籁';
-      autoBtn.classList.remove('on');
-      return;
-    }
+    if (state.seqOn) { stopSeq(); return; }
     if (state.humOn) stopHum();
     if (state.sysOn) stopSys();
     if (state.micOn) stopMic();
     if (state.musicOn) stopMusic();
-    state.seqOn = true;
-    autoBtn.textContent = '⏹ 停演';
-    autoBtn.classList.add('on');
     startSeq();
   }
 
@@ -1849,72 +2228,157 @@
     try { localStorage.setItem('cz_inst', id); } catch (e) {}
   }
 
-  (function buildSheet() {
-    var sw = $('swatches'), sz = $('sizes');
-    if (!sw || !sz) return;
-    THEMES.forEach(function (t) {
-      var b = document.createElement('button');
-      b.className = 'swatch';
-      b.setAttribute('data-theme', t.id);
-      b.title = t.name;
-      b.style.background = 'radial-gradient(circle at 35% 30%,' + t.accent2 + ',' + t.accent + ' 72%)';
-      b.addEventListener('click', function () { applyTheme(t.id, true); });
-      sw.appendChild(b);
+  /* ---------- 三级菜单（设置） ---------- */
+  var sheetNav = ['root'];
+  function playHum() {
+    if (!state.humNotes.length) { toast('还没有哼唱：先点「🎤 哼唱」哼几句', 4000); return; }
+    Audio.ensure();
+    var c = Audio.ctx();
+    var t0 = c.currentTime + 0.12;
+    var notes = state.humNotes.slice();
+    var rel = notes[0].t;
+    notes.forEach(function (n) {
+      var when = t0 + Math.max(0, n.t - rel);
+      Audio.note(n.midi, { when: when, vel: 0.85, wet: 0.4 });
+      visQueue.push({ t: when, kind: 'note', midi: n.midi });
     });
-    ['13', '25', '49', '88'].forEach(function (k) {
-      var b = document.createElement('button');
-      b.className = 'size-btn';
-      b.setAttribute('data-keys', k);
-      b.textContent = k + ' 键';
-      b.addEventListener('click', function () { selectKeys(k); });
-      sz.appendChild(b);
-    });
-    markSizeBtns(state.keyRange);
-
-    var srcTools = $('srcTools'), genTools = $('genTools');
-    function toolBtn(parent, label, cls, fn) {
-      var b = document.createElement('button');
-      b.className = 'size-btn ' + (cls || '');
-      b.textContent = label;
-      b.addEventListener('click', fn);
-      if (parent) parent.appendChild(b);
-      return b;
+    toast('▶ 回放哼唱（' + notes.length + ' 个音）', 2600);
+  }
+  function mkSub(parent, label, cls, fn) {
+    var b = document.createElement('button');
+    b.className = 'size-btn ' + (cls || '');
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    parent.appendChild(b);
+    return b;
+  }
+  function mkItem(icon, label, value, fn) {
+    var b = document.createElement('button');
+    b.className = 'sheet-item';
+    b.innerHTML = '<span>' + icon + ' ' + label + '</span><span class="v">' + (value || '') + ' ›</span>';
+    b.addEventListener('click', fn);
+    return b;
+  }
+  function sheetGo(id) { sheetNav.push(id); renderSheet(); }
+  function sheetBack() { if (sheetNav.length > 1) { sheetNav.pop(); renderSheet(); } }
+  function sourceLabel() {
+    if (state.humOn) return '哼唱';
+    if (state.micOn) return '外音';
+    if (state.sysOn) return '系统声';
+    if (state.musicOn) return '放歌';
+    if (state.seqOn) return '天籁';
+    return '未开启';
+  }
+  function instName(id) {
+    for (var i = 0; i < INSTRUMENTS.length; i++) if (INSTRUMENTS[i].id === id) return INSTRUMENTS[i].name;
+    return id;
+  }
+  function renderSheet() {
+    var id = sheetNav[sheetNav.length - 1] || 'root';
+    var titleEl = $('sheetTitle');
+    if (titleEl) {
+      titleEl.textContent = { root: '设置', sources: '音源', look: '外观', instruments: '音色', create: '创作', recdur: '录音时长', hum: '哼唱' }[id] || '设置';
     }
-    var instBox = $('instChips');
-    if (instBox) {
+    var backEl = $('sheetBack');
+    if (backEl) backEl.hidden = sheetNav.length <= 1;
+    var body = $('sheetBody');
+    if (!body) return;
+    body.innerHTML = '';
+
+    if (id === 'root') {
+      body.appendChild(mkItem('🎧', '音源', sourceLabel(), function () { sheetGo('sources'); }));
+      body.appendChild(mkItem('🎹', '音色', instName(state.instrument), function () { sheetGo('instruments'); }));
+      body.appendChild(mkItem('🎨', '外观', '配色 · 琴键', function () { sheetGo('look'); }));
+      body.appendChild(mkItem('🎛', '创作', state.seqOn ? '播放中' : '生成 / 录音 / 曲库', function () { sheetGo('create'); }));
+      body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
+    } else if (id === 'sources') {
+      var box = document.createElement('div');
+      box.className = 'sheet-sub';
+      body.appendChild(box);
+      mkSub(box, (state.micOn && !state.humOn) ? '🎤 外音 · 开' : '🎤 外音', (state.micOn && !state.humOn) ? 'on' : '', function () { toggleMic(); renderSheet(); });
+      mkSub(box, state.sysOn ? '🎧 系统声 · 开' : '🎧 系统声', state.sysOn ? 'on' : '', function () { toggleSys(); renderSheet(); });
+      mkSub(box, state.musicOn ? '🎵 停播' : '🎵 放歌', state.musicOn ? 'on' : '', function () { var mb = $('musicBtn'); if (mb) mb.click(); renderSheet(); });
+      mkSub(box, state.seqOn ? '✨ 停演' : '✨ 天籁', state.seqOn ? 'on' : '', function () { toggleSeq(); renderSheet(); });
+      mkSub(box, state.humOn ? '🎤 哼唱 · 开' : '🎤 哼唱', state.humOn ? 'on' : '', function () { toggleHum(); renderSheet(); });
+      var note = document.createElement('div');
+      note.className = 'sheet-note';
+      note.textContent = '「系统声」只在电脑 Chrome/Edge 共享音频时可用，手机浏览器一般不支持。';
+      body.appendChild(note);
+    } else if (id === 'look') {
+      var row1 = document.createElement('div');
+      row1.className = 'sheet-sub';
+      THEMES.forEach(function (t) {
+        var b = document.createElement('button');
+        b.className = 'swatch' + (state.themeId === t.id ? ' on' : '');
+        b.setAttribute('data-theme', t.id);
+        b.title = t.name;
+        b.style.background = 'radial-gradient(circle at 35% 30%,' + t.accent2 + ',' + t.accent + ' 72%)';
+        b.addEventListener('click', function () { applyTheme(t.id, true); renderSheet(); });
+        row1.appendChild(b);
+      });
+      body.appendChild(row1);
+      var row2 = document.createElement('div');
+      row2.className = 'sheet-sub';
+      ['13', '25', '49', '88'].forEach(function (k) {
+        mkSub(row2, k + ' 键', state.keyRange === k ? 'on' : '', function () { selectKeys(k); renderSheet(); });
+      });
+      body.appendChild(row2);
+    } else if (id === 'instruments') {
+      var rowi = document.createElement('div');
+      rowi.className = 'sheet-sub';
       INSTRUMENTS.forEach(function (ins) {
         var b = document.createElement('button');
-        b.className = 'size-btn inst-btn';
+        b.className = 'size-btn inst-btn' + (state.instrument === ins.id ? ' on' : '');
         b.setAttribute('data-inst', ins.id);
         b.textContent = ins.name;
-        b.addEventListener('click', function () { selectInstrument(ins.id); });
-        instBox.appendChild(b);
+        b.addEventListener('click', function () { selectInstrument(ins.id); renderSheet(); });
+        rowi.appendChild(b);
       });
-    }
-    markInstBtns(state.instrument);
-    toolBtn(srcTools, '🎤 哼唱', 'hum-toggle', toggleHum);
-    toolBtn(srcTools, '🎧 系统声', '', toggleSys);
-    toolBtn(genTools, '🎲 换一首', '', function () { restartSeq(); });
-    toolBtn(genTools, '⏺ 录音', 'rec-toggle', function () { if (rec.active) stopRec(); else startRec(state.recSecs); });
-    var durBox = $('recDur');
-    if (durBox) {
+      body.appendChild(rowi);
+    } else if (id === 'create') {
+      body.appendChild(mkItem('🎲', '换一首', '生成新曲', function () { restartSeq(); }));
+      body.appendChild(mkItem(rec.active ? '⏹' : '⏺', rec.active ? '停止并保存' : '录音', rec.active ? '录制中' : (state.recSecs ? state.recSecs + ' 秒' : '手动'), function () {
+        if (rec.active) stopRec(); else startRec(state.recSecs);
+        renderSheet();
+      }));
+      body.appendChild(mkItem('⏱', '录音时长', state.recSecs ? state.recSecs + ' 秒' : '手动', function () { sheetGo('recdur'); }));
+      body.appendChild(mkItem('📚', '曲库', (library.length || 0) + ' 首', function () { closeSheet(); openLibrary(); }));
+      body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
+    } else if (id === 'recdur') {
+      var rowd = document.createElement('div');
+      rowd.className = 'sheet-sub';
       [[15, '15 秒'], [30, '30 秒'], [60, '60 秒'], [0, '手动']].forEach(function (d) {
-        var b = document.createElement('button');
-        b.className = 'size-btn rec-dur';
-        b.setAttribute('data-secs', d[0]);
-        b.textContent = d[1];
-        b.addEventListener('click', function () {
+        mkSub(rowd, d[1], state.recSecs === d[0] ? 'on' : '', function () {
           state.recSecs = d[0];
           try { localStorage.setItem('cz_recsecs', String(d[0])); } catch (e) {}
-          syncRecBtns();
+          renderSheet();
         });
-        durBox.appendChild(b);
       });
+      body.appendChild(rowd);
+      var note2 = document.createElement('div');
+      note2.className = 'sheet-note';
+      note2.textContent = '手动模式下，再点一次「录音」才会停止并保存。';
+      body.appendChild(note2);
+    } else if (id === 'hum') {
+      var info = document.createElement('div');
+      info.className = 'sheet-note';
+      info.textContent = state.humNotes.length ? ('已录 ' + state.humNotes.length + ' 个音，可以先回放听听，满意再保存 MIDI。') : '还没有录音：先点「🎤 哼唱」哼几句。';
+      body.appendChild(info);
+      var rowh = document.createElement('div');
+      rowh.className = 'sheet-sub';
+      mkSub(rowh, '▶ 回放', '', function () { playHum(); });
+      mkSub(rowh, '💾 保存 MIDI', '', function () { saveHumMidi(); });
+      mkSub(rowh, '🗑 清除', '', function () {
+        state.humNotes = [];
+        state.humLastMidi = 0;
+        renderSheet();
+        toast('已清除哼唱', 2000);
+      });
+      body.appendChild(rowh);
     }
-    toolBtn(genTools, '💾 哼唱 MIDI', '', function () { saveHumMidi(); });
-    syncHumBtns();
-    syncRecBtns();
-  })();
+  }
+  function openSheet() { sheetNav = ['root']; renderSheet(); if ($('sheet')) $('sheet').classList.add('on'); }
+  function closeSheet() { if ($('sheet')) $('sheet').classList.remove('on'); }
 
   function markSizeBtns(k) {
     var all = document.querySelectorAll('.size-btn');
@@ -1926,10 +2390,14 @@
     markSizeBtns(k);
   }
 
-  var sheet = $('sheet');
-  $('styleBtn').addEventListener('click', function () { sheet.classList.add('on'); });
-  $('sheetClose').addEventListener('click', function () { sheet.classList.remove('on'); });
-  sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.classList.remove('on'); });
+  $('styleBtn').addEventListener('click', openSheet);
+  if ($('sheetBack')) $('sheetBack').addEventListener('click', sheetBack);
+  if ($('sheetClose')) $('sheetClose').addEventListener('click', closeSheet);
+  if ($('sheet')) {
+    $('sheet').addEventListener('click', function (e) {
+      if (e.target === $('sheet')) closeSheet();
+    });
+  }
 
 
   /* 电脑键盘也能弹 */
@@ -2315,7 +2783,10 @@
     state.beatEnv *= Math.exp(-dt * 4.0);
     if (meterFill) meterFill.style.width = (clamp(state.level, 0, 1) * 100).toFixed(0) + '%';
     if (bpmTag) {
-      if (state.seqOn) { bpmTag.hidden = false; bpmTag.textContent = '120 BPM'; }
+      if (state.seqOn) {
+        bpmTag.hidden = false;
+        bpmTag.textContent = ((state.currentPiece && state.currentPiece.bpm) || 120) + ' BPM';
+      }
       else if (state.micOn || state.musicOn || state.sysOn) {
         bpmTag.hidden = false;
         bpmTag.textContent = state.bpm ? Math.round(state.bpm) + ' BPM' : '— BPM';
@@ -2529,6 +3000,8 @@
   cam.phi = cam.tPhi;
   cam.dist = cam.tDist;
   try {
+    loadLibrary();
+    renderLibrary();
     var savedTheme = localStorage.getItem('cz_theme') || 'cyan';
     var savedKeys = localStorage.getItem('cz_keys') || '13';
     var savedInst = localStorage.getItem('cz_inst');
