@@ -2026,26 +2026,43 @@
     if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = piece.bpm + ' BPM'; }
   }
 
-  function startSeq() {
-    if (player.on) return;
-    if (!state.currentPiece) {
-      var cfg = PRESET_PIECES[Math.floor(Math.random() * PRESET_PIECES.length)];
-      state.currentPiece = composePiece(cfg);
-      if (typeof toast === 'function') {
-        toast('✨ 精选：<b>' + esc(cfg.name) + '</b><br>' + styleById(cfg.styleId).icon + ' ' + styleById(cfg.styleId).name, 3800);
-      }
+  /* ===== 最初的「天籁」即兴生成器：120 BPM 五声音阶 ===== */
+  var PENTA = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84];
+  var ORIG_BPM = 120;
+  var TRANSPOSES = [0, 2, 3, 5, -3, -5];
+  var orig = { on: false, timer: 0, next: 0, step: 0, transpose: 0, bus: null };
+
+  function origSchedule(i, t, bus) {
+    var tr = orig.transpose;
+    if (i % 8 === 0) { Audio.kick(t, 1, bus); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
+    if (i === 6 || i === 22) { Audio.kick(t, 0.4, bus); visQueue.push({ t: t, kind: 'beat', amt: 0.4 }); }
+    if (i % 2 === 1 && Math.random() < 0.8) Audio.hat(t, i % 4 === 3 ? 0.5 : 0.26, bus);
+    if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
+    if (i % 2 === 0 && Math.random() < 0.42) {
+      var midi = PENTA[Math.floor(Math.random() * PENTA.length)] + tr;
+      Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, bus: bus });
+      visQueue.push({ t: t, kind: 'note', midi: midi });
     }
-    playPiece(state.currentPiece);
-    saveLibraryPiece(state.currentPiece);
+    if (i % 32 === 0) Audio.pad(t, [48 + tr, 55 + tr, 60 + tr], 0.9, bus);
   }
-  function stopSeq() {
-    if (tta.on) stopTTA();
-    player.on = false;
-    clearInterval(player.timer);
-    player.timer = 0;
-    if (player.bus) {
-      var bus = player.bus;
-      player.bus = null;
+  function origPump() {
+    var c = Audio.ctx();
+    if (!c || !orig.on) return;
+    var stepDur = 60 / ORIG_BPM / 4;
+    var guard = 0;
+    while (orig.next < c.currentTime + 0.25 && guard++ < 40) {
+      origSchedule(orig.step, orig.next, orig.bus);
+      orig.next += stepDur;
+      orig.step = (orig.step + 1) % 32;
+    }
+  }
+  function stopOriginalMusic() {
+    orig.on = false;
+    clearInterval(orig.timer);
+    orig.timer = 0;
+    if (orig.bus) {
+      var bus = orig.bus;
+      orig.bus = null;
       var cc = Audio.ctx();
       try {
         if (cc) {
@@ -2053,8 +2070,55 @@
           bus.gain.setValueAtTime(bus.gain.value, cc.currentTime);
           bus.gain.linearRampToValueAtTime(0, cc.currentTime + 0.05);
         }
-      } catch (e) { try { bus.gain.value = 0; } catch (e2) {} }
+      } catch (e) {}
       setTimeout(function () { try { bus.disconnect(); } catch (e) {} }, 120);
+    }
+    if (Audio.dampReverb) Audio.dampReverb(0.3);
+  }
+  function startOriginalMusic() {
+    stopSeq();
+    stopAllAudio('seq');
+    Audio.ensure();
+    var c = Audio.ctx();
+    orig.bus = Audio.bus();
+    orig.bus.gain.value = 1;
+    orig.transpose = TRANSPOSES[Math.floor(Math.random() * TRANSPOSES.length)];
+    orig.on = true;
+    orig.step = 0;
+    orig.next = c.currentTime + 0.1;
+    state.seqOn = true;
+    state.mood = '优美';
+    state.currentPiece = { name: '天籁 · 即兴', styleId: 'aurora', bpm: ORIG_BPM };
+    if (autoBtn) { autoBtn.textContent = '⏹ 停演'; autoBtn.classList.add('on'); }
+    if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = '120 BPM'; }
+    showNowTitle(state.currentPiece);
+    origPump();
+    clearInterval(orig.timer);
+    orig.timer = setInterval(origPump, 40);
+  }
+
+  function startSeq() {
+    if (orig.on) return;
+    startOriginalMusic();
+  }
+  function stopSeq() {
+    stopOriginalMusic();
+    if (tta.on) stopTTA();
+    player.on = false;
+    clearInterval(player.timer);
+    player.timer = 0;
+    if (player.bus) {
+      var bus2 = player.bus;
+      player.bus = null;
+      var cc2 = Audio.ctx();
+      try {
+        if (cc2) {
+          bus2.gain.cancelScheduledValues(cc2.currentTime);
+          bus2.gain.setValueAtTime(bus2.gain.value, cc2.currentTime);
+          bus2.gain.linearRampToValueAtTime(0, cc2.currentTime + 0.05);
+        }
+      } catch (e) { try { bus2.gain.value = 0; } catch (e2) {} }
+      setTimeout(function () { try { bus2.disconnect(); } catch (e) {} }, 120);
     }
     if (Audio.dampReverb) Audio.dampReverb(0.32);
     state.seqOn = false;
@@ -2063,32 +2127,10 @@
     if (autoBtn) { autoBtn.textContent = '✨ 天籁'; autoBtn.classList.remove('on'); }
     hideNowTitle();
   }
-
-  /* 🎛 设置 → 创作 → 换一首：生成逻辑入口 */
   function restartSeq() {
-    var sid = pickStyleId();
-    var req = buildMusicPrompt(sid);
-    if (typeof window !== 'undefined') window.__lastMusicPrompt = req;
-
-    function fallbackLocal() {
-      state.currentPiece = composePiece({ styleId: sid });
-      playPiece(state.currentPiece);
-      saveLibraryPiece(state.currentPiece);
-      toast('🎲 新曲：<b>' + esc(state.currentPiece.name) + '</b><br>' + styleById(sid).icon + ' ' + styleById(sid).name, 4500);
-    }
-
-    if (TTA_CONFIG.getEndpoint()) {
-      toast('🎼 正在请求 text-to-audio 生成…', 2500);
-      fetchTTA(req).then(function (buf) {
-        playTTAudio(buf, req);
-      }).catch(function (err) {
-        console.warn('[tta]', err);
-        toast('TTA 服务不可用，改用本地合成', 2600);
-        fallbackLocal();
-      });
-    } else {
-      fallbackLocal();
-    }
+    stopOriginalMusic();
+    startOriginalMusic();
+    toast('🎲 换一种律动', 2200);
   }
 
   /* ---------- 浮动曲名（可拖动） ---------- */
