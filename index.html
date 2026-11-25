@@ -1300,7 +1300,7 @@
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
   var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, elegant layered arrangement, 3-5 instruments in clear harmonic layers: lead melody, harmonic pad, rhythmic or colour accents, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, wide stereo, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture, 60-90 seconds duration`;
 
-  var INTRO_DIRECTIVE = `with a 15-20 seconds atmospheric intro: sustained low pad and sparse single-note accents only, main melody enters gradually after the intro, instruments add layer by layer, gradual fade-out ending`;
+  var INTRO_DIRECTIVE = `starting immediately at full energy, no intro: main melody and harmonic layers present from the first bar, immediate climactic material, instruments add subtle layers as it evolves, gradual fade-out ending`;
 
   var promptAurora = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, impressionist chamber music, Debussy and Ravel aesthetic, BPM 72, layers: flute lead, french horn sustained pad, marimba soft accents, subtle glockenspiel sparkle, slow legato melodic lines, extended tertian harmony, gentle harmonic colour shifts, long sustained resonant notes, vast quiet hall reverb, restrained, ethereal, subtle harmonic suspension, no fast ornamentation`;
 
@@ -1312,7 +1312,7 @@
 
   var promptTide = `${SYSTEM_PREFIX}, ${INTRO_DIRECTIVE}, phasing minimalist music, Steve Reich phasing technique, Keiko Abe marimba writing, BPM 104, layers: marimba main pattern, quiet vibraphone phasing layer, soft hand percussion pulse, occasional glockenspiel colour, gradual slow phasing shift, consonant cyclic harmony, clean precise articulation, light natural reverb, hypnotic slow evolution, no abrupt rhythmic jumps`;
 
-  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic overcrowded layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music, abrupt start without intro, short clip, looped repetition`;
+  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic overcrowded layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music, slow intro, empty opening, long silent intro, short clip, looped repetition`;
 
   var TTA_SYSTEM_PREFIX = SYSTEM_PREFIX;
   var TTA_NEGATIVE_PROMPT = NEG_PROMPT;
@@ -1342,8 +1342,8 @@
       : def.prompt;
     var prompt = body
       + " (max three instruments: " + arr.join(', ') + "; solo sections may use one)."
-      + " Total duration " + duration + " seconds (60-90s), with a 15-20 seconds atmospheric intro (pad and sparse accents only, "
-      + "main melody enters gradually), layered build-up and a gradual fade-out ending. Clean instrument separation, "
+      + " Total duration " + duration + " seconds (60-90s), starting immediately at full energy with no intro: main melody and "
+      + "harmonic layers present from the first bar, layers evolve subtly, gradual fade-out ending. Clean instrument separation, "
       + "long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
     return {
       styleId: styleId,
@@ -1359,8 +1359,8 @@
       instrument_separation: true,
       seed: (Date.now() % 2147483647) >>> 0,
       duration: duration,
-      intro_seconds: [15, 20],
-      structure: 'atmospheric_intro_15_20s -> melody_enters -> layers_build -> fade_out',
+      intro_seconds: [0, 0],
+      structure: 'immediate_full_energy -> layers_evolve -> fade_out',
       crossfade_seconds: 2,
       layer_roles: ['lead_melody', 'harmonic_pad', 'colour_accents', 'low_drone', 'soft_percussion'],
       pitch_shift_cents: A4_SHIFT_CENTS,
@@ -1640,7 +1640,7 @@
 
     for (var ph = 0; ph < phases; ph++) {
       var base = ph * 16;
-      var isIntro = ph < Math.max(1, Math.ceil(15 / (4 * secPerBar)));
+      var isIntro = false;
       var isOutro = ph >= phases - 1;
       var layer = isIntro ? 0 : (ph < phases - 2 ? 1 : 2);
       var env = isIntro ? 0.5 : (isOutro ? 0.35 : 1);
@@ -1650,7 +1650,14 @@
         var di = deg + off * 2;
         chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
-      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: (isIntro ? 0.5 : 0.56) * env });
+      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: 0.56 * env });
+      var nd2 = prog[(ph + 1) % prog.length];
+      var nch2 = [];
+      for (var no2 = 0; no2 < 3; no2++) {
+        var ndi2 = nd2 + no2 * 2;
+        nch2.push(root + scale[ndi2 % sl] + 12 * Math.floor(ndi2 / sl));
+      }
+      chords.push({ t: base + 8, midis: [nch2[0] + 12, nch2[1] + 12, nch2[2] + 12, nch2[0] + 24], vel: 0.46 * env });
 
       var bassMidi = root - 12 + scale[deg % sl];
       if (isIntro) {
@@ -1671,6 +1678,7 @@
           var cv = contour[pi % contour.length];
           var idxc = Math.max(0, Math.min(2, cv));
           var midi = chord[idxc] + 24 + (cv >= 2 ? 12 : 0);
+          if (rnd() < 0.25) midi += (rnd() < 0.5 ? 12 : -12);
           if (ph === phases - 2 && pi === pat.length - 1) midi = chord[0] + 24 - 12;
           melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: (0.42 + layer * 0.08 + (pi % 2 === 0 ? 0.1 : 0)) * env });
         }
@@ -1732,8 +1740,8 @@
     var totalBars = Math.max(12, Math.min(40, Math.round(targetSec / secPerBar)));
     totalBars += totalBars % 2;
     var sections = totalBars / 2;
-    var introEnd = Math.max(8, Math.round(((10 + rnd() * 4) * bpm / 60) / 8) * 8);
-    var introTex = Math.floor(rnd() * 4);          // 0 铺底 1 零星色彩 2 低音分解 3 轻脉冲
+    var introEnd = 0;                              // 不要前奏，直接进入
+    var introTex = 0;
     var midStart = introEnd + 16;
     var outroStart = Math.max(midStart + 8, (sections - 2) * 8);
     bars = totalBars;
@@ -1753,7 +1761,7 @@
       var base = ci * 8;
       var isIntro = base < introEnd;
       var isOutro = base >= outroStart;
-      var layer = isIntro ? 0 : (base < midStart ? 1 : 2);
+      var layer = isOutro ? 1 : 2;
       var env = isIntro ? 0.55 : (isOutro ? Math.max(0.22, 1 - (base - outroStart) / ((sections * 8) - outroStart)) : 1);
       var phrase = Math.floor(ci / 2);
       var variant = phrase % 4;
@@ -1769,11 +1777,22 @@
       var sus4 = scale[(((deg + 3) % sl) + sl) % sl];
       var ninth = scale[(((deg + 1) % sl) + sl) % sl];
       var padTop = school.wide ? 24 : 12;
-      if (!(isIntro && introTex === 1) && !(variant === 3 && phrase > 1 && rnd() < 0.35)) {
+      if (!(variant === 3 && phrase > 1 && rnd() < 0.35)) {
         chords.push({
           t: base,
           midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop],
-          vel: (isIntro ? 0.72 : 0.58) * env * (0.85 + 0.15 * inten)
+          vel: 0.6 * env * (0.85 + 0.15 * inten)
+        });
+        var nd = harmony[(ci + 1) % sections];
+        var nchord = [];
+        for (var noff = 0; noff < 3; noff++) {
+          var ndi = nd + noff * 2;
+          nchord.push(root + scale[ndi % sl] + 12 * Math.floor(ndi / sl));
+        }
+        chords.push({
+          t: base + 4,
+          midis: [nchord[0] + 12, nchord[2] + 12, root + scale[(((nd + 3) % sl) + sl) % sl] + 12, root + scale[(((nd + 1) % sl) + sl) % sl] + padTop],
+          vel: 0.5 * env * (0.85 + 0.15 * inten)
         });
       }
 
@@ -1832,6 +1851,7 @@
             if (variant === 1) cv = -cv;
             var idxc = cv < 0 ? 0 : Math.max(0, Math.min(2, cv));
             var midi = chord[idxc] + style.octave + octShift + (cv >= 2 ? 12 : 0);
+            if (rnd() < 0.28) midi += (rnd() < 0.5 ? 12 : -12);
             var isLast = pi === rhy.length - 1;
             if (isLast && ci === Math.floor(introEnd / 8) + 1) midi = root + scale[(((deg + 1) % sl) + sl) % sl] + style.octave;
             if (isLast && ci === sections - 1) midi = chord[0] + style.octave - 12;
@@ -3626,7 +3646,7 @@
         state.waveAmp = Math.min(1.5, state.waveAmp + 1.15 * ev.amt + 0.35);
       } else if (ev.kind === 'chord') {
         var nowCh = performance.now();
-        if (nowCh - (state.lastVisFreq || 0) >= 240) {
+        if (nowCh - (state.lastVisFreq || 0) >= 140) {
           state.lastVisFreq = nowCh;
           setFreq(midiToFreq(ev.midi));
         }
@@ -3635,7 +3655,7 @@
         state.waveAmp = Math.min(1.5, state.waveAmp + 0.45);
       } else if (ev.kind === 'note') {
         var nowVis = performance.now();
-        var gap = state.seqOn ? (state.mood === '空灵' ? 300 : (state.mood === '震撼' ? 230 : (state.mood === '律动' ? 270 : 300))) : 0;
+        var gap = state.seqOn ? (state.mood === '空灵' ? 160 : (state.mood === '震撼' ? 120 : (state.mood === '律动' ? 140 : 150))) : 0;
         if (nowVis - (state.lastVisFreq || 0) >= gap) {
           state.lastVisFreq = nowVis;
           setFreq(midiToFreq(ev.midi));
