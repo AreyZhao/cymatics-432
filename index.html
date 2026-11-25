@@ -425,7 +425,7 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：点一下随机播放一首精选曲（5 种风格 × 7 首 = 35 首），切换/停止会立刻静音上一首；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
+      <li>✨ <b>天籁</b>：点一下随机播放一首精选曲（5 种风格 × 7 首 = 35 首），作曲参考莫扎特的问答乐句、巴赫的对位与巴托克的固定音型；切换/停止会立刻静音上一首；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
       <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 双簧管 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 合成器（双簧管带一点丝绒鼻音，安静、深情）。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
@@ -1275,11 +1275,11 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 74, scale: 'penta', drums: 'pulse', wet: 0.6, octave: 24, bright: true },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 80, scale: 'dorian', drums: 'pulse', wet: 0.62, octave: 24, bright: true },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 92, scale: 'penta', drums: 'soft', wet: 0.46, octave: 24, bright: true },
-    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false },
-    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 96, scale: 'major', drums: 'groove', wet: 0.38, octave: 24, bright: true, evolving: true }
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 74, scale: 'penta', drums: 'pulse', wet: 0.6, octave: 24, bright: true, school: 'bach' },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 80, scale: 'dorian', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'bach' },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 92, scale: 'major', drums: 'soft', wet: 0.46, octave: 24, bright: true, school: 'mozart' },
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false, school: 'bartok' },
+    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 96, scale: 'major', drums: 'groove', wet: 0.38, octave: 24, bright: true, evolving: true, school: 'bartok' }
   ];
   var TITLE_POOLS = {
     aurora: [['极光', '星河', '月蚀', '霜降', '萤火', '雾岛', '光隙', '风隙'], ['之梦', '低语', '漫游', '呼吸', '倒影', '余波']],
@@ -1300,6 +1300,32 @@
     '震撼': [[0, 1, 2, 3, 4, 5, 6, 7], [0, 0.5, 1, 2, 3, 4, 4.5, 5, 6], [0, 1, 2, 2.5, 3, 4, 5, 6, 7]],
     '律动': [[0, 1.5, 2.5, 3.5], [0, 0.75, 1.5, 2.5, 3.5], [0, 1, 2, 2.5, 3, 3.5]]
   };
+
+  var SCHOOLS = {
+    mozart: {
+      prog: [[0, 3, 4, 0], [0, 4, 5, 0], [0, 5, 3, 4]],
+      pats: [[0, 1, 2, 3, 4, 5, 6], [0, 2, 3, 4, 6], [0, 1, 2, 4, 5, 6]],
+      alberti: true, counter: false, ostinato: false, grace: true
+    },
+    bach: {
+      prog: [[0, 3, 4, 0], [0, 3, 5, 4], [0, 4, 3, 0]],
+      pats: [[0, 1.5, 2, 3.5, 4, 5, 6], [0, 2, 3, 4, 5, 6]],
+      alberti: false, counter: true, ostinato: false, grace: true
+    },
+    bartok: {
+      prog: [[0, 3, 4, 0], [0, 2, 3, 0]],
+      pats: [[0, 1.5, 2.5, 3, 4.5, 5.5, 6.5], [0, 1, 2.5, 4, 5, 5.5]],
+      alberti: false, counter: false, ostinato: true, grace: false
+    }
+  };
+
+  var MEL_PATTERNS = {
+    '空灵': [[0, 2.5, 4, 6], [0, 3, 4, 6], [0, 2, 4, 6.5], [0, 2.5, 4.5, 6]],
+    '优美': [[0, 1, 2, 4, 6], [0, 2, 4, 5, 6], [0, 1.5, 4, 6], [0, 3, 4, 6]],
+    '震撼': [[0, 1, 2, 3, 4, 5, 6, 7], [0, 1, 2, 4, 5, 6], [0, 2, 3, 4, 6, 7]],
+    '律动': [[0, 1.5, 2.5, 4, 6], [0, 2, 4, 5, 6]]
+  };
+  var CONTOURS = [[0, 1, 2, 1, 0, 1], [1, 2, 1, 0, 1, 2], [0, 1, 0, -1, 0, 1], [2, 1, 0, 1, 2, 1]];
 
   function styleById(id) {
     for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === id) return STYLES[i];
@@ -1328,49 +1354,53 @@
     var scale = SCALES[style.scale] || SCALES.major;
     var sl = scale.length;
     var melody = [], chords = [], drums = [], sparkles = [], bassline = [];
-    var progs = PROGS['律动'];
-    var prog = progs[Math.floor(rnd() * progs.length)];
+    var prog = PROGS['律动'][Math.floor(rnd() * PROGS['律动'].length)];
+    var contour = CONTOURS[Math.floor(rnd() * CONTOURS.length)];
+    var phasePats = [[0, 3, 6], [0, 1.5, 4, 6, 10], [0, 1.5, 2.5, 4, 6, 9, 12], [0, 1.5, 2.5, 4, 5.5, 6, 8, 9.5, 12, 14]];
+
     for (var ph = 0; ph < 4; ph++) {
       var base = ph * 16;
-      var deg = prog[ph];
+      var deg = prog[ph % prog.length];
       var chord = [];
-      for (var off = 0; off < 4; off++) {
+      for (var off = 0; off < 3; off++) {
         var di = deg + off * 2;
         chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
-      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[3] + 12], vel: 0.55 + ph * 0.1 });
+      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: 0.5 + ph * 0.1 });
+
       var bassMidi = root - 12 + scale[deg % sl];
       if (ph >= 1) {
-        bassline.push({ t: base, midi: bassMidi, vel: 0.6 });
-        if (ph >= 2) for (var b = 2; b < 16; b += 4) bassline.push({ t: base + b, midi: bassMidi, vel: 0.38 });
-      }
-      if (ph >= 2) {
-        for (var sp = 0; sp < 6; sp++) {
-          sparkles.push({ t: base + rnd() * 16, midi: chord[Math.floor(rnd() * chord.length)] + 24, vel: 0.09 + rnd() * 0.1 });
+        for (var bt = 0; bt < 16; bt++) {
+          bassline.push({ t: base + bt, midi: bassMidi + (bt % 4 === 2 ? 7 : 0), vel: bt % 2 ? 0.2 : 0.32 });
         }
       }
-      var noteCount = [3, 5, 7, 9][ph];
-      for (var ni = 0; ni < noteCount; ni++) {
-        var t = base + Math.floor(rnd() * 64) / 4;
-        var midi;
-        if (rnd() < 0.72) midi = chord[Math.floor(rnd() * chord.length)] + (ph >= 3 ? 12 : 0);
-        else midi = root + scale[Math.floor(rnd() * sl)] + 12;
-        melody.push({ t: t, midi: midi, vel: 0.45 + ph * 0.08 + rnd() * 0.12 });
+      if (ph >= 2) {
+        for (var sp = 0; sp < 2; sp++) sparkles.push({ t: base + 4 + sp * 6 + rnd() * 2, midi: chord[2] + 24, vel: 0.05 + rnd() * 0.04 });
       }
+
+      var pat = phasePats[ph];
+      for (var pi = 0; pi < pat.length; pi++) {
+        var cv = contour[pi % contour.length];
+        var idxc = Math.max(0, Math.min(2, cv));
+        var midi = chord[idxc] + 24 + (cv >= 2 ? 12 : 0);
+        if (ph === 3 && pi === pat.length - 1) midi = chord[0] + 24;
+        melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: 0.45 + ph * 0.06 + (pi % 2 === 0 ? 0.12 : 0) + rnd() * 0.08 });
+      }
+
       if (ph === 0) {
-        for (var h = 0; h < 16; h += 4) drums.push({ kind: 'hat', t: base + h, vel: 0.1 });
+        [0, 4, 8, 12].forEach(function (bt2) { drums.push({ kind: 'hat', t: base + bt2, vel: 0.08 }); });
       } else if (ph === 1) {
-        drums.push({ kind: 'kick', t: base, vel: 0.5 }, { kind: 'kick', t: base + 8, vel: 0.45 });
-        for (var h1 = 0; h1 < 16; h1 += 2) drums.push({ kind: 'hat', t: base + h1, vel: h1 % 4 ? 0.12 : 0.2 });
+        [0, 4, 8, 12].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: 0.45 }); });
+        for (var h1 = 0; h1 < 16; h1 += 2) drums.push({ kind: 'hat', t: base + h1, vel: 0.09 });
       } else if (ph === 2) {
-        [0, 3, 6, 10, 12].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: 0.7 }); });
-        for (var h2 = 0; h2 < 16; h2++) drums.push({ kind: 'hat', t: base + h2 + 0.5, vel: h2 % 2 ? 0.14 : 0.22 });
+        [0, 2, 4, 6, 8, 10, 12, 14].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: bt2 % 4 === 0 ? 0.55 : 0.38 }); });
+        for (var h2 = 0; h2 < 16; h2++) drums.push({ kind: 'hat', t: base + h2 + 0.5, vel: h2 % 2 ? 0.1 : 0.13 });
       } else {
-        [0, 2, 4, 6, 9, 11, 13, 15].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: 0.8 }); });
-        for (var h3 = 0; h3 < 16; h3++) drums.push({ kind: 'hat', t: base + h3 + (h3 % 2 ? 0 : 0.5), vel: h3 % 4 === 0 ? 0.26 : 0.16 });
+        [0, 2, 4, 6, 8, 10, 12, 14].forEach(function (bt2) { drums.push({ kind: 'kick', t: base + bt2, vel: bt2 % 4 === 0 ? 0.72 : 0.5 }); });
+        for (var h3 = 0; h3 < 16; h3++) drums.push({ kind: 'hat', t: base + h3 + (h3 % 2 ? 0 : 0.5), vel: h3 % 4 === 0 ? 0.14 : 0.1 });
       }
     }
-    return { bars: 16, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline };
+    return { bars: 16, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: [], counter: [] };
   }
 
   /* 作曲：8 小节 / 4 个和弦段落；三种气质（空灵 / 优美 / 震撼） */
@@ -1385,7 +1415,7 @@
     var inst = opts.instrument || state.instrument || 'musicbox';
     var scale = SCALES[style.scale] || SCALES.penta;
     var sl = scale.length;
-    var bars = 8, melody = [], chords = [], drums = [], sparkles = [], bassline = [];
+    var bars = 8, melody = [], chords = [], drums = [], sparkles = [], bassline = [], arp = [], counter = [];
 
     if (style.evolving) {
       var ev = composeEvolving(style, rnd, root, inst);
@@ -1394,90 +1424,81 @@
         name: opts.name || autoName,
         styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: style.scale,
         instrument: inst, seed: seed, bars: ev.bars, created: opts.created || Date.now(),
-        wet: style.wet, melody: ev.melody, chords: ev.chords, drums: ev.drums, sparkles: ev.sparkles, bassline: ev.bassline
+        wet: style.wet, melody: ev.melody, chords: ev.chords, drums: ev.drums, sparkles: ev.sparkles, bassline: ev.bassline, arp: ev.arp, counter: ev.counter
       };
     }
-    var progs = PROGS[style.mood] || PROGS['优美'];
-    var prog = progs[Math.floor(rnd() * progs.length)];
-    var rhySet = RHYTHMS[style.mood] || RHYTHMS['优美'];
-    var rhy = rhySet[Math.floor(rnd() * rhySet.length)];
-    var prevMidi = null;
+    var school = SCHOOLS[style.school] || SCHOOLS.mozart;
+    var prog = school.prog[Math.floor(rnd() * school.prog.length)];
+    var pat = school.pats[Math.floor(rnd() * school.pats.length)];
+    var contour = CONTOURS[Math.floor(rnd() * CONTOURS.length)];
 
     for (var ci = 0; ci < 4; ci++) {
-      var base = ci * 8;                 /* 每段 2 小节 = 8 拍 */
-      var deg = prog[ci];
+      var base = ci * 8;
+      var deg = prog[ci % prog.length];
       var chord = [];
       for (var off = 0; off < 3; off++) {
         var di = deg + off * 2;
         chord.push(root + scale[di % sl] + 12 * Math.floor(di / sl));
       }
-      /* 和声铺底：宽音域、慢起音 */
-      var pad = [chord[0] + 12, chord[1] + 12, chord[2] + 12];
-      if (ci === 0 || style.mood === '震撼') pad.push(chord[0] + 24);
-      chords.push({ t: base, midis: pad, vel: style.mood === '震撼' ? 0.95 : 0.7 });
+      chords.push({ t: base, midis: [chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[0] + 24], vel: style.mood === '震撼' ? 0.85 : 0.58 });
 
-      /* 低音 */
+      /* 低音：巴赫级进 / 莫扎特根音五音 / 巴托克固定音型 */
       var bassMidi = root - 12 + scale[deg % sl];
-      if (style.mood === '震撼') {
-        for (var b = 0; b < 8; b++) bassline.push({ t: base + b, midi: bassMidi, vel: b % 2 === 0 ? 0.85 : 0.5 });
-      } else if (style.mood === '优美') {
-        bassline.push({ t: base, midi: bassMidi, vel: 0.62 });
-        bassline.push({ t: base + 4, midi: bassMidi, vel: 0.4 });
+      if (school.ostinato) {
+        for (var bo = 0; bo < 8; bo++) {
+          bassline.push({ t: base + bo, midi: bassMidi + (bo % 2 ? 7 : 0), vel: bo % 2 ? 0.26 : 0.4 });
+        }
+      } else if (style.school === 'bach') {
+        var stepDown = root - 12 + scale[(((deg - 1) % sl) + sl) % sl];
+        bassline.push({ t: base, midi: stepDown, vel: 0.58 });
+        bassline.push({ t: base + 4, midi: bassMidi, vel: 0.52 });
       } else {
-        bassline.push({ t: base, midi: bassMidi, vel: 0.6 });
+        bassline.push({ t: base, midi: bassMidi, vel: 0.58 });
+        bassline.push({ t: base + 4, midi: bassMidi + 7, vel: 0.38 });
       }
 
-      /* 空灵/优美加高频闪光层（钟琴） */
-      {
-        var sparkN = style.bright ? (style.mood === '空灵' ? 3 : 4) : 2;
-        for (var sp = 0; sp < sparkN; sp++) {
-          sparkles.push({
-            t: base + rhy[Math.floor(rnd() * rhy.length)] + rnd() * 0.4,
-            midi: chord[Math.floor(rnd() * chord.length)] + 24,
-            vel: 0.08 + rnd() * 0.1
-          });
+      /* 旋律：2 小节一句，问答式收尾 */
+      for (var pi = 0; pi < pat.length; pi++) {
+        var cv = contour[pi % contour.length];
+        var idxc = Math.max(0, Math.min(2, cv));
+        var midi = chord[idxc] + style.octave + (cv >= 2 ? 12 : 0);
+        var isLast = pi === pat.length - 1;
+        if (isLast && ci === 1) midi = chord[1] + style.octave;
+        if (isLast && ci === 3) midi = chord[0] + style.octave;
+        var vel = 0.55 + (pi % 2 === 0 ? 0.14 : 0.02) + rnd() * 0.08;
+        melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: vel });
+
+        if (school.grace && (isLast || pi === 0) && rnd() < 0.5) {
+          melody.push({ t: base + pat[pi] - 0.09, midi: midi + (scale[1] || 2), vel: vel * 0.45, grace: true });
+        }
+        if (school.counter && pi % 2 === 0) {
+          counter.push({ t: base + pat[pi] + 0.02, midi: chord[(idxc + 2) % 3] + style.octave - 12, vel: vel * 0.45 });
         }
       }
 
-      /* 旋律：和弦音为骨架，级进为主，句尾回落 */
-      for (var ri = 0; ri < rhy.length; ri++) {
-        if (rnd() < (style.mood === '空灵' ? 0.12 : 0)) continue;
-        var t = base + rhy[ri];
-        var pool = [];
-        for (var pc2 = 0; pc2 < chord.length; pc2++) {
-          pool.push(chord[pc2] + (style.octave - 12));
-          pool.push(chord[pc2] + style.octave);
+      /* 莫扎特式阿尔贝蒂伴奏 */
+      if (school.alberti) {
+        var alb = [chord[0], chord[1], chord[2], chord[1]];
+        for (var ab = 0; ab < 8; ab++) {
+          arp.push({ t: base + ab, midi: alb[ab % 4], vel: ab % 2 ? 0.1 : 0.15 });
         }
-        for (var sc2 = 0; sc2 < sl; sc2++) pool.push(root + scale[sc2] + style.octave);
-        var midi;
-        if (prevMidi == null) {
-          midi = pool[Math.floor(rnd() * pool.length)];
-        } else {
-          midi = prevMidi;
-          for (var tryN = 0; tryN < 6; tryN++) {
-            var cand2 = pool[Math.floor(rnd() * pool.length)];
-            var dd = Math.abs(cand2 - prevMidi);
-            if (dd >= 1 && dd <= 7) { midi = cand2; break; }
-          }
-          if (ri === rhy.length - 1 && rnd() < 0.5) midi = prevMidi - Math.abs(scale[1]);
-        }
-        if (style.mood === '空灵' && rnd() < 0.18) midi += 12;
-        prevMidi = midi;
-        melody.push({ t: t + (rnd() - 0.5) * 0.035, midi: midi, vel: 0.62 + rnd() * 0.28 });
       }
 
-      /* 节奏 */
+      if (style.bright) {
+        sparkles.push({ t: base + 2 + rnd() * 2, midi: chord[2] + 24, vel: 0.05 + rnd() * 0.04 });
+      }
+
+      /* 鼓：克制 */
       if (style.drums === 'epic') {
-        for (var e = 0; e < 8; e += 2) drums.push({ kind: 'kick', t: base + e, vel: e % 4 === 0 ? 0.95 : 0.6 });
-        for (var h = 0; h < 16; h++) drums.push({ kind: 'hat', t: base + h * 0.5, vel: h % 2 ? 0.22 : 0.15 });
+        [0, 2, 4, 6].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: bt % 4 === 0 ? 0.8 : 0.5 }); });
+        for (var h = 0; h < 8; h++) drums.push({ kind: 'hat', t: base + h, vel: h % 2 ? 0.1 : 0.16 });
       } else if (style.drums === 'soft') {
-        drums.push({ kind: 'kick', t: base, vel: 0.62 }, { kind: 'kick', t: base + 4, vel: 0.42 });
-        for (var h2 = 1; h2 < 8; h2 += 2) drums.push({ kind: 'hat', t: base + h2, vel: 0.14 });
+        drums.push({ kind: 'kick', t: base, vel: 0.55 }, { kind: 'kick', t: base + 4, vel: 0.38 });
+        drums.push({ kind: 'hat', t: base + 2, vel: 0.09 }, { kind: 'hat', t: base + 6, vel: 0.08 });
       } else if (style.drums === 'pulse') {
-        drums.push({ kind: 'kick', t: base, vel: 0.5 }, { kind: 'kick', t: base + 5, vel: 0.32 });
-        drums.push({ kind: 'hat', t: base + 2, vel: 0.14 }, { kind: 'hat', t: base + 6, vel: 0.12 });
-        drums.push({ kind: 'hat', t: base + 2.5, vel: 0.1 }, { kind: 'hat', t: base + 6.5, vel: 0.1 });
-      } else if (ci % 2 === 0) {
+        drums.push({ kind: 'kick', t: base, vel: 0.45 }, { kind: 'kick', t: base + 4, vel: 0.32 });
+        drums.push({ kind: 'hat', t: base + 2, vel: 0.09 }, { kind: 'hat', t: base + 6, vel: 0.08 });
+      } else {
         drums.push({ kind: 'kick', t: base, vel: 0.4 });
       }
     }
@@ -1486,7 +1507,7 @@
       name: opts.name || autoName,
       styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: style.scale,
       instrument: inst, seed: seed, bars: bars, created: opts.created || Date.now(),
-      wet: style.wet, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline
+      wet: style.wet, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: arp, counter: counter
     };
   }
 
@@ -1498,6 +1519,8 @@
     (p.sparkles || []).forEach(function (sp) { ev.push({ t: sp.t, kind: 'sparkle', midi: sp.midi, vel: sp.vel }); });
     (p.chords || []).forEach(function (ch) { ev.push({ t: ch.t, kind: 'pad', midis: ch.midis, vel: ch.vel }); });
     (p.bassline || []).forEach(function (b) { ev.push({ t: b.t, kind: 'bass', midi: b.midi, vel: b.vel }); });
+    (p.arp || []).forEach(function (a2) { ev.push({ t: a2.t, kind: 'arp', midi: a2.midi, vel: a2.vel }); });
+    (p.counter || []).forEach(function (c2) { ev.push({ t: c2.t, kind: 'counter', midi: c2.midi, vel: c2.vel }); });
     (p.drums || []).forEach(function (d) { ev.push({ t: d.t, kind: d.kind, vel: d.vel }); });
     ev.sort(function (a, b) { return a.t - b.t; });
     return ev;
@@ -1515,6 +1538,10 @@
       visQueue.push({ t: when, kind: 'chord', midi: ev.midis[0] });
     } else if (ev.kind === 'bass') {
       Audio.bass(when, ev.midi, ev.vel, bus);
+    } else if (ev.kind === 'arp') {
+      Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: 'ep', bus: bus });
+    } else if (ev.kind === 'counter') {
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: 'handpan', bus: bus });
     } else if (ev.kind === 'kick') {
       Audio.kick(when, ev.vel, bus);
       visQueue.push({ t: when, kind: 'beat', amt: ev.vel });
