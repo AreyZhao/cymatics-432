@@ -4313,6 +4313,25 @@
   function saveLibrary() {
     try { localStorage.setItem(LIB_KEY, JSON.stringify(library.slice(0, 60))); } catch (e) {}
   }
+  var TRASH_KEY = 'cz_trash_v1';
+  var trash = [];
+  function loadTrash() {
+    try { trash = JSON.parse(localStorage.getItem(TRASH_KEY) || '[]') || []; } catch (e) { trash = []; }
+    if (!Array.isArray(trash)) trash = [];
+  }
+  function saveTrash() {
+    try { localStorage.setItem(TRASH_KEY, JSON.stringify(trash.slice(0, 100))); } catch (e) {}
+  }
+  function trashPiece(it) {
+    var copy = {
+      id: it.id, name: it.name, styleId: it.styleId, bpm: it.bpm, root: it.root,
+      scaleName: it.scaleName, instrument: it.instrument, seed: it.seed, created: it.created,
+      bars: it.bars, preset: !!it.preset, engine: it.engine || '', deletedAt: Date.now()
+    };
+    trash.unshift(copy);
+    trash = trash.slice(0, 100);
+    saveTrash();
+  }
   function saveLibraryPiece(piece) {
     for (var i = 0; i < library.length; i++) if (library[i].id === piece.id) return;
     library.unshift({
@@ -4364,7 +4383,7 @@
     var box = $('libFilters');
     if (!box) return;
     box.innerHTML = '';
-    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }].concat(STYLES);
+    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }, { id: 'trash', name: '回收站', icon: '🗑️' }].concat(STYLES);
     all.forEach(function (st) {
       var b = document.createElement('button');
       b.className = 'lib-btn' + (libFilter === st.id ? ' primary' : '');
@@ -4378,6 +4397,66 @@
     var list = $('libList');
     if (!list) return;
     var q = (libQuery || '').trim().toLowerCase();
+    if (libFilter === 'trash') {
+      var tr = trash.filter(function (it) {
+        if (!q) return true;
+        return (it.name + ' ' + styleById(it.styleId).name).toLowerCase().indexOf(q) >= 0;
+      });
+      list.innerHTML = '';
+      if (trash.length) {
+        var clr = document.createElement('button');
+        clr.className = 'lib-btn danger';
+        clr.textContent = '清空回收站';
+        clr.style.marginBottom = '6px';
+        clr.addEventListener('click', function () {
+          trash = [];
+          saveTrash();
+          renderLibrary();
+          toast('回收站已清空', 2200);
+        });
+        list.appendChild(clr);
+      }
+      if (!tr.length) {
+        list.innerHTML = '<div class="lib-empty">回收站是空的</div>';
+        return;
+      }
+      tr.forEach(function (it) {
+        var st = styleById(it.styleId);
+        var row = document.createElement('div');
+        row.className = 'lib-item';
+        var t = document.createElement('div');
+        t.className = 't';
+        t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
+          '<div class="meta">' + st.icon + ' ' + st.name + ' · ' + fmtDate(it.deletedAt) + ' 删除</div>';
+        var restore = document.createElement('button');
+        restore.className = 'lib-btn primary';
+        restore.textContent = '↩';
+        restore.title = '恢复';
+        restore.addEventListener('click', function () {
+          library.unshift(it);
+          trash = trash.filter(function (x) { return x.id !== it.id; });
+          saveLibrary();
+          saveTrash();
+          renderLibrary();
+          toast('已恢复「' + esc(it.name) + '」', 2200);
+        });
+        var purge = document.createElement('button');
+        purge.className = 'lib-btn danger';
+        purge.textContent = '✕';
+        purge.title = '彻底删除';
+        purge.addEventListener('click', function () {
+          trash = trash.filter(function (x) { return x.id !== it.id; });
+          saveTrash();
+          renderLibrary();
+          toast('已彻底删除「' + esc(it.name) + '」', 2200);
+        });
+        row.appendChild(t);
+        row.appendChild(restore);
+        row.appendChild(purge);
+        list.appendChild(row);
+      });
+      return;
+    }
     var items = library.filter(function (it) {
       if (libFilter === 'preset') return !!it.preset;
       if (libFilter !== 'all' && it.styleId !== libFilter) return false;
@@ -4427,12 +4506,14 @@
       var del = document.createElement('button');
       del.className = 'lib-btn danger';
       del.textContent = '🗑';
+      del.title = '移入回收站';
       del.addEventListener('click', function () {
         library = library.filter(function (x) { return x.id !== it.id; });
         saveLibrary();
+        trashPiece(it);
         renderLibrary();
         if (state.currentPiece && state.currentPiece.id === it.id) { stopSeq(); state.currentPiece = null; }
-        toast('已删除「' + esc(it.name) + '」', 2200);
+        toast('已移入回收站「' + esc(it.name) + '」', 2400);
       });
       row.appendChild(t);
       row.appendChild(play);
@@ -4469,6 +4550,7 @@
   }
   function openLibrary() {
     loadLibrary();
+    loadTrash();
     renderLibrary();
     if ($('lib')) $('lib').classList.add('on');
   }
@@ -4504,13 +4586,15 @@
   });
   if ($('editDel')) $('editDel').addEventListener('click', function () {
     if (!editingId) return;
+    var target = library.filter(function (x) { return x.id === editingId; })[0];
     library = library.filter(function (x) { return x.id !== editingId; });
     saveLibrary();
+    if (target) trashPiece(target);
     renderLibrary();
     if ($('libEdit')) $('libEdit').classList.remove('on');
     if (state.currentPiece && state.currentPiece.id === editingId) { stopSeq(); state.currentPiece = null; }
     editingId = null;
-    toast('已删除', 2200);
+    toast('已移入回收站', 2200);
   });
 
   /* ============================================================
@@ -6104,6 +6188,7 @@
   cam.dist = cam.tDist;
   try {
     loadLibrary();
+    loadTrash();
     seedPresets();
     renderLibrary();
     var savedTheme = localStorage.getItem('cz_theme') || 'cyan';
