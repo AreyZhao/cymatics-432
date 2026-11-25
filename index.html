@@ -1693,47 +1693,77 @@
     return { bars: totalBars, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: [], counter: [] };
   }
 
-  /* 最初的即兴生成器（固定成曲）：120 BPM 五声音阶 + 逐段演化 */
+  var ORIG_STYLE_PARAMS = {
+    aurora: { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 120, density: 0.34, drums: 'lite', inst: 'musicbox', comp: 'marimba' },
+    deep:   { scale: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24], bpm: 108, density: 0.28, drums: 'sparse', inst: 'handpan', comp: 'bell' },
+    dawn:   { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 118, density: 0.4, drums: 'lite', inst: 'piano', comp: 'ep' },
+    pulse:  { scale: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24], bpm: 126, density: 0.36, drums: 'strong', inst: 'horn', comp: 'marimba' },
+    grow:   { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 132, density: 0.5, drums: 'groove', inst: 'marimba', comp: 'bell' }
+  };
+  function resolveStyleId() {
+    if (state.genStyle && state.genStyle !== 'auto') {
+      for (var i = 0; i < STYLES.length; i++) if (STYLES[i].id === state.genStyle) return state.genStyle;
+    }
+    return STYLES[Math.floor(Math.random() * STYLES.length)].id;
+  }
+
+  /* 最初的即兴生成器（固定成曲）：风格化五声/调式 + 逐段演化 */
   function composeOriginalPiece(opts) {
     opts = opts || {};
-    var bpm = opts.bpm || 120;
+    var sid = opts.styleId && ORIG_STYLE_PARAMS[opts.styleId] ? opts.styleId : 'aurora';
+    var sp = ORIG_STYLE_PARAMS[sid];
+    var bpm = opts.bpm || sp.bpm;
     var seed = (opts.seed == null ? 1234567 : opts.seed) >>> 0;
     var rnd = mulberry32(seed);
     var shifts = [-5, -3, 0, 2, 3, 5];
     var rootShift = shifts[Math.floor(rnd() * shifts.length)];
-    var PENTA2 = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
-    var cycles = 16;                         // 16 × 8 拍 = 128 拍 ≈ 64 秒 @120
-    var melody = [], chords = [], drums = [], sparkles = [], bassline = [];
+    var scaleArr = sp.scale;
+    var cycles = 16;
+    /* 编配随机：不是每首都带鼓和铺底；没有铺底时用旋律层替代 */
+    var arrange = rnd();
+    var hasDrums = arrange < 0.62;
+    var hasPad = arrange >= 0.18 && arrange < 0.86;
+    var compKind = rnd() < 0.5 ? 'arp' : (rnd() < 0.5 ? 'bell' : 'none');
+    var melody = [], chords = [], drums = [], sparkles = [], bassline = [], arp = [], counter = [];
     for (var cy = 0; cy < cycles; cy++) {
       var tr = rootShift + (cy % 4 === 2 ? 2 : 0);
-      var density = cy === cycles - 1 ? 0.2 : (0.32 + 0.18 * Math.min(1, cy / 8));
+      var density = cy === cycles - 1 ? sp.density * 0.5 : (sp.density + 0.12 * Math.min(1, cy / 8));
       for (var i = 0; i < 32; i++) {
         var t = (cy * 32 + i) * 0.25;
-        if (i === 0) drums.push({ kind: 'kick', t: t, vel: 0.95 });
-        if (i === 12) drums.push({ kind: 'kick', t: t, vel: 0.7 });
-        if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t + (rnd() - 0.5) * 0.012, vel: 0.4 });
-        if ((i === 3 || i === 11 || i === 19 || i === 27) && rnd() < 0.42) {
-          drums.push({ kind: 'hat', t: t + (rnd() - 0.5) * 0.02, vel: 0.16 });
+        if (hasDrums) {
+          var kickMain = sp.drums === 'strong' ? (i % 8 === 0 || i % 8 === 4) : (i === 0 || i === 12);
+          if (kickMain) drums.push({ kind: 'kick', t: t, vel: 0.95 });
+          if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t + (rnd() - 0.5) * 0.012, vel: sp.drums === 'sparse' ? 0.28 : 0.42 });
+          if (sp.drums !== 'sparse' && (i === 3 || i === 11 || i === 19 || i === 27) && rnd() < 0.42) {
+            drums.push({ kind: 'hat', t: t + (rnd() - 0.5) * 0.02, vel: 0.16 });
+          }
         }
         if (i % 16 === 0) bassline.push({ t: t, midi: 45 + tr, vel: 0.75 });
-        if (i % 32 === 0) chords.push({ t: t, midis: [48 + tr, 55 + tr, 60 + tr], vel: 0.8 });
+        if (hasPad && i % 32 === 0) chords.push({ t: t, midis: [48 + tr, 55 + tr, 60 + tr], vel: 0.8 });
+        if (!hasPad && compKind === 'arp' && i % 4 === 0) {
+          arp.push({ t: t, midi: 60 + scaleArr[Math.floor((i / 4) % scaleArr.length)] + tr, vel: 0.2 });
+        }
+        if (compKind === 'bell' && i % 8 === 4) {
+          sparkles.push({ t: t, midi: 72 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr, vel: 0.18 });
+        }
         if (i % 2 === 0 && rnd() < density) {
-          var midi = 60 + PENTA2[Math.floor(rnd() * PENTA2.length)] + tr;
+          var midi = 60 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
           if (rnd() < 0.18) midi += 12;
           melody.push({ t: t, midi: midi, vel: 0.62 + rnd() * 0.2 });
           if (rnd() < 0.1) sparkles.push({ t: t + 0.125, midi: midi + 12, vel: 0.16 });
         }
       }
     }
+    var inst = opts.instrument || sp.inst;
     return {
-      id: 'orig-' + seed.toString(36),
+      id: 'orig-' + sid + '-' + seed.toString(36),
       name: opts.name || '即兴',
-      styleId: opts.styleId || 'aurora', mood: '优美', bpm: bpm,
-      root: 48 + rootShift, scaleName: 'penta', instrument: opts.instrument || 'musicbox',
+      styleId: sid, mood: styleById(sid).mood || '优美', bpm: bpm,
+      root: 48 + rootShift, scaleName: styleById(sid).scale, instrument: inst,
       seed: seed, bars: cycles * 2, created: opts.created || Date.now(),
-      wet: 0.5, engine: 'original', mode: 'ensemble',
+      wet: 0.5, engine: 'original', mode: hasDrums ? 'ensemble' : 'duo',
       melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline,
-      arp: [], counter: [], arpInst: 'musicbox', counterInst: 'musicbox', sparkInst: 'bell'
+      arp: arp, counter: counter, arpInst: sp.comp, counterInst: sp.comp, sparkInst: 'bell'
     };
   }
 
@@ -2075,21 +2105,29 @@
 
   function origSchedule(i, t, bus) {
     var tr = orig.transpose;
-    if (i % 8 === 0) { Audio.kick(t, 1, bus); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
-    if (i === 6 || i === 22) { Audio.kick(t, 0.4, bus); visQueue.push({ t: t, kind: 'beat', amt: 0.4 }); }
-    if ((i === 3 || i === 11 || i === 19 || i === 27) && Math.random() < 0.4) Audio.hat(t, 0.16, bus);
+    var drums = orig.drums || 'lite';
+    if (orig.hasDrums !== false) {
+      if (i % 8 === 0 || (drums === 'strong' && i % 8 === 4)) { Audio.kick(t, 1, bus); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
+      if (i === 6 || i === 22) { Audio.kick(t, drums === 'sparse' ? 0.28 : 0.38, bus); visQueue.push({ t: t, kind: 'beat', amt: 0.38 }); }
+      if (drums !== 'sparse' && (i === 3 || i === 11 || i === 19 || i === 27) && Math.random() < 0.4) Audio.hat(t, 0.16, bus);
+    }
     if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
-    if (i % 2 === 0 && Math.random() < 0.42) {
-      var midi = PENTA[Math.floor(Math.random() * PENTA.length)] + tr;
+    if (!orig.hasPad && orig.compKind === 'arp' && i % 4 === 0) {
+      var csc = orig.scale || [0, 2, 4, 7, 9, 12];
+      Audio.note(60 + csc[Math.floor((i / 4) % csc.length)] + tr, { when: t, vel: 0.2, wet: 0.5, inst: orig.compInst || 'marimba', bus: bus });
+    }
+    if (i % 2 === 0 && Math.random() < (orig.density || 0.34)) {
+      var sc = orig.scale || [0, 2, 4, 7, 9, 12];
+      var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
       Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, bus: bus });
       visQueue.push({ t: t, kind: 'note', midi: midi });
     }
-    if (i % 32 === 0) Audio.pad(t, [48 + tr, 55 + tr, 60 + tr], 0.9, bus);
+    if (orig.hasPad !== false && i % 32 === 0) Audio.pad(t, [48 + tr, 55 + tr, 60 + tr], 0.9, bus);
   }
   function origPump() {
     var c = Audio.ctx();
     if (!c || !orig.on) return;
-    var stepDur = 60 / ORIG_BPM / 4;
+    var stepDur = 60 / (orig.bpm || ORIG_BPM) / 4;
     var guard = 0;
     while (orig.next < c.currentTime + 0.25 && guard++ < 40) {
       origSchedule(orig.step, orig.next, orig.bus);
@@ -2116,11 +2154,22 @@
     }
     if (Audio.dampReverb) Audio.dampReverb(0.3);
   }
-  function startOriginalMusic() {
+  function startOriginalMusic(styleId) {
     stopSeq();
     stopAllAudio('seq');
     Audio.ensure();
     var c = Audio.ctx();
+    var sid = (styleId && ORIG_STYLE_PARAMS[styleId]) ? styleId : 'aurora';
+    var sp = ORIG_STYLE_PARAMS[sid];
+    orig.styleId = sid;
+    orig.scale = sp.scale;
+    orig.density = sp.density;
+    orig.drums = sp.drums;
+    orig.bpm = sp.bpm;
+    orig.compInst = sp.comp;
+    orig.hasDrums = Math.random() < 0.62;
+    orig.hasPad = Math.random() < 0.7;
+    orig.compKind = Math.random() < 0.5 ? 'arp' : 'none';
     orig.bus = Audio.bus();
     orig.bus.gain.value = 1;
     orig.transpose = TRANSPOSES[Math.floor(Math.random() * TRANSPOSES.length)];
@@ -2128,10 +2177,10 @@
     orig.step = 0;
     orig.next = c.currentTime + 0.1;
     state.seqOn = true;
-    state.mood = '优美';
-    state.currentPiece = { name: '天籁 · 即兴', styleId: 'aurora', bpm: ORIG_BPM };
+    state.mood = styleById(sid).mood || '优美';
+    state.currentPiece = { name: '天籁 · 即兴', styleId: sid, bpm: sp.bpm };
     if (autoBtn) { autoBtn.textContent = '⏹ 停演'; autoBtn.classList.add('on'); }
-    if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = '120 BPM'; }
+    if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = sp.bpm + ' BPM'; }
     showNowTitle(state.currentPiece);
     origPump();
     clearInterval(orig.timer);
@@ -2140,7 +2189,7 @@
 
   function startSeq() {
     if (orig.on) return;
-    startOriginalMusic();
+    startOriginalMusic(resolveStyleId());
   }
   function stopSeq() {
     stopOriginalMusic();
@@ -2171,14 +2220,17 @@
   var NEW_TITLES = ['夜潮', '流沙', '星雾', '潮下', '风隙', '月蚀', '霜降', '回声', '涟漪', '砂时', '萤火', '雾岛', '深蓝', '光隙', '余波', '潮汐'];
   function restartSeq() {
     stopSeq();
+    var sid = resolveStyleId();
+    var sp = ORIG_STYLE_PARAMS[sid];
     var seed = ((Date.now() * 2654435761) >>> 0);
     var title = NEW_TITLES[Math.floor(Math.random() * NEW_TITLES.length)];
-    var bpm = 108 + Math.floor(Math.random() * 20);
-    var p = composeOriginalPiece({ seed: seed, bpm: bpm, name: title, instrument: state.instrument || 'musicbox' });
+    var inst = (state.instrument && state.instrument !== 'musicbox') ? state.instrument : sp.inst;
+    var p = composeOriginalPiece({ seed: seed, styleId: sid, bpm: sp.bpm, name: title, instrument: inst });
     state.currentPiece = p;
     playPiece(p);
     saveLibraryPiece(p);
-    toast('🎲 新曲已存入曲库：<b>' + esc(title) + '</b>（可导出 MIDI）', 3800);
+    var st = styleById(sid);
+    toast('🎲 ' + esc(title) + '（' + st.icon + ' ' + st.name + '，' + sp.bpm + ' BPM）已存入曲库', 3800);
   }
 
   /* ---------- 浮动曲名（可拖动） ---------- */
