@@ -1319,11 +1319,11 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 58, bpmRange: [56, 60], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.5, palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 54, bpmRange: [52, 56], scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false, school: 'part', soloChance: 0.5, palette: { lead: ['handpan', 'marimba'], comp: ['bell', 'ep'] } },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 72, bpmRange: [70, 74], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, palette: { lead: ['oboe', 'clarinet'], comp: ['clarinet', 'bell', 'ep'] } },
-    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 76, bpmRange: [74, 78], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
-    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 88, bpmRange: [86, 90], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 58, bpmRange: [56, 60], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.5, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 54, bpmRange: [52, 56], scale: 'dorian', drums: 'pulse', wet: 0.66, octave: 24, bright: false, school: 'part', soloChance: 0.5, altScales: ['minorPenta', 'major'], palette: { lead: ['handpan', 'marimba'], comp: ['bell', 'ep'] } },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 72, bpmRange: [70, 74], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, altScales: ['penta', 'dorian'], palette: { lead: ['oboe', 'clarinet'], comp: ['clarinet', 'bell', 'ep'] } },
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 76, bpmRange: [74, 78], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, altScales: ['minorPenta', 'dorian'], palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
+    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 88, bpmRange: [86, 90], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
   ];
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
   var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, elegant layered arrangement, 3-5 instruments in clear harmonic layers: lead melody, harmonic pad, rhythmic or colour accents, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, wide stereo, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture, 60-90 seconds duration`;
@@ -1732,7 +1732,9 @@
     var solo = rnd() < (style.soloChance || 0.3);
     var mode = solo ? 'solo' : (rnd() < 0.5 ? 'duo' : 'ensemble');
     var inst = lead;
-    var scale = SCALES[style.scale] || SCALES.penta;
+    var scalePool = [style.scale].concat(style.altScales || []);
+    var scaleName = scalePool[Math.floor(rnd() * scalePool.length)];
+    var scale = SCALES[scaleName] || SCALES.penta;
     var sl = scale.length;
     var bars = 8, melody = [], chords = [], drums = [], sparkles = [], bassline = [], arp = [], counter = [];
 
@@ -1764,13 +1766,27 @@
     var outroStart = Math.max(midStart + 8, (sections - 2) * 8);
     bars = totalBars;
 
+    /* 和声不再整曲循环同一进行：级进移动，每 8 小节回主音 */
+    var harmony = [];
+    var hdeg = 0;
+    for (var hi = 0; hi < sections; hi++) {
+      harmony.push(hdeg);
+      if (hi % 4 === 3) { hdeg = 0; continue; }
+      var moves = [-2, -1, 1, 2, 3];
+      hdeg = ((hdeg + moves[Math.floor(rnd() * moves.length)]) % sl + sl) % sl;
+    }
+    var INTENS = [0.62, 0.84, 1.0, 0.74];
+
     for (var ci = 0; ci < sections; ci++) {
       var base = ci * 8;
       var isIntro = base < introEnd;
       var isOutro = base >= outroStart;
       var layer = isIntro ? 0 : (base < midStart ? 1 : 2);
       var env = isIntro ? 0.55 : (isOutro ? Math.max(0.22, 1 - (base - outroStart) / ((sections * 8) - outroStart)) : 1);
-      var deg = prog[ci % prog.length];
+      var phrase = Math.floor(ci / 2);
+      var variant = phrase % 4;
+      var inten = INTENS[variant];
+      var deg = harmony[ci];
       var chord = [];
       for (var off = 0; off < 3; off++) {
         var di = deg + off * 2;
@@ -1781,11 +1797,13 @@
       var sus4 = scale[(((deg + 3) % sl) + sl) % sl];
       var ninth = scale[(((deg + 1) % sl) + sl) % sl];
       var padTop = school.wide ? 24 : 12;
-      chords.push({
-        t: base,
-        midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop],
-        vel: (isIntro ? 0.72 : 0.58) * env
-      });
+      if (!(variant === 3 && phrase > 1 && rnd() < 0.35)) {
+        chords.push({
+          t: base,
+          midis: [chord[0] + 12, chord[2] + 12, root + sus4 + 12, root + ninth + padTop],
+          vel: (isIntro ? 0.72 : 0.58) * env * (0.85 + 0.15 * inten)
+        });
+      }
 
       /* 层 2：低音持续音 */
       var bassMidi = root - 12 + scale[deg % sl];
@@ -1793,7 +1811,11 @@
         for (var bo = 0; bo < 8; bo += 2) bassline.push({ t: base + bo, midi: bassMidi + (bo % 4 ? 7 : 0), vel: (bo % 4 ? 0.22 : 0.34) * env });
       } else {
         bassline.push({ t: base, midi: bassMidi, vel: (isIntro ? 0.66 : 0.56) * env });
-        if (!isIntro) bassline.push({ t: base + 4, midi: bassMidi + 7, vel: 0.34 * env });
+        if (!isIntro) {
+          var bNext = variant === 2 ? bassMidi + 12 : (phrase % 2 === 0 ? bassMidi + 7 : bassMidi + 5);
+          bassline.push({ t: base + 4, midi: bNext, vel: 0.33 * env });
+          if (variant === 1) bassline.push({ t: base + 6, midi: bassMidi + 3, vel: 0.24 * env });
+        }
       }
 
       /* 层 3：色彩点缀（前奏只有零星单音） */
@@ -1810,20 +1832,27 @@
         melody.push({ t: base + 2, midi: chord[1] + style.octave, vel: 0.24 * env, intro: true });
       }
 
-      /* 层 4：主旋律（前奏之后才进入，收尾前淡出） */
+      /* 层 4：主旋律 —— 每 4 小节变奏：变奏 A / 倒影 / 移八度 / 留白 */
       if (!isIntro && !isOutro) {
-        for (var pi = 0; pi < pat.length; pi++) {
-          if (layer === 1 && pi > 3) continue;
-          var cv = contour[pi % contour.length];
-          var idxc = Math.max(0, Math.min(2, cv));
-          var midi = chord[idxc] + style.octave + (cv >= 2 ? 12 : 0);
-          var isLast = pi === pat.length - 1;
-          if (isLast && ci === Math.floor(introEnd / 8) + 1) midi = root + scale[(((deg + 1) % sl) + sl) % sl] + style.octave;
-          if (isLast && ci === sections - 1) midi = chord[0] + style.octave - 12;
-          var vel = (0.5 + (pi % 2 === 0 ? 0.14 : 0.02) + rnd() * 0.08) * env;
-          melody.push({ t: base + pat[pi] + (rnd() - 0.5) * 0.015, midi: midi, vel: vel });
-          if (school.grace && (isLast || pi === 0) && rnd() < 0.45) {
-            melody.push({ t: base + pat[pi] - 0.09, midi: midi + (scale[1] || 2), vel: vel * 0.4, grace: true });
+        var restSection = variant === 3 && rnd() < 0.45;
+        var rhy = variant === 1 ? pat.slice().reverse()
+          : (variant === 3 ? pat.filter(function (_, ix) { return ix % 2 === 0; }) : pat);
+        var octShift = variant === 2 ? 12 : (variant === 3 ? -12 : 0);
+        if (!restSection) {
+          for (var pi = 0; pi < rhy.length; pi++) {
+            if (layer === 1 && pi > 3) continue;
+            var cv = contour[pi % contour.length];
+            if (variant === 1) cv = -cv;
+            var idxc = cv < 0 ? 0 : Math.max(0, Math.min(2, cv));
+            var midi = chord[idxc] + style.octave + octShift + (cv >= 2 ? 12 : 0);
+            var isLast = pi === rhy.length - 1;
+            if (isLast && ci === Math.floor(introEnd / 8) + 1) midi = root + scale[(((deg + 1) % sl) + sl) % sl] + style.octave;
+            if (isLast && ci === sections - 1) midi = chord[0] + style.octave - 12;
+            var vel = (0.46 + (pi % 2 === 0 ? 0.16 : 0.02) + rnd() * 0.1) * env * inten;
+            melody.push({ t: base + rhy[pi] + (rnd() - 0.5) * 0.03, midi: midi, vel: vel });
+            if (school.grace && (isLast || pi === 0) && rnd() < 0.4) {
+              melody.push({ t: base + rhy[pi] - 0.09, midi: midi + (scale[1] || 2), vel: vel * 0.38, grace: true });
+            }
           }
         }
       }
@@ -1833,7 +1862,7 @@
       }
 
       /* 层 5：对位 / 相位 / 分解和弦（中段才加入） */
-      if (!isIntro && !isOutro && layer >= 1) {
+      if (!isIntro && !isOutro && layer >= 1 && (variant !== 3 || layer === 2)) {
         if (school.alberti) {
           var alb = [chord[0], chord[1], chord[2], chord[1]];
           for (var ab = 0; ab < 8; ab++) arp.push({ t: base + ab, midi: alb[ab % 4], vel: (ab % 2 ? 0.08 : 0.12) * env });
@@ -1841,7 +1870,7 @@
           var balb = [chord[0], chord[2], chord[1]];
           for (var ba = 0; ba < 8; ba += 2) arp.push({ t: base + ba, midi: balb[ba % 3] + 12, vel: 0.09 * env });
         }
-        if (school.counter) {
+        if (school.counter && (variant === 1 || variant === 2)) {
           for (var cpi = 0; cpi < pat.length; cpi += 2) {
             var ccv = contour[cpi % contour.length];
             var cidx = Math.max(0, Math.min(2, ccv));
@@ -1856,7 +1885,7 @@
       }
 
       /* 层 6：轻柔打击（仅全编制、中段后，前奏与收尾都没有） */
-      if (mode === 'ensemble' && layer >= 2 && !isIntro && !isOutro) {
+      if (mode === 'ensemble' && layer >= 2 && !isIntro && !isOutro && variant !== 3) {
         if (style.drums === 'epic') {
           [0, 4].forEach(function (bt) { drums.push({ kind: 'kick', t: base + bt, vel: 0.45 * env }); });
           drums.push({ kind: 'hat', t: base + 2, vel: 0.08 * env }, { kind: 'hat', t: base + 6, vel: 0.07 * env });
@@ -1883,7 +1912,7 @@
       id: 't' + seed.toString(36) + '-' + style.id,
       mode: mode, arpInst: mode === 'solo' ? inst : compInst, counterInst: compInst, sparkInst: sparkInst,
       name: opts.name || autoName,
-      styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: style.scale,
+      styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: scaleName,
       instrument: inst, seed: seed, bars: bars, created: opts.created || Date.now(),
       wet: style.wet, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: arp, counter: counter
     };
@@ -2121,7 +2150,7 @@
     renderLibrary();
   }
   function seedPresets() {
-    var flag = 'cz_presets_v6';
+    var flag = 'cz_presets_v7';
     try { if (localStorage.getItem(flag)) return; } catch (e) {}
     try {
       library = library.filter(function (it) { return !it.preset; });
