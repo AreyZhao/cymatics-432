@@ -2021,21 +2021,31 @@
     return ev;
   }
 
+  function visualFreqFor(mood, midi) {
+    var base = 4200;
+    if (mood === '震撼') base = 4700;
+    else if (mood === '律动') base = 4850;
+    else if (mood === '优美') base = 4350;
+    else if (mood === '空灵') base = 4100;
+    var f = base + (midi - 60) * 30;
+    return Math.max(3600, Math.min(5600, Math.round(f)));
+  }
+
   function scheduleEvent(ev, when, p, bus) {
     if (ev.kind === 'melody') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: p.instrument, bus: bus });
       if (p.mode !== 'solo') Audio.note(ev.midi + 12, { when: when + 0.16, vel: ev.vel * 0.13, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
-      visQueue.push({ t: when, kind: 'note', midi: ev.midi });
+      visQueue.push({ t: when, kind: 'note', midi: ev.midi, freq: visualFreqFor(p.mood, ev.midi) });
     } else if (ev.kind === 'sparkle') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
     } else if (ev.kind === 'pad') {
       Audio.pad(when, ev.midis, ev.vel, bus);
-      visQueue.push({ t: when, kind: 'chord', midi: ev.midis[0] });
+      visQueue.push({ t: when, kind: 'chord', midi: ev.midis[0], freq: visualFreqFor(p.mood, ev.midis[0]) });
     } else if (ev.kind === 'bass') {
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'arp') {
       Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: p.arpInst || 'ep', bus: bus });
-      visQueue.push({ t: when, kind: 'note', midi: ev.midi });
+      visQueue.push({ t: when, kind: 'note', midi: ev.midi, freq: visualFreqFor(p.mood, ev.midi) });
     } else if (ev.kind === 'counter') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: p.counterInst || 'handpan', bus: bus });
     } else if (ev.kind === 'kick') {
@@ -2120,7 +2130,7 @@
       var sc = orig.scale || [0, 2, 4, 7, 9, 12];
       var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
       Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, bus: bus });
-      visQueue.push({ t: t, kind: 'note', midi: midi });
+      visQueue.push({ t: t, kind: 'note', midi: midi, freq: visualFreqFor(orig.mood, midi) });
     }
     if (orig.hasPad !== false && i % 32 === 0) Audio.pad(t, [48 + tr, 55 + tr, 60 + tr], 0.9, bus);
   }
@@ -2162,6 +2172,7 @@
     var sid = (styleId && ORIG_STYLE_PARAMS[styleId]) ? styleId : 'aurora';
     var sp = ORIG_STYLE_PARAMS[sid];
     orig.styleId = sid;
+    orig.mood = styleById(sid).mood || '优美';
     orig.scale = sp.scale;
     orig.density = sp.density;
     orig.drums = sp.drums;
@@ -6017,7 +6028,7 @@
         var nowCh = performance.now();
         if (nowCh - (state.lastVisFreq || 0) >= 140) {
           state.lastVisFreq = nowCh;
-          setFreq(midiToFreq(ev.midi));
+          setFreq(ev.freq || midiToFreq(ev.midi));
         }
         state.beatEnv = Math.min(1.9, state.beatEnv + 0.5);
         state.wave = 0;
@@ -6027,7 +6038,7 @@
         var gap = state.seqOn ? (state.mood === '空灵' ? 160 : (state.mood === '震撼' ? 120 : (state.mood === '律动' ? 140 : 150))) : 0;
         if (nowVis - (state.lastVisFreq || 0) >= gap) {
           state.lastVisFreq = nowVis;
-          setFreq(midiToFreq(ev.midi));
+          setFreq(ev.freq || midiToFreq(ev.midi));
         }
         state.beatEnv = Math.min(1.9, state.beatEnv + (state.mood === '空灵' ? 0.34 : 0.45));
         state.wave = 0;
