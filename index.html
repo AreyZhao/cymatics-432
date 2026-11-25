@@ -425,9 +425,9 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：点一下随机播放一首精选曲（5 种风格 × 7 首 = 35 首）；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
+      <li>✨ <b>天籁</b>：点一下随机播放一首精选曲（5 种风格 × 7 首 = 35 首），切换/停止会立刻静音上一首；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
-      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器（拨弦、弦乐、管风琴已重新调音，更柔和）。</li>
+      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 合成器（弦乐、管风琴已移除，换成更耐听的电钢琴与手碟）。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
     </ul>
     <h3>🤖 AI 识别（本地）</h3>
@@ -884,7 +884,7 @@
    * ============================================================ */
   var Audio = (function () {
     var ctx = null, master = null, comp = null, verbSend = null;
-    var noiseBuf = null, playerBus = null;
+    var noiseBuf = null, playerBus = null, verbWet = null;
 
     function makeIR(dur, decay) {
       var rate = ctx.sampleRate;
@@ -927,6 +927,7 @@
         conv.buffer = makeIR(2.6, 2.6);
         var wet = ctx.createGain();
         wet.gain.value = 0.5;
+        verbWet = wet;
         verbSend = ctx.createGain();
         verbSend.gain.value = 0.9;
         verbSend.connect(conv);
@@ -939,17 +940,38 @@
       return ctx;
     }
 
-    function outBus(wet) {
+    function outBus(wet, dest) {
       var g = ctx.createGain();
       g.gain.value = 1;
-      g.connect(master);
-      if (wet > 0) {
+      g.connect(dest || master);
+      if (wet > 0 && !dest) {
         var s = ctx.createGain();
         s.gain.value = wet;
         g.connect(s);
         s.connect(verbSend);
       }
       return g;
+    }
+    function seqBus() {
+      ensure();
+      var g = ctx.createGain();
+      g.gain.value = 1;
+      g.connect(master);
+      var s = ctx.createGain();
+      s.gain.value = 0.7;
+      g.connect(s);
+      s.connect(verbSend);
+      return g;
+    }
+    function dampReverb(sec) {
+      if (!verbWet) return;
+      var t = ctx.currentTime;
+      try {
+        verbWet.gain.cancelScheduledValues(t);
+        verbWet.gain.setValueAtTime(verbWet.gain.value, t);
+        verbWet.gain.linearRampToValueAtTime(0, t + 0.04);
+        verbWet.gain.linearRampToValueAtTime(0.5, t + 0.04 + (sec || 0.3));
+      } catch (e) {}
     }
 
     function note(midi, opts) {
@@ -959,8 +981,8 @@
       var f = midiToFreq(midi);
       var vel = opts.vel == null ? 1 : opts.vel;
       var inst = opts.inst || state.instrument;
-      var wet = inst === 'flute' ? 0.55 : (inst === 'strings' ? 0.5 : (inst === 'bell' ? 0.45 : 0.34));
-      var out = outBus(wet);
+      var wet = inst === 'flute' ? 0.55 : (inst === 'ep' ? 0.45 : (inst === 'handpan' ? 0.5 : (inst === 'bell' ? 0.45 : 0.34)));
+      var out = outBus(wet, opts.bus);
       var o, g, o2, g2, lp, lfo, lfoG;
 
       if (inst === 'musicbox') {
@@ -1017,21 +1039,19 @@
         g.gain.exponentialRampToValueAtTime(0.0005, t + 1.0);
         o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
         o.start(t); o2.start(t); o.stop(t + 1.1); o2.stop(t + 1.1);
-      } else if (inst === 'strings') {
-        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
-        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.004, t); o2.detune.value = 4;
-        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5;
-        lp.frequency.setValueAtTime(Math.min(2200, f * 4), t);
-        lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 4.6;
-        lfoG = c.createGain(); lfoG.gain.value = f * 0.004;
-        lfo.connect(lfoG); lfoG.connect(o.frequency); lfoG.connect(o2.frequency);
+      } else if (inst === 'ep') {
+        o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2, t);
+        var modG = c.createGain();
+        modG.gain.setValueAtTime(f * 1.4, t);
+        modG.gain.exponentialRampToValueAtTime(Math.max(1, f * 0.12), t + 0.55);
+        o2.connect(modG); modG.connect(o.frequency);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.1 * vel, t + 0.22);
-        g.gain.setValueAtTime(0.1 * vel, t + 1.0);
-        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.4);
-        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
-        o.start(t); o2.start(t); o.stop(t + 2.5); o2.stop(t + 2.5); lfo.start(t); lfo.stop(t + 2.5);
+        g.gain.linearRampToValueAtTime(0.2 * vel, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0004, t + 1.7);
+        o.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 1.8); o2.stop(t + 1.8);
       } else if (inst === 'bell') {
         var parts = [[1, 0.16 * vel, 2.4], [2.76, 0.08 * vel, 1.6], [5.4, 0.045 * vel, 0.9]];
         for (var bi = 0; bi < parts.length; bi++) {
@@ -1044,20 +1064,17 @@
           po.connect(pg); pg.connect(out);
           po.start(t); po.stop(t + parts[bi][2] + 0.1);
         }
-      } else if (inst === 'organ') {
-        var hgt = [0.1, 0.055, 0.03, 0.017];
-        var olp = c.createBiquadFilter(); olp.type = 'lowpass'; olp.frequency.value = 3800; olp.Q.value = 0.4;
-        olp.connect(out);
-        for (var hi = 0; hi < hgt.length; hi++) {
-          var ho = c.createOscillator(); ho.type = 'sine';
-          ho.frequency.setValueAtTime(f * (hi + 1), t);
-          var hg = c.createGain();
-          hg.gain.setValueAtTime(0.0001, t);
-          hg.gain.linearRampToValueAtTime(hgt[hi] * vel, t + 0.07);
-          hg.gain.setValueAtTime(hgt[hi] * vel, t + 0.7);
-          hg.gain.exponentialRampToValueAtTime(0.0002, t + 1.4);
-          ho.connect(hg); hg.connect(olp);
-          ho.start(t); ho.stop(t + 1.5);
+      } else if (inst === 'handpan') {
+        var hparts = [[1, 0.18 * vel, 2.4], [2, 0.06 * vel, 1.5], [3, 0.025 * vel, 0.9], [4.1, 0.012 * vel, 0.5]];
+        for (var hpi = 0; hpi < hparts.length; hpi++) {
+          var hpo = c.createOscillator(); hpo.type = 'sine';
+          hpo.frequency.setValueAtTime(f * hparts[hpi][0], t);
+          var hpg = c.createGain();
+          hpg.gain.setValueAtTime(0.0001, t);
+          hpg.gain.linearRampToValueAtTime(hparts[hpi][1], t + 0.008);
+          hpg.gain.exponentialRampToValueAtTime(0.0002, t + hparts[hpi][2]);
+          hpo.connect(hpg); hpg.connect(out);
+          hpo.start(t); hpo.stop(t + hparts[hpi][2] + 0.1);
         }
       } else {
         o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
@@ -1074,7 +1091,7 @@
       }
     }
 
-    function kick(when, vel) {
+    function kick(when, vel, bus) {
       var c = ensure();
       var t = Math.max(c.currentTime + 0.006, when || 0);
       var o = c.createOscillator(); o.type = 'sine';
@@ -1084,7 +1101,7 @@
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(0.5 * (vel || 1), t + 0.006);
       g.gain.exponentialRampToValueAtTime(0.0004, t + 0.4);
-      o.connect(g); g.connect(master);
+      o.connect(g); g.connect(bus || master);
       o.start(t); o.stop(t + 0.42);
 
       var n = c.createBufferSource(); n.buffer = noiseBuf;
@@ -1092,11 +1109,11 @@
       var ng = c.createGain();
       ng.gain.setValueAtTime(0.09 * (vel || 1), t);
       ng.gain.exponentialRampToValueAtTime(0.0002, t + 0.05);
-      n.connect(bp); bp.connect(ng); ng.connect(master);
+      n.connect(bp); bp.connect(ng); ng.connect(bus || master);
       n.start(t); n.stop(t + 0.06);
     }
 
-    function hat(when, vel) {
+    function hat(when, vel, bus) {
       var c = ensure();
       var t = Math.max(c.currentTime + 0.006, when || 0);
       var n = c.createBufferSource(); n.buffer = noiseBuf;
@@ -1104,11 +1121,11 @@
       var g = c.createGain();
       g.gain.setValueAtTime(0.055 * (vel || 1), t);
       g.gain.exponentialRampToValueAtTime(0.0002, t + 0.055);
-      n.connect(hp); hp.connect(g); g.connect(master);
+      n.connect(hp); hp.connect(g); g.connect(bus || master);
       n.start(t); n.stop(t + 0.07);
     }
 
-    function bass(when, midi, vel) {
+    function bass(when, midi, vel, bus) {
       var c = ensure();
       var t = Math.max(c.currentTime + 0.006, when || 0);
       var f = midiToFreq(midi) / 2;
@@ -1117,14 +1134,14 @@
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(0.2 * (vel || 1), t + 0.03);
       g.gain.exponentialRampToValueAtTime(0.0003, t + 1.1);
-      o.connect(g); g.connect(master);
+      o.connect(g); g.connect(bus || master);
       o.start(t); o.stop(t + 1.2);
     }
 
-    function pad(when, midis, vel) {
+    function pad(when, midis, vel, bus) {
       var c = ensure();
       var t = Math.max(c.currentTime + 0.006, when || 0);
-      var out = outBus(0.75);
+      var out = outBus(0.75, bus);
       var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1900;
       lp.connect(out);
       for (var i = 0; i < midis.length; i++) {
@@ -1156,6 +1173,8 @@
       ctx: function () { return ctx; },
       now: function () { return ctx ? ctx.currentTime : 0; },
       player: player,
+      bus: seqBus,
+      dampReverb: dampReverb,
       master: function () { ensure(); return master; },
       note: note, kick: kick, hat: hat, bass: bass, pad: pad
     };
@@ -1195,12 +1214,12 @@
     { name: '露白', styleId: 'dawn', seed: 56502658, bpm: 92, root: 43, instrument: 'bell' },
     { name: '早潮', styleId: 'dawn', seed: 2858864944, bpm: 92, root: 47, instrument: 'piano' },
     { name: '脉冲星河', styleId: 'pulse', seed: 774553834, bpm: 112, root: 44, instrument: 'synth' },
-    { name: '光之洪流', styleId: 'pulse', seed: 1457683801, bpm: 112, root: 43, instrument: 'strings' },
+    { name: '光之洪流', styleId: 'pulse', seed: 1457683801, bpm: 112, root: 43, instrument: 'synth' },
     { name: '雷纹', styleId: 'pulse', seed: 387276917, bpm: 112, root: 44, instrument: 'synth' },
     { name: '星火', styleId: 'pulse', seed: 3576916120, bpm: 112, root: 43, instrument: 'synth' },
-    { name: '光隙轨迹', styleId: 'pulse', seed: 3668339987, bpm: 112, root: 45, instrument: 'strings' },
+    { name: '光隙轨迹', styleId: 'pulse', seed: 3668339987, bpm: 112, root: 45, instrument: 'synth' },
     { name: '裂空', styleId: 'pulse', seed: 535203442, bpm: 112, root: 46, instrument: 'synth' },
-    { name: '潮爆', styleId: 'pulse', seed: 443779575, bpm: 112, root: 43, instrument: 'strings' },
+    { name: '潮爆', styleId: 'pulse', seed: 443779575, bpm: 112, root: 43, instrument: 'synth' },
     { name: '初潮', styleId: 'grow', seed: 535203442, bpm: 96, root: 46, instrument: 'piano' },
     { name: '渐强', styleId: 'grow', seed: 2802362286, bpm: 96, root: 47, instrument: 'bell' },
     { name: '星涌', styleId: 'grow', seed: 3816266512, bpm: 96, root: 47, instrument: 'piano' },
@@ -1428,44 +1447,55 @@
 
   var player = { on: false, timer: 0, loopStart: 0, dur: 0, piece: null };
 
-  function scheduleLoop(t0) {
+  function buildSeqEvents(p) {
+    var ev = [];
+    (p.melody || []).forEach(function (n) { ev.push({ t: n.t, kind: 'melody', midi: n.midi, vel: n.vel }); });
+    (p.sparkles || []).forEach(function (sp) { ev.push({ t: sp.t, kind: 'sparkle', midi: sp.midi, vel: sp.vel }); });
+    (p.chords || []).forEach(function (ch) { ev.push({ t: ch.t, kind: 'pad', midis: ch.midis, vel: ch.vel }); });
+    (p.bassline || []).forEach(function (b) { ev.push({ t: b.t, kind: 'bass', midi: b.midi, vel: b.vel }); });
+    (p.drums || []).forEach(function (d) { ev.push({ t: d.t, kind: d.kind, vel: d.vel }); });
+    ev.sort(function (a, b) { return a.t - b.t; });
+    return ev;
+  }
+
+  function scheduleEvent(ev, when, p, bus) {
+    if (ev.kind === 'melody') {
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: p.instrument, bus: bus });
+      visQueue.push({ t: when, kind: 'note', midi: ev.midi });
+    } else if (ev.kind === 'sparkle') {
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.85, inst: 'bell', bus: bus });
+    } else if (ev.kind === 'pad') {
+      Audio.pad(when, ev.midis, ev.vel, bus);
+      if (!p.drums || !p.drums.length) visQueue.push({ t: when, kind: 'beat', amt: 0.55 });
+    } else if (ev.kind === 'bass') {
+      Audio.bass(when, ev.midi, ev.vel, bus);
+    } else if (ev.kind === 'kick') {
+      Audio.kick(when, ev.vel, bus);
+      visQueue.push({ t: when, kind: 'beat', amt: ev.vel });
+    } else if (ev.kind === 'hat') {
+      Audio.hat(when, ev.vel, bus);
+    }
+  }
+
+  var SCHED_AHEAD = 0.9;
+  function pumpSeq() {
     var p = player.piece;
-    if (!p) return;
-    var spb = 60 / p.bpm;
+    if (!player.on || !p || !player.events) return;
     var now = Audio.now();
-    var wet = p.wet == null ? 0.45 : p.wet;
-    (p.melody || []).forEach(function (n) {
-      var when = t0 + n.t * spb;
-      if (when < now - 0.05) return;
-      Audio.note(n.midi, { when: when, vel: n.vel, wet: wet, inst: p.instrument });
-      visQueue.push({ t: when, kind: 'note', midi: n.midi });
-    });
-    (p.sparkles || []).forEach(function (s) {
-      var when = t0 + s.t * spb;
-      if (when < now - 0.05) return;
-      Audio.note(s.midi, { when: when, vel: s.vel, wet: 0.85, inst: 'bell' });
-    });
-    (p.chords || []).forEach(function (ch) {
-      var when = t0 + ch.t * spb;
-      if (when < now - 0.05) return;
-      Audio.pad(when, ch.midis, ch.vel);
-    });
-    (p.bassline || []).forEach(function (b) {
-      var when = t0 + b.t * spb;
-      if (when < now - 0.05) return;
-      Audio.bass(when, b.midi, b.vel);
-    });
-    (p.drums || []).forEach(function (d) {
-      var when = t0 + d.t * spb;
-      if (when < now - 0.05) return;
-      if (d.kind === 'kick') { Audio.kick(when, d.vel); visQueue.push({ t: when, kind: 'beat', amt: d.vel }); }
-      else Audio.hat(when, d.vel);
-    });
-    /* 空灵段落没有鼓时，用和弦切换给画面一点呼吸 */
-    if (!p.drums || !p.drums.length) {
-      (p.chords || []).forEach(function (ch) {
-        visQueue.push({ t: t0 + ch.t * spb, kind: 'beat', amt: 0.55 });
-      });
+    var spb = 60 / p.bpm;
+    var loopDur = p.bars * 4 * spb;
+    var guard = 0;
+    while (guard++ < 240) {
+      if (player.idx >= player.events.length) {
+        player.idx = 0;
+        player.loopStart += loopDur;
+      }
+      var ev = player.events[player.idx];
+      var when = player.loopStart + ev.t * spb;
+      if (when > now + SCHED_AHEAD) break;
+      player.idx++;
+      if (when < now - 0.12) continue;
+      scheduleEvent(ev, when, p, player.bus);
     }
   }
 
@@ -1479,18 +1509,13 @@
     autoBtn.textContent = '⏹ 停演';
     autoBtn.classList.add('on');
     var c = Audio.ctx();
-    player.dur = piece.bars * 4 * (60 / piece.bpm);
+    player.bus = Audio.bus();
+    player.events = buildSeqEvents(piece);
+    player.idx = 0;
     player.loopStart = c.currentTime + 0.12;
     player.on = true;
-    scheduleLoop(player.loopStart);
-    player.timer = setInterval(function () {
-      var cc = Audio.ctx();
-      if (!player.on || !cc) return;
-      if (cc.currentTime > player.loopStart + player.dur - 0.8) {
-        player.loopStart += player.dur;
-        scheduleLoop(player.loopStart);
-      }
-    }, 120);
+    pumpSeq();
+    player.timer = setInterval(pumpSeq, 100);
     showNowTitle(piece);
     if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = piece.bpm + ' BPM'; }
   }
@@ -1511,12 +1536,27 @@
     player.on = false;
     clearInterval(player.timer);
     player.timer = 0;
+    if (player.bus) {
+      var bus = player.bus;
+      player.bus = null;
+      var cc = Audio.ctx();
+      try {
+        if (cc) {
+          bus.gain.cancelScheduledValues(cc.currentTime);
+          bus.gain.setValueAtTime(bus.gain.value, cc.currentTime);
+          bus.gain.linearRampToValueAtTime(0, cc.currentTime + 0.05);
+        }
+      } catch (e) { try { bus.gain.value = 0; } catch (e2) {} }
+      setTimeout(function () { try { bus.disconnect(); } catch (e) {} }, 320);
+    }
+    if (Audio.dampReverb) Audio.dampReverb(0.32);
     state.seqOn = false;
     state.currentPiece = null;
     visQueue.length = 0;
     if (autoBtn) { autoBtn.textContent = '✨ 天籁'; autoBtn.classList.remove('on'); }
     hideNowTitle();
   }
+
   function restartSeq() {
     state.currentPiece = composePiece({ styleId: pickStyleId() });
     playPiece(state.currentPiece);
@@ -2445,10 +2485,10 @@
     { id: 'musicbox', name: '🎼 八音盒' },
     { id: 'piano', name: '🎹 电子琴' },
     { id: 'pluck', name: '🎸 拨弦' },
-    { id: 'strings', name: '🎻 弦乐' },
+    { id: 'ep', name: '🎛️ 电钢琴' },
     { id: 'flute', name: '🌬️ 长笛' },
     { id: 'bell', name: '🔔 钟琴' },
-    { id: 'organ', name: '⛪ 管风琴' },
+    { id: 'handpan', name: '🥁 手碟' },
     { id: 'synth', name: '🌌 合成器' }
   ];
   function markInstBtns(id) {
