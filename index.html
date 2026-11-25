@@ -1392,13 +1392,15 @@
   function buildMusicPrompt(styleId) {
     var st = styleById(styleId);
     var def = TTA_STYLE_PROMPTS[styleId] || TTA_STYLE_PROMPTS.aurora;
-    var arr = def.instruments.slice(0, 3);
+    var arr = sanitizeInstruments(def.instruments);
+    var duration = clampDuration(24);
     var bpm = clampBpm(st, Math.round((def.bpm[0] + def.bpm[1]) / 2));
     var prompt = "[" + st.name + "] " + def.prompt
       + " Instrumentation: " + arr.join(', ') + " (max three instruments, solo sections may use one)."
       + " Reference composers: " + def.composers + "."
       + " Tempo: " + bpm + " BPM (" + def.bpm[0] + "-" + def.bpm[1] + " range)."
-      + " Instrumental only, no vocals: long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals.";
+      + " Render as a seamless " + duration + "-second loop (16-30 seconds only, never longer), clean instrument separation, "
+      + "long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
     return {
       styleId: styleId,
       title: genTitleFromStyle(styleId),
@@ -1408,8 +1410,13 @@
       bpm: bpm,
       bpm_range: def.bpm,
       instruments: arr,
+      active_instruments: arr,
+      max_instruments: TTA_MAX_INSTRUMENTS,
+      instrument_separation: true,
       seed: (Date.now() % 2147483647) >>> 0,
-      duration: 30
+      duration: duration,
+      pitch_shift_cents: A4_SHIFT_CENTS,
+      tuning: 'A4=' + CYMATICS_A4_HZ + 'Hz'
     };
   }
   function genTitleFromStyle(styleId) {
@@ -1417,6 +1424,25 @@
     var pool = TITLE_POOLS[styleId];
     if (!pool) return '未命名';
     return pool[0][Math.floor(Math.random() * pool[0].length)] + '·' + pool[1][Math.floor(Math.random() * pool[1].length)];
+  }
+
+  var CYMATICS_A4_HZ = 432;
+  var A4_SHIFT_CENTS = 1200 * Math.log2(CYMATICS_A4_HZ / 440);  // ≈ -31.8 cents
+  var TTA_DURATION = { min: 16, max: 30, target: 24 };
+  var TTA_MAX_INSTRUMENTS = 3;
+  var TTA_ALLOWED_INSTRUMENTS = ['music box', 'electric keyboard', 'oboe', 'electric piano', 'flute', 'bells',
+    'handpan', 'french horn', 'marimba', 'clarinet', 'synth'];
+
+  function sanitizeInstruments(list) {
+    var out = [];
+    (list || []).forEach(function (name) {
+      var n = String(name).toLowerCase();
+      if (TTA_ALLOWED_INSTRUMENTS.indexOf(n) >= 0 && out.indexOf(n) < 0) out.push(n);
+    });
+    return out.slice(0, TTA_MAX_INSTRUMENTS);
+  }
+  function clampDuration(sec) {
+    return Math.max(TTA_DURATION.min, Math.min(TTA_DURATION.max, Math.round(sec || TTA_DURATION.target)));
   }
 
   var TTA_CONFIG = {
@@ -1452,7 +1478,12 @@
         bpm: req.bpm,
         bpm_range: req.bpm_range,
         duration: req.duration,
-        seed: req.seed
+        seed: req.seed,
+        active_instruments: req.active_instruments,
+        max_instruments: 3,
+        instrument_separation: true,
+        pitch_shift_cents: req.pitch_shift_cents,
+        tuning: req.tuning
       })
     }).then(function (res) {
       if (!res.ok) throw new Error('TTA HTTP ' + res.status);
@@ -1473,6 +1504,8 @@
     var src = c.createBufferSource();
     src.buffer = buffer;
     src.loop = true;
+    try { src.detune.value = A4_SHIFT_CENTS; }
+    catch (e) { try { src.playbackRate.value = CYMATICS_A4_HZ / 440; } catch (e2) {} }
     var an = newAnalyser(c);
     src.connect(an);
     var sink = c.createGain();
@@ -1490,7 +1523,38 @@
     if (autoBtn) { autoBtn.textContent = '⏹ 停演'; autoBtn.classList.add('on'); }
     showNowTitle(state.currentPiece);
     if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = req.bpm + ' BPM'; }
-    toast('🎼 TTA 生成完成：<b>' + req.title + '</b>', 4000);
+    toast('🎼 TTA 生成完成：<b>' + req.title + '</b><br>A4=432Hz 已后期移调', 4200);
+  }
+
+  function buildHumTTAPrompt(notes) {
+    var sid = (state.genStyle && state.genStyle !== 'auto') ? state.genStyle : pickStyleId();
+    var req = buildMusicPrompt(sid);
+    var contour = notes.slice(0, 16).map(function (n) { return n.midi; });
+    req.source = 'hum';
+    req.prompt += " This arrangement follows a hummed melody (MIDI pitches: " + contour.join('-') + "); "
+      + "keep its contour and rhythm, render it purely instrumentally with the listed instruments, no vocals.";
+    req.melody_midi = notes.map(function (n) {
+      return { t: Math.round(n.t * 1000) / 1000, midi: n.midi, dur: Math.round((n.dur || 0.3) * 1000) / 1000 };
+    });
+    return req;
+  }
+
+  function humTTAGenerate() {
+    if (!state.humNotes.length) { toast('还没有哼唱：先点「🎤 哼唱」哼几句', 4200); return; }
+    var req = buildHumTTAPrompt(state.humNotes);
+    if (TTA_CONFIG.getEndpoint()) {
+      toast('🎼 正在把哼唱交给 text-to-audio 编曲…', 2600);
+      fetchTTA(req).then(function (buf) {
+        playTTAudio(buf, req);
+      }).catch(function (err) {
+        console.warn('[hum-tta]', err);
+        toast('TTA 不可用，先用本地音色回放哼唱', 2600);
+        playHum();
+      });
+    } else {
+      toast('未配置 TTA 服务：先用本地音色回放哼唱', 3200);
+      playHum();
+    }
   }
 
   var TITLE_POOLS = {
@@ -3035,6 +3099,7 @@
       var rowh = document.createElement('div');
       rowh.className = 'sheet-sub';
       mkSub(rowh, '▶ 回放', '', function () { playHum(); });
+      mkSub(rowh, '🎼 TTA 编曲', '', function () { humTTAGenerate(); });
       mkSub(rowh, '💾 保存 MIDI', '', function () { saveHumMidi(); });
       mkSub(rowh, '🗑 清除', '', function () {
         state.humNotes = [];
