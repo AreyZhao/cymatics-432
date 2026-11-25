@@ -1126,7 +1126,7 @@
       var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 0.6;
       var g = c.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(0.32 * v, t + 0.02);
+      g.gain.linearRampToValueAtTime(0.37 * v, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0003, t + 2.4);
       o.connect(lp); lp.connect(g); g.connect(dest);
       o.start(t); o.stop(t + 2.5);
@@ -1414,7 +1414,7 @@
       /* 和声铺底：宽音域、慢起音 */
       var pad = [chord[0] + 12, chord[1] + 12, chord[2] + 12];
       if (ci === 0 || style.mood === '震撼') pad.push(chord[0] + 24);
-      chords.push({ t: base, midis: pad, vel: style.mood === '震撼' ? 0.9 : 0.62 });
+      chords.push({ t: base, midis: pad, vel: style.mood === '震撼' ? 0.95 : 0.7 });
 
       /* 低音 */
       var bassMidi = root - 12 + scale[deg % sl];
@@ -1428,8 +1428,8 @@
       }
 
       /* 空灵/优美加高频闪光层（钟琴） */
-      if (style.bright) {
-        var sparkN = style.mood === '空灵' ? 3 : 4;
+      {
+        var sparkN = style.bright ? (style.mood === '空灵' ? 3 : 4) : 2;
         for (var sp = 0; sp < sparkN; sp++) {
           sparkles.push({
             t: base + rhy[Math.floor(rnd() * rhy.length)] + rnd() * 0.4,
@@ -1441,7 +1441,7 @@
 
       /* 旋律：和弦音为骨架，级进为主，句尾回落 */
       for (var ri = 0; ri < rhy.length; ri++) {
-        if (rnd() < (style.mood === '空灵' ? 0.22 : 0.08)) continue;
+        if (rnd() < (style.mood === '空灵' ? 0.12 : 0)) continue;
         var t = base + rhy[ri];
         var pool = [];
         for (var pc2 = 0; pc2 < chord.length; pc2++) {
@@ -1463,7 +1463,7 @@
         }
         if (style.mood === '空灵' && rnd() < 0.18) midi += 12;
         prevMidi = midi;
-        melody.push({ t: t + (rnd() - 0.5) * 0.035, midi: midi, vel: 0.5 + rnd() * 0.3 });
+        melody.push({ t: t + (rnd() - 0.5) * 0.035, midi: midi, vel: 0.62 + rnd() * 0.28 });
       }
 
       /* 节奏 */
@@ -1506,12 +1506,13 @@
   function scheduleEvent(ev, when, p, bus) {
     if (ev.kind === 'melody') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: p.instrument, bus: bus });
+      Audio.note(ev.midi + 12, { when: when + 0.16, vel: ev.vel * 0.26, wet: 0.85, inst: 'bell', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
     } else if (ev.kind === 'sparkle') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.85, inst: 'bell', bus: bus });
     } else if (ev.kind === 'pad') {
       Audio.pad(when, ev.midis, ev.vel, bus);
-      if (!p.drums || !p.drums.length) visQueue.push({ t: when, kind: 'beat', amt: 0.55 });
+      visQueue.push({ t: when, kind: 'chord', midi: ev.midis[0] });
     } else if (ev.kind === 'bass') {
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'kick') {
@@ -3120,7 +3121,7 @@
       state.bpm = state.seqOn ? 120 : 0;
       if (state.seqOn) state.level = Math.max(state.level, state.beatEnv * 0.7);
     }
-    state.beatEnv *= Math.exp(-dt * 4.0);
+    state.beatEnv *= Math.exp(-dt * 2.7);
     if (meterFill) meterFill.style.width = (clamp(state.level, 0, 1) * 100).toFixed(0) + '%';
     if (bpmTag) {
       if (state.seqOn) {
@@ -3139,26 +3140,39 @@
     while (visQueue.length && visQueue[0].t <= nowT + 0.02) {
       var ev = visQueue.shift();
       if (ev.kind === 'beat') {
-        state.beatEnv = Math.min(1.6, state.beatEnv + ev.amt * 1.15);
+        state.beatEnv = Math.min(1.9, state.beatEnv + ev.amt * 1.6);
         state.wave = 0;
-        state.waveAmp = Math.min(1.3, state.waveAmp + 0.9 * ev.amt + 0.25);
+        state.waveAmp = Math.min(1.5, state.waveAmp + 1.15 * ev.amt + 0.35);
+      } else if (ev.kind === 'chord') {
+        var nowCh = performance.now();
+        if (nowCh - (state.lastVisFreq || 0) >= 240) {
+          state.lastVisFreq = nowCh;
+          setFreq(midiToFreq(ev.midi));
+        }
+        state.beatEnv = Math.min(1.9, state.beatEnv + 0.5);
+        state.wave = 0;
+        state.waveAmp = Math.min(1.5, state.waveAmp + 0.45);
       } else if (ev.kind === 'note') {
         var nowVis = performance.now();
-        var gap = state.seqOn ? (state.mood === '空灵' ? 520 : (state.mood === '震撼' ? 300 : (state.mood === '律动' ? 380 : 400))) : 0;
+        var gap = state.seqOn ? (state.mood === '空灵' ? 300 : (state.mood === '震撼' ? 230 : (state.mood === '律动' ? 270 : 300))) : 0;
         if (nowVis - (state.lastVisFreq || 0) >= gap) {
           state.lastVisFreq = nowVis;
           setFreq(midiToFreq(ev.midi));
         }
-        state.beatEnv = Math.min(1.6, state.beatEnv + (state.mood === '空灵' ? 0.18 : 0.28));
+        state.beatEnv = Math.min(1.9, state.beatEnv + (state.mood === '空灵' ? 0.34 : 0.45));
+        state.wave = 0;
+        state.waveAmp = Math.min(1.5, state.waveAmp + 0.22);
         flashKey(keyEls[ev.midi], 420);
       }
     }
 
-    state.energy = Math.max(state.beatEnv * 0.95, state.level * 0.95);
+    var ambient = state.seqOn ? (0.46 + 0.08 * Math.sin(t * 0.65)) : 0;
+    state.energy = Math.max(state.beatEnv * 0.95, state.level * 0.95, ambient);
     var visMood = state.seqOn ? (state.mood || '优美') : '优美';
-    var moodGain = visMood === '空灵' ? 0.68 : (visMood === '震撼' ? 1.12 : (visMood === '律动' ? 0.96 : 0.9));
-    var vEnergy = Math.min(1.35, state.energy * moodGain);
-    var zoom = 1 - 0.055 * vEnergy;
+    var moodGain = visMood === '空灵' ? 0.92 : (visMood === '震撼' ? 1.28 : (visMood === '律动' ? 1.06 : 1.0));
+    var vEnergy = Math.min(1.5, state.energy * moodGain) * (1 + 0.07 * Math.sin(t * 0.85));
+    vEnergy = Math.max(0, vEnergy);
+    var zoom = 1 - 0.075 * vEnergy;
 
     /* ---- 色调 ---- */
     var hd = state.hueTarget - state.hue;
@@ -3200,12 +3214,12 @@
 
     /* ---- 绘制 ---- */
     if (state.waveAmp > 0.01) {
-      state.wave += dt * 1.7;
-      state.waveAmp *= Math.exp(-dt * 3.4);
+      state.wave += dt * 2.0;
+      state.waveAmp *= Math.exp(-dt * 3.0);
       if (state.wave > 1.45) state.waveAmp = 0;
     }
-    var pulse = 0.85 + 1.7 * vEnergy + 0.035 * Math.sin(t * 1.3);
-    var sharp = 14.0 - 7.0 * vEnergy;
+    var pulse = 0.92 + 2.05 * vEnergy + 0.05 * Math.sin(t * 1.3);
+    var sharp = 14.5 - 8.5 * vEnergy;
 
     gl.clearColor(0, 0, 0, 1);
     if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
@@ -3230,7 +3244,7 @@
       gl.uniform1f(U.uGain, 0.085);
       gl.drawArrays(gl.POINTS, 0, COUNT);
     }
-    gl.uniform1f(U.uPx, POINT_SIZE * (1 + 0.5 * vEnergy));
+    gl.uniform1f(U.uPx, POINT_SIZE * (1 + 0.75 * vEnergy));
     gl.uniform1f(U.uGain, 1.15);
     gl.drawArrays(gl.POINTS, 0, COUNT);
 
