@@ -324,12 +324,7 @@
     </div>
     <div class="sheet-row">
       <span class="sheet-label">音色</span>
-      <select id="instSelect" class="sheet-select" aria-label="音色">
-        <option value="musicbox">🎼 八音盒</option>
-        <option value="piano">🎹 电子琴</option>
-        <option value="flute">🌬️ 长笛</option>
-        <option value="synth">🌌 合成器</option>
-      </select>
+      <div class="sizes" id="instChips"></div>
     </div>
     <div class="sheet-row">
       <span class="sheet-label">音源</span>
@@ -360,6 +355,7 @@
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
       <li>✨ <b>天籁</b>：内置 120 BPM 节拍与五声音阶旋律，可「换一首」，也能录 15 秒保存 WAV。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律，自动量化成五声音阶配乐，并能把旋律保存成 MIDI。</li>
+      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 弦乐 / 长笛 / 钟琴 / 管风琴 / 合成器，在 🎨 面板切换。</li>
     </ul>
     <h3>🤖 AI 识别（本地）</h3>
     <ul>
@@ -883,7 +879,8 @@
       var f = midiToFreq(midi);
       var vel = opts.vel == null ? 1 : opts.vel;
       var inst = opts.inst || state.instrument;
-      var out = outBus(inst === 'flute' ? 0.55 : 0.34);
+      var wet = inst === 'flute' ? 0.55 : (inst === 'strings' ? 0.5 : (inst === 'bell' ? 0.45 : 0.34));
+      var out = outBus(wet);
       var o, g, o2, g2, lp, lfo, lfoG;
 
       if (inst === 'musicbox') {
@@ -928,6 +925,54 @@
         o.connect(g); g.connect(out);
         o.start(t); o.stop(t + 2.0);
         lfo.start(t); lfo.stop(t + 2.0);
+      } else if (inst === 'pluck') {
+        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'square'; o2.frequency.setValueAtTime(f * 1.003, t);
+        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.2;
+        lp.frequency.setValueAtTime(Math.min(12000, f * 12), t);
+        lp.frequency.exponentialRampToValueAtTime(Math.max(180, f * 1.3), t + 0.35);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.2 * vel, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0004, t + 1.1);
+        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 1.2); o2.stop(t + 1.2);
+      } else if (inst === 'strings') {
+        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.006, t); o2.detune.value = 5;
+        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.8; lp.frequency.setValueAtTime(2400, t);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.13 * vel, t + 0.16);
+        g.gain.setValueAtTime(0.13 * vel, t + 0.9);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.2);
+        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 2.3); o2.stop(t + 2.3);
+      } else if (inst === 'bell') {
+        var parts = [[1, 0.16 * vel, 2.4], [2.76, 0.08 * vel, 1.6], [5.4, 0.045 * vel, 0.9]];
+        for (var bi = 0; bi < parts.length; bi++) {
+          var po = c.createOscillator(); po.type = 'sine';
+          po.frequency.setValueAtTime(f * parts[bi][0], t);
+          var pg = c.createGain();
+          pg.gain.setValueAtTime(0.0001, t);
+          pg.gain.linearRampToValueAtTime(parts[bi][1], t + 0.003);
+          pg.gain.exponentialRampToValueAtTime(0.0002, t + parts[bi][2]);
+          po.connect(pg); pg.connect(out);
+          po.start(t); po.stop(t + parts[bi][2] + 0.1);
+        }
+      } else if (inst === 'organ') {
+        var hgt = [0.12, 0.07, 0.045, 0.03];
+        for (var hi = 0; hi < hgt.length; hi++) {
+          var ho = c.createOscillator(); ho.type = 'sine';
+          ho.frequency.setValueAtTime(f * (hi + 1), t);
+          var hg = c.createGain();
+          hg.gain.setValueAtTime(0.0001, t);
+          hg.gain.linearRampToValueAtTime(hgt[hi] * vel, t + 0.05);
+          hg.gain.setValueAtTime(hgt[hi] * vel, t + 0.7);
+          hg.gain.exponentialRampToValueAtTime(0.0002, t + 1.4);
+          ho.connect(hg); hg.connect(out);
+          ho.start(t); ho.stop(t + 1.5);
+        }
       } else {
         o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
         o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.005, t);
@@ -1575,9 +1620,7 @@
     if (f) startMusic(f);
     e.target.value = '';
   });
-  $('instSelect').addEventListener('change', function (e) {
-    state.instrument = e.target.value;
-  });
+
 
   /* ============================================================
    * 频率 / 模式
@@ -1759,6 +1802,28 @@
     if (save) { try { localStorage.setItem('cz_theme', t.id); } catch (e) {} }
   }
 
+  var INSTRUMENTS = [
+    { id: 'musicbox', name: '🎼 八音盒' },
+    { id: 'piano', name: '🎹 电子琴' },
+    { id: 'pluck', name: '🎸 拨弦' },
+    { id: 'strings', name: '🎻 弦乐' },
+    { id: 'flute', name: '🌬️ 长笛' },
+    { id: 'bell', name: '🔔 钟琴' },
+    { id: 'organ', name: '⛪ 管风琴' },
+    { id: 'synth', name: '🌌 合成器' }
+  ];
+  function markInstBtns(id) {
+    var all = document.querySelectorAll('.inst-btn');
+    for (var i = 0; i < all.length; i++) {
+      all[i].classList.toggle('on', all[i].getAttribute('data-inst') === id);
+    }
+  }
+  function selectInstrument(id) {
+    state.instrument = id;
+    markInstBtns(id);
+    try { localStorage.setItem('cz_inst', id); } catch (e) {}
+  }
+
   (function buildSheet() {
     var sw = $('swatches'), sz = $('sizes');
     if (!sw || !sz) return;
@@ -1790,6 +1855,18 @@
       if (parent) parent.appendChild(b);
       return b;
     }
+    var instBox = $('instChips');
+    if (instBox) {
+      INSTRUMENTS.forEach(function (ins) {
+        var b = document.createElement('button');
+        b.className = 'size-btn inst-btn';
+        b.setAttribute('data-inst', ins.id);
+        b.textContent = ins.name;
+        b.addEventListener('click', function () { selectInstrument(ins.id); });
+        instBox.appendChild(b);
+      });
+    }
+    markInstBtns(state.instrument);
     toolBtn(srcTools, '🎤 哼唱', 'hum-toggle', toggleHum);
     toolBtn(srcTools, '🎧 系统声', '', toggleSys);
     toolBtn(genTools, '🎲 换一首', '', function () { restartSeq(); });
@@ -2396,6 +2473,8 @@
   try {
     var savedTheme = localStorage.getItem('cz_theme') || 'cyan';
     var savedKeys = localStorage.getItem('cz_keys') || '13';
+    var savedInst = localStorage.getItem('cz_inst');
+    if (savedInst) { state.instrument = savedInst; markInstBtns(savedInst); }
     applyTheme(savedTheme, false);
     buildPiano(RANGES[savedKeys] ? savedKeys : '13');
     var szAll = document.querySelectorAll('.size-btn');
