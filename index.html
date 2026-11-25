@@ -425,7 +425,7 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：只听设备/标签页自身的声音，不拾取麦克风。电脑 Chrome/Edge 共享时勾选「分享音频」；手机浏览器多数不支持。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：点一下随机播放精选曲（6 种风格 × 7 首 = 42 首），自动匹配编乐与音色：空灵→德彪西/拉威尔/莱奇，深情→舒伯特/勃拉姆斯/德沃夏克，震撼→贝多芬/谭盾/潘德列茨基，律动→安倍圭子/莱奇，优美→莫扎特；切换/停止会立刻静音上一首；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
+      <li>✨ <b>天籁</b>：5 种风格 × 7 首 = 35 首精选，纯器乐、每首最多 3 件乐器（独奏 1 件）。参考德彪西 / 拉威尔 / 史蒂夫·莱奇（空灵）、舒伯特 / 勃拉姆斯（深情）、贝多芬 / 谭盾（震撼）、安倍圭子（律动）。「🎛 设置 → 创作 → 换一首」走 text-to-audio 生成（英文 prompt + negative prompt，锁定各风格 BPM 区间），服务不可用时自动回退本地合成。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
       <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 双簧管 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 圆号 / 马林巴 / 单簧管 / 合成器。每首曲只用 1–3 件乐器，独奏时只用一种。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
@@ -1315,24 +1315,184 @@
     { name: '生长', styleId: 'grow', seed: 978983017, bpm: 96, root: 46, instrument: 'piano' },
     { name: '涌流', styleId: 'grow', seed: 352355708, bpm: 96, root: 44, instrument: 'bell' },
     { name: '蔓长', styleId: 'grow', seed: 1218333409, bpm: 96, root: 45, instrument: 'piano' },
-    { name: '回环', styleId: 'grow', seed: 147926525, bpm: 96, root: 43, instrument: 'bell' },
-    { name: '暮歌', styleId: 'dusk', seed: 2027808452, bpm: 76, root: 47, instrument: 'horn' },
-    { name: '长夜', styleId: 'dusk', seed: 3098215336, bpm: 76, root: 47, instrument: 'oboe' },
-    { name: '远山', styleId: 'dusk', seed: 1549107668, bpm: 76, root: 47, instrument: 'oboe' },
-    { name: '灯下', styleId: 'dusk', seed: 2323661502, bpm: 76, root: 47, instrument: 'horn' },
-    { name: '夜航', styleId: 'dusk', seed: 1788458060, bpm: 76, root: 45, instrument: 'oboe' },
-    { name: '晚风', styleId: 'dusk', seed: 1936384585, bpm: 76, root: 45, instrument: 'horn' },
-    { name: '归途', styleId: 'dusk', seed: 1013904226, bpm: 76, root: 46, instrument: 'oboe' }
+    { name: '回环', styleId: 'grow', seed: 147926525, bpm: 96, root: 43, instrument: 'bell' }
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 74, scale: 'penta', drums: 'pulse', wet: 0.6, octave: 24, bright: true, school: 'debussy', soloChance: 0.45, palette: { lead: ['flute', 'clarinet', 'handpan', 'bell'], comp: ['bell', 'handpan', 'ep'] } },
-    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 80, scale: 'dorian', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.4, palette: { lead: ['clarinet', 'oboe', 'handpan'], comp: ['ep', 'handpan', 'bell'] } },
-    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 92, scale: 'major', drums: 'soft', wet: 0.46, octave: 24, bright: true, school: 'mozart', soloChance: 0.35, palette: { lead: ['flute', 'clarinet'], comp: ['ep', 'handpan'] } },
-    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false, school: 'beethoven', soloChance: 0.15, palette: { lead: ['marimba', 'bell', 'synth'], comp: ['handpan'] } },
-    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 96, scale: 'major', drums: 'groove', wet: 0.38, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, palette: { lead: ['marimba', 'piano', 'bell'], comp: ['marimba', 'ep', 'handpan'] } },
-    { id: 'dusk',   name: '暮色 · 深情', icon: '🌆', mood: '深情', bpm: 76, scale: 'major', drums: 'none', wet: 0.55, octave: 24, bright: false, school: 'schubert', soloChance: 0.4, palette: { lead: ['horn', 'oboe'], comp: ['ep', 'handpan'] } }
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 74, bpmRange: [70, 82], scale: 'penta', drums: 'pulse', wet: 0.6, octave: 24, bright: true, school: 'debussy', soloChance: 0.45, palette: { lead: ['flute', 'clarinet', 'handpan', 'bell'], comp: ['bell', 'handpan', 'ep'] } },
+    { id: 'deep',   name: '深海 · 空灵', icon: '🌊', mood: '空灵', bpm: 80, bpmRange: [72, 86], scale: 'dorian', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.4, palette: { lead: ['clarinet', 'oboe', 'handpan'], comp: ['ep', 'handpan', 'bell'] } },
+    { id: 'dawn',   name: '晨光 · 优美', icon: '🌅', mood: '优美', bpm: 92, bpmRange: [84, 100], scale: 'major', drums: 'soft', wet: 0.46, octave: 24, bright: true, school: 'mozart', soloChance: 0.35, palette: { lead: ['flute', 'clarinet'], comp: ['ep', 'handpan'] } },
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 112, bpmRange: [100, 126], scale: 'penta', drums: 'epic', wet: 0.3, octave: 12, bright: false, school: 'beethoven', soloChance: 0.15, palette: { lead: ['marimba', 'bell', 'synth'], comp: ['handpan'] } },
+    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 96, bpmRange: [88, 110], scale: 'major', drums: 'groove', wet: 0.38, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, palette: { lead: ['marimba', 'piano', 'bell'], comp: ['marimba', 'ep', 'handpan'] } },
   ];
+  /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
+  var TTA_SYSTEM_PREFIX = "You are a composer rendering pure instrumental music for a real-time cymatics visualization. "
+    + "The music must be purely instrumental (no vocals, no singing, no speech, no lyrics). "
+    + "Prefer long natural reverb tails, spacious stereo field, soft transients and restrained percussion so the "
+    + "cymatics particle patterns can expand smoothly. Use at most three instruments at once; solo passages may use one. "
+    + "The result should sound acoustic, warm and coherent, never plastic, never harsh.";
+
+  var TTA_NEGATIVE_PROMPT = "vocals, singing, speech, lyrics, choir, vocal chops, "
+    + "noise, hiss, hum, clicks, clipping, low fidelity, "
+    + "plastic electronic tones, cheap synth presets, harsh distortion, overdriven saw leads, "
+    + "dissonant chords, atonal clusters, unresolved suspensions, "
+    + "aggressive drums, heavy kick, double-time percussion, loud abrupt cuts, "
+    + "muddy mix, boomy bass build-up";
+
+  var TTA_STYLE_PROMPTS = {
+    aurora: {
+      bpm: [70, 82],
+      instruments: ['flute', 'clarinet', 'handpan', 'bell', 'electric piano'],
+      composers: 'Claude Debussy, Maurice Ravel, Steve Reich',
+      prompt: "Sparse impressionist chamber ambience. A single flute or clarinet line floats over soft handpan resonances "
+        + "and occasional bell overtones, with Debussy/Ravel colour and slow Steve Reich-like repeating cells. "
+        + "Cold, misty, translucent and weightless, with wide silence between phrases. "
+        + "Long reverb tails, distant perspective, very gentle pulse, no strong drums."
+    },
+    deep: {
+      bpm: [72, 86],
+      instruments: ['clarinet', 'oboe', 'handpan', 'electric piano'],
+      composers: 'Maurice Ravel, Claude Debussy',
+      prompt: "Submerged, cold and blurred instrumental ambience. Oboe or clarinet soli with handpan and electric piano, "
+        + "modal Dorian colour and impressionist voicings. Distant and spacious, like sound heard underwater, "
+        + "very slow harmonic breathing, long tails and deep reverb, no aggressive rhythm."
+    },
+    dawn: {
+      bpm: [84, 100],
+      instruments: ['flute', 'clarinet', 'electric piano', 'handpan'],
+      composers: 'Wolfgang Amadeus Mozart',
+      prompt: "Clean, transparent classical chamber music. Flute and clarinet melody with light electric-piano arpeggios, "
+        + "Mozart-like antecedent and consequent phrasing, balanced cadences and gentle dynamic shaping. "
+        + "Airy, bright, natural room reverb, delicate and unforced, no heavy percussion."
+    },
+    pulse: {
+      bpm: [100, 126],
+      instruments: ['marimba', 'bell', 'synth', 'handpan'],
+      composers: 'Ludwig van Beethoven, Tan Dun, Krzysztof Penderecki',
+      prompt: "Epic but controlled instrumental ritual. Low frame-drum accents under marimba and bell patterns and a soft synth drone, "
+        + "Beethoven-like weight, Tan Dun and Penderecki-like percussive gestures, mysterious rather than violent. "
+        + "Long decay, huge reverb space, powerful but restrained, no machine-gun percussion."
+    },
+    grow: {
+      bpm: [88, 110],
+      instruments: ['marimba', 'electric piano', 'bell', 'handpan'],
+      composers: 'Steve Reich, Keiko Abe',
+      prompt: "Warm minimalist instrumental groove. Steve Reich / Keiko Abe marimba ostinato, additive layering that evolves "
+        + "from a single figure into a full groove, electric piano pulses and bell shimmer. "
+        + "Harmonious, flowing and human, long tails and room reverb, steady but never aggressive."
+    }
+  };
+
+  function clampBpm(style, bpm) {
+    var r = style && style.bpmRange;
+    if (!r) return bpm;
+    return Math.max(r[0], Math.min(r[1], Math.round(bpm)));
+  }
+
+  function buildMusicPrompt(styleId) {
+    var st = styleById(styleId);
+    var def = TTA_STYLE_PROMPTS[styleId] || TTA_STYLE_PROMPTS.aurora;
+    var arr = def.instruments.slice(0, 3);
+    var bpm = clampBpm(st, Math.round((def.bpm[0] + def.bpm[1]) / 2));
+    var prompt = "[" + st.name + "] " + def.prompt
+      + " Instrumentation: " + arr.join(', ') + " (max three instruments, solo sections may use one)."
+      + " Reference composers: " + def.composers + "."
+      + " Tempo: " + bpm + " BPM (" + def.bpm[0] + "-" + def.bpm[1] + " range)."
+      + " Instrumental only, no vocals: long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals.";
+    return {
+      styleId: styleId,
+      title: genTitleFromStyle(styleId),
+      system: TTA_SYSTEM_PREFIX,
+      prompt: prompt,
+      negative_prompt: TTA_NEGATIVE_PROMPT,
+      bpm: bpm,
+      bpm_range: def.bpm,
+      instruments: arr,
+      seed: (Date.now() % 2147483647) >>> 0,
+      duration: 30
+    };
+  }
+  function genTitleFromStyle(styleId) {
+    var st = styleById(styleId);
+    var pool = TITLE_POOLS[styleId];
+    if (!pool) return '未命名';
+    return pool[0][Math.floor(Math.random() * pool[0].length)] + '·' + pool[1][Math.floor(Math.random() * pool[1].length)];
+  }
+
+  var TTA_CONFIG = {
+    endpoint: (typeof window !== 'undefined' && window.CYMATICS_TTA_ENDPOINT) || '',
+    getEndpoint: function () {
+      if (this.endpoint) return this.endpoint;
+      try { return localStorage.getItem('cz_tta_endpoint') || ''; } catch (e) { return ''; }
+    }
+  };
+  var tta = { src: null, on: false };
+
+  function stopTTA() {
+    if (!tta.on) return;
+    tta.on = false;
+    try { tta.src.stop(); } catch (e) {}
+    try { tta.src.disconnect(); } catch (e) {}
+    tta.src = null;
+    state.musicOn = false;
+    analyser = null;
+    audioData = null;
+  }
+
+  function fetchTTA(req) {
+    var ep = TTA_CONFIG.getEndpoint();
+    if (!ep) return Promise.reject(new Error('no TTA endpoint'));
+    return fetch(ep, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: req.system,
+        prompt: req.prompt,
+        negative_prompt: req.negative_prompt,
+        bpm: req.bpm,
+        bpm_range: req.bpm_range,
+        duration: req.duration,
+        seed: req.seed
+      })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('TTA HTTP ' + res.status);
+      return res.arrayBuffer();
+    }).then(function (buf) {
+      var c = Audio.ensure();
+      return new Promise(function (resolve, reject) {
+        c.decodeAudioData(buf, resolve, reject);
+      });
+    });
+  }
+
+  function playTTAudio(buffer, req) {
+    stopSeq();
+    stopAllAudio('tta');
+    Audio.ensure();
+    var c = Audio.ctx();
+    var src = c.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    var an = newAnalyser(c);
+    src.connect(an);
+    var sink = c.createGain();
+    sink.gain.value = 0.85;
+    an.connect(sink);
+    sink.connect(Audio.master());
+    analyser = an;
+    audioData = new Uint8Array(an.frequencyBinCount);
+    tta.src = src;
+    tta.on = true;
+    src.start();
+    state.musicOn = true;
+    state.seqOn = true;
+    state.currentPiece = { name: req.title, styleId: req.styleId, bpm: req.bpm };
+    if (autoBtn) { autoBtn.textContent = '⏹ 停演'; autoBtn.classList.add('on'); }
+    showNowTitle(state.currentPiece);
+    if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = req.bpm + ' BPM'; }
+    toast('🎼 TTA 生成完成：<b>' + req.title + '</b>', 4000);
+  }
+
   var TITLE_POOLS = {
     aurora: [['极光', '星河', '月蚀', '霜降', '萤火', '雾岛', '光隙', '风隙'], ['之梦', '低语', '漫游', '呼吸', '倒影', '余波']],
     deep:   [['深海', '潮汐', '砂时', '回声', '深蓝', '暗流'], ['沉浮', '低语', '暗涌', '倒影', '回旋']],
@@ -1482,12 +1642,12 @@
     var seed = (opts.seed == null ? Math.floor(Math.random() * 4294967295) : opts.seed) >>> 0;
     var rnd = mulberry32(seed);
     var autoName = genTitle(rnd, style);
-    var bpm = opts.bpm || style.bpm;
+    var bpm = clampBpm(style, opts.bpm || style.bpm);
     var root = opts.root == null ? (style.mood === '空灵' ? 45 : 43) + Math.floor(rnd() * 5) : opts.root;
     var palette = style.palette || { lead: [(opts.instrument || 'piano')], comp: ['ep'] };
     var lead = opts.instrument || palette.lead[Math.floor(rnd() * palette.lead.length)];
     var compInst = palette.comp[Math.floor(rnd() * palette.comp.length)];
-    var sparkInst = palette.comp[Math.floor(rnd() * palette.comp.length)];
+    var sparkInst = compInst;
     var solo = rnd() < (style.soloChance || 0.3);
     var mode = solo ? 'solo' : (rnd() < 0.5 ? 'duo' : 'ensemble');
     var inst = lead;
@@ -1706,6 +1866,7 @@
     saveLibraryPiece(state.currentPiece);
   }
   function stopSeq() {
+    if (tta.on) stopTTA();
     player.on = false;
     clearInterval(player.timer);
     player.timer = 0;
@@ -1730,11 +1891,31 @@
     hideNowTitle();
   }
 
+  /* 🎛 设置 → 创作 → 换一首：生成逻辑入口 */
   function restartSeq() {
-    state.currentPiece = composePiece({ styleId: pickStyleId() });
-    playPiece(state.currentPiece);
-    saveLibraryPiece(state.currentPiece);
-    toast('🎲 新曲：<b>' + esc(state.currentPiece.name) + '</b><br>' + styleById(state.currentPiece.styleId).icon + ' ' + styleById(state.currentPiece.styleId).name, 4500);
+    var sid = pickStyleId();
+    var req = buildMusicPrompt(sid);
+    if (typeof window !== 'undefined') window.__lastMusicPrompt = req;
+
+    function fallbackLocal() {
+      state.currentPiece = composePiece({ styleId: sid });
+      playPiece(state.currentPiece);
+      saveLibraryPiece(state.currentPiece);
+      toast('🎲 新曲：<b>' + esc(state.currentPiece.name) + '</b><br>' + styleById(sid).icon + ' ' + styleById(sid).name, 4500);
+    }
+
+    if (TTA_CONFIG.getEndpoint()) {
+      toast('🎼 正在请求 text-to-audio 生成…', 2500);
+      fetchTTA(req).then(function (buf) {
+        playTTAudio(buf, req);
+      }).catch(function (err) {
+        console.warn('[tta]', err);
+        toast('TTA 服务不可用，改用本地合成', 2600);
+        fallbackLocal();
+      });
+    } else {
+      fallbackLocal();
+    }
   }
 
   /* ---------- 浮动曲名（可拖动） ---------- */
@@ -1813,7 +1994,7 @@
     renderLibrary();
   }
   function seedPresets() {
-    var flag = 'cz_presets_v5';
+    var flag = 'cz_presets_v6';
     try { if (localStorage.getItem(flag)) return; } catch (e) {}
     try {
       library = library.filter(function (it) { return !it.preset; });
@@ -2339,6 +2520,7 @@
   }
 
   function stopAllAudio(except) {
+    if (except !== 'tta' && typeof tta !== 'undefined' && tta.on) { try { stopTTA(); } catch (e) {} }
     if (except !== 'seq') { try { stopSeq(); } catch (e) {} }
     if (except !== 'music') {
       if (state.musicOn || musicEl || musicNode) { try { stopMusic(); } catch (e) {} }
@@ -3501,7 +3683,7 @@
   setInterval(dbgUpdate, 800);
 
   /* 调试钩子：便于自动化测试（不影响正常使用） */
-  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lutCache: lutCache, lutIdx: lutIdx }, compose: composePiece, styles: STYLES };
+  window.__cz = { state: state, audio: Audio, analyser: function () { return analyser; }, debug: { cur: curArr, prev: prevArr, lutCache: lutCache, lutIdx: lutIdx }, compose: composePiece, styles: STYLES, musicPrompt: buildMusicPrompt, tta: TTA_CONFIG };
 
   resize();
   cam.theta = cam.tTheta;
