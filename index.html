@@ -1707,9 +1707,12 @@
       var density = cy === cycles - 1 ? 0.2 : (0.32 + 0.18 * Math.min(1, cy / 8));
       for (var i = 0; i < 32; i++) {
         var t = (cy * 32 + i) * 0.25;
-        if (i % 8 === 0) drums.push({ kind: 'kick', t: t, vel: 1 });
-        if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t, vel: 0.38 });
-        if (i % 2 === 1 && rnd() < 0.78) drums.push({ kind: 'hat', t: t, vel: i % 4 === 3 ? 0.45 : 0.24 });
+        if (i === 0) drums.push({ kind: 'kick', t: t, vel: 0.95 });
+        if (i === 12) drums.push({ kind: 'kick', t: t, vel: 0.7 });
+        if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t + (rnd() - 0.5) * 0.012, vel: 0.4 });
+        if ((i === 3 || i === 11 || i === 19 || i === 27) && rnd() < 0.42) {
+          drums.push({ kind: 'hat', t: t + (rnd() - 0.5) * 0.02, vel: 0.16 });
+        }
         if (i % 16 === 0) bassline.push({ t: t, midi: 45 + tr, vel: 0.75 });
         if (i % 32 === 0) chords.push({ t: t, midis: [48 + tr, 55 + tr, 60 + tr], vel: 0.8 });
         if (i % 2 === 0 && rnd() < density) {
@@ -2072,7 +2075,7 @@
     var tr = orig.transpose;
     if (i % 8 === 0) { Audio.kick(t, 1, bus); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
     if (i === 6 || i === 22) { Audio.kick(t, 0.4, bus); visQueue.push({ t: t, kind: 'beat', amt: 0.4 }); }
-    if (i % 2 === 1 && Math.random() < 0.8) Audio.hat(t, i % 4 === 3 ? 0.5 : 0.26, bus);
+    if ((i === 3 || i === 11 || i === 19 || i === 27) && Math.random() < 0.4) Audio.hat(t, 0.16, bus);
     if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
     if (i % 2 === 0 && Math.random() < 0.42) {
       var midi = PENTA[Math.floor(Math.random() * PENTA.length)] + tr;
