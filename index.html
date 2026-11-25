@@ -427,7 +427,7 @@
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
       <li>✨ <b>天籁</b>：点一下随机播放一首精选曲（5 种风格 × 7 首 = 35 首），切换/停止会立刻静音上一首；「🎛 设置 → 创作 → 换一首」可按选定气质生成新曲。风格：🌌 极光·空灵 / 🌊 深海·空灵 / 🌅 晨光·优美 / ⚡ 脉冲·震撼 / 🌀 潮生·律动。播放时曲名浮在画面上可拖动。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
-      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 拨弦 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 合成器（弦乐、管风琴已移除，换成更耐听的电钢琴与手碟）。</li>
+      <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 双簧管 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 合成器（双簧管带一点丝绒鼻音，安静、深情）。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
     </ul>
     <h3>🤖 AI 识别（本地）</h3>
@@ -988,9 +988,10 @@
       var inst = opts.inst || state.instrument;
       if (inst === 'strings') inst = 'ep';
       if (inst === 'organ') inst = 'handpan';
-      var wet = inst === 'flute' ? 0.55 : (inst === 'ep' ? 0.45 : (inst === 'handpan' ? 0.5 : (inst === 'bell' ? 0.45 : 0.34)));
+      if (inst === 'pluck' || inst === 'guitar') inst = 'oboe';
+      var wet = inst === 'flute' ? 0.55 : (inst === 'oboe' ? 0.52 : (inst === 'ep' ? 0.45 : (inst === 'handpan' ? 0.5 : (inst === 'bell' ? 0.45 : 0.34))));
       var out = outBus(wet, opts.bus);
-      var INST_TRIM = { musicbox: 0.95, piano: 1.0, pluck: 0.9, ep: 0.85, flute: 0.72, bell: 0.78, handpan: 0.85, synth: 0.58 };
+      var INST_TRIM = { musicbox: 0.95, piano: 1.0, oboe: 0.62, ep: 0.85, flute: 0.72, bell: 0.78, handpan: 0.85, synth: 0.58 };
       out.gain.value = INST_TRIM[inst] || 1;
       var o, g, o2, g2, lp, lfo, lfoG;
 
@@ -1037,18 +1038,29 @@
         o.connect(lp); lp.connect(g); g.connect(out);
         o.start(t); o.stop(t + 1.6);
         lfo.start(t); lfo.stop(t + 1.6);
-      } else if (inst === 'pluck') {
-        o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
-        o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2, t);
-        lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.6;
-        lp.frequency.setValueAtTime(Math.min(6500, f * 6), t);
-        lp.frequency.exponentialRampToValueAtTime(Math.max(260, f * 1.4), t + 0.55);
+      } else if (inst === 'oboe') {
+        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'square'; o2.frequency.setValueAtTime(f * 1.002, t);
+        var obForm = c.createBiquadFilter();
+        obForm.type = 'peaking';
+        obForm.frequency.value = Math.min(2600, Math.max(900, f * 2.4));
+        obForm.Q.value = 1.2;
+        obForm.gain.value = 7;
+        var obLp = c.createBiquadFilter();
+        obLp.type = 'lowpass';
+        obLp.frequency.value = Math.min(4200, f * 6);
+        obLp.Q.value = 0.5;
+        lfo = c.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5.0;
+        lfoG = c.createGain(); lfoG.gain.value = f * 0.0032;
+        lfo.connect(lfoG); lfoG.connect(o.frequency); lfoG.connect(o2.frequency);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.23 * vel, t + 0.006);
-        g.gain.exponentialRampToValueAtTime(0.0005, t + 1.0);
-        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
-        o.start(t); o2.start(t); o.stop(t + 1.1); o2.stop(t + 1.1);
+        g.gain.linearRampToValueAtTime(0.115 * vel, t + 0.06);
+        g.gain.setValueAtTime(0.115 * vel, t + 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 1.4);
+        o.connect(obForm); o2.connect(obForm); obForm.connect(obLp); obLp.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 1.5); o2.stop(t + 1.5);
+        lfo.start(t); lfo.stop(t + 1.5);
       } else if (inst === 'ep') {
         o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f, t);
         o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2, t);
@@ -2494,7 +2506,7 @@
   var INSTRUMENTS = [
     { id: 'musicbox', name: '🎼 八音盒' },
     { id: 'piano', name: '🎹 电子琴' },
-    { id: 'pluck', name: '🎸 拨弦' },
+    { id: 'oboe', name: '🎷 双簧管' },
     { id: 'ep', name: '🎛️ 电钢琴' },
     { id: 'flute', name: '🌬️ 长笛' },
     { id: 'bell', name: '🔔 钟琴' },
