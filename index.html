@@ -1281,13 +1281,8 @@
     major: [0, 2, 4, 5, 7, 9, 11]
   };
   var PRESET_PIECES = [
-    { name: '星雾', styleId: 'aurora', seed: 408858366, bpm: 72, root: 49, instrument: 'flute' },
-    { name: '潮下', styleId: 'deep', seed: 295853050, bpm: 66, root: 49, instrument: 'handpan' },
-    { name: '露白', styleId: 'dawn', seed: 4020695695, bpm: 88, root: 47, instrument: 'oboe' },
-    { name: '雷纹', styleId: 'pulse', seed: 1957966034, bpm: 92, root: 46, instrument: 'horn' },
-    { name: '涌流', styleId: 'grow', seed: 1457683801, bpm: 104, root: 43, instrument: 'marimba' },
-    { name: '沉沙', styleId: 'deep', seed: 3176299443, bpm: 66, root: 48, instrument: 'marimba' },
-    { name: '风隙', styleId: 'aurora', seed: 3541994911, bpm: 72, root: 46, instrument: 'horn' }
+    { name: '夜潮', styleId: 'aurora', engine: 'original', seed: 20260501, bpm: 120, root: 0, instrument: 'musicbox' },
+    { name: '流沙', styleId: 'deep', engine: 'original', seed: 88112233, bpm: 108, root: 0, instrument: 'musicbox' }
   ];
 
   var STYLES = [
@@ -1694,6 +1689,47 @@
       }
     }
     return { bars: totalBars, melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline, arp: [], counter: [] };
+  }
+
+  /* 最初的即兴生成器（固定成曲）：120 BPM 五声音阶 + 逐段演化 */
+  function composeOriginalPiece(opts) {
+    opts = opts || {};
+    var bpm = opts.bpm || 120;
+    var seed = (opts.seed == null ? 1234567 : opts.seed) >>> 0;
+    var rnd = mulberry32(seed);
+    var shifts = [-5, -3, 0, 2, 3, 5];
+    var rootShift = shifts[Math.floor(rnd() * shifts.length)];
+    var PENTA2 = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+    var cycles = 16;                         // 16 × 8 拍 = 128 拍 ≈ 64 秒 @120
+    var melody = [], chords = [], drums = [], sparkles = [], bassline = [];
+    for (var cy = 0; cy < cycles; cy++) {
+      var tr = rootShift + (cy % 4 === 2 ? 2 : 0);
+      var density = cy === cycles - 1 ? 0.2 : (0.32 + 0.18 * Math.min(1, cy / 8));
+      for (var i = 0; i < 32; i++) {
+        var t = (cy * 32 + i) * 0.25;
+        if (i % 8 === 0) drums.push({ kind: 'kick', t: t, vel: 1 });
+        if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t, vel: 0.38 });
+        if (i % 2 === 1 && rnd() < 0.78) drums.push({ kind: 'hat', t: t, vel: i % 4 === 3 ? 0.45 : 0.24 });
+        if (i % 16 === 0) bassline.push({ t: t, midi: 45 + tr, vel: 0.75 });
+        if (i % 32 === 0) chords.push({ t: t, midis: [48 + tr, 55 + tr, 60 + tr], vel: 0.8 });
+        if (i % 2 === 0 && rnd() < density) {
+          var midi = 60 + PENTA2[Math.floor(rnd() * PENTA2.length)] + tr;
+          if (rnd() < 0.18) midi += 12;
+          melody.push({ t: t, midi: midi, vel: 0.62 + rnd() * 0.2 });
+          if (rnd() < 0.1) sparkles.push({ t: t + 0.125, midi: midi + 12, vel: 0.16 });
+        }
+      }
+    }
+    return {
+      id: 'orig-' + seed.toString(36),
+      name: opts.name || '即兴',
+      styleId: opts.styleId || 'aurora', mood: '优美', bpm: bpm,
+      root: 48 + rootShift, scaleName: 'penta', instrument: opts.instrument || 'musicbox',
+      seed: seed, bars: cycles * 2, created: opts.created || Date.now(),
+      wet: 0.5, engine: 'original', mode: 'ensemble',
+      melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline,
+      arp: [], counter: [], arpInst: 'musicbox', counterInst: 'musicbox', sparkInst: 'bell'
+    };
   }
 
   /* 作曲：8 小节 / 4 个和弦段落；三种气质（空灵 / 优美 / 震撼） */
@@ -2209,13 +2245,13 @@
     renderLibrary();
   }
   function seedPresets() {
-    var flag = 'cz_presets_v8';
+    var flag = 'cz_presets_v9';
     try { if (localStorage.getItem(flag)) return; } catch (e) {}
     try {
       library = [];                       // 清空旧曲库（含之前生成的曲目）
       for (var i = 0; i < PRESET_PIECES.length; i++) {
         var cfg = PRESET_PIECES[i];
-        var pc = composePiece(cfg);
+        var pc = cfg.engine === 'original' ? composeOriginalPiece(cfg) : composePiece(cfg);
         pc.preset = true;
         var exists = false;
         for (var j = 0; j < library.length; j++) if (library[j].id === pc.id) { exists = true; break; }
@@ -2223,7 +2259,7 @@
         library.push({
           id: pc.id, name: pc.name, styleId: pc.styleId, bpm: pc.bpm,
           root: pc.root, scaleName: pc.scaleName, instrument: pc.instrument,
-          seed: pc.seed, created: pc.created, bars: pc.bars, preset: true
+          seed: pc.seed, created: pc.created, bars: pc.bars, preset: true, engine: pc.engine || ''
         });
       }
       saveLibrary();
@@ -2231,6 +2267,7 @@
     } catch (e) {}
   }
   function pieceFromSaved(item) {
+    if (item.engine === 'original') return composeOriginalPiece(item);
     return composePiece({
       seed: item.seed, styleId: item.styleId, bpm: item.bpm,
       root: item.root, instrument: item.instrument, name: item.name, created: item.created
