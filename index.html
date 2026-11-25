@@ -354,19 +354,21 @@
   <div class="bar">
     <div class="row">
       <span class="unit">Hz</span>
-      <input id="freqInput" type="text" inputmode="decimal" value="345" aria-label="频率（0 到无限，可输入 ∞）">
+      <input id="freqInput" type="text" inputmode="decimal" value="174" aria-label="频率（0 到无限，可输入 ∞）">
       <input id="freqSlider" type="range" min="0" max="1000" step="1" value="0" aria-label="频率滑块">
       <span id="modeTag" class="tag">m2 · n2</span>
       <span id="bpmTag" class="tag" hidden>— BPM</span>
     </div>
     <div class="row">
       <div class="presets">
-        <button class="chip on" data-freq="345">345</button>
-        <button class="chip" data-freq="432">432</button>
+        <button class="chip on" data-freq="174">174</button>
+        <button class="chip" data-freq="285">285</button>
+        <button class="chip" data-freq="396">396</button>
+        <button class="chip" data-freq="417">417</button>
         <button class="chip" data-freq="528">528</button>
         <button class="chip" data-freq="639">639</button>
         <button class="chip" data-freq="741">741</button>
-        <button class="chip" data-freq="963">963</button>
+        <button class="chip" data-freq="852">852</button>
         <button class="chip" data-freq="1000000" title="无上限">∞</button>
       </div>
       <button id="pianoBtn" class="btn">🎹 键盘</button>
@@ -727,7 +729,7 @@
    * 状态
    * ============================================================ */
   var state = {
-    freq: 345,
+    freq: 174,
     m: 2,
     n: 2,
     modeA: 8,
@@ -758,7 +760,7 @@
     prevBass: 0,
     fluxHist: [],
     audioHz: 0,
-    manualFreq: 345,
+    manualFreq: 174,
     lastFreqPush: 0,
     themeId: 'cyan',
     themeHue: 0.55,
@@ -2777,7 +2779,7 @@
     state.bpm = 0;
     analyser = null;
     audioData = null;
-    setFreq(state.manualFreq || 345);
+    setFreq(state.manualFreq || 174);
     if (bpmTag) bpmTag.hidden = true;
     micBtn.classList.remove('on');
     micBtn.textContent = '🎤 外音';
@@ -2793,7 +2795,7 @@
     state.bpm = 0;
     analyser = null;
     audioData = null;
-    setFreq(state.manualFreq || 345);
+    setFreq(state.manualFreq || 174);
     if (bpmTag) bpmTag.hidden = true;
     musicBtn.classList.remove('on');
     musicBtn.textContent = '🎵 放首歌';
@@ -4055,7 +4057,7 @@
     if (/[?&]panel=1/.test(q)) sheet.classList.add('on');
   })();
 
-  setFreq(345);
+  setFreq(174);
   /* 支持 ?f=345 / ?f=∞ / ?f=0 指定初始频率 */
   (function () {
     var raw = (location.search.match(/[?&]f=([^&]+)/) || [])[1];
