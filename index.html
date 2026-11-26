@@ -1919,7 +1919,15 @@
     var densityBase = sp.density + (prof.char === 'pluck' ? 0.06 : (prof.char === 'sustain' ? -0.04 : 0.02));
     var melody = [], chords = [], drums = [], sparkles = [], bassline = [], arp = [], counter = [];
     var GROW_STEPS = [[0, 16], [0, 8, 16, 24], [0, 4, 8, 12, 16, 20, 24, 28], [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]];
-    var CYCLE_PATS = [[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 7, 10, 12, 14, 20], [0, 1, 4, 6, 9, 12, 14, 16], [0, 2, 6, 8, 12, 14, 16, 24]];
+    var MOTIF_R = [[0, 4, 8, 12], [0, 6, 8, 14], [0, 4, 8, 14], [0, 4, 10, 12]];
+    var MOTIF_T = [0, 1, -1, 2];
+    var motifDeg = [];
+    var md0 = Math.floor(rnd() * scaleArr.length);
+    motifDeg.push(md0);
+    for (var mgi = 0; mgi < 3; mgi++) {
+      var mv = [1, 1, 2, -1, 2][Math.floor(rnd() * 5)];
+      motifDeg.push(((motifDeg[motifDeg.length - 1] + mv) % scaleArr.length + scaleArr.length) % scaleArr.length);
+    }
     var prevLead = 60, prevCounter = 48;
     var GROW_TR = [0, 2, -2, 5];
     for (var cy = 0; cy < cycles; cy++) {
@@ -1943,12 +1951,12 @@
           } else if (sid === 'grow') {
             if (stage >= 2 && i % 8 === 0) drums.push({ kind: 'kick', t: t, vel: 0.88 });
             if (stage >= 2 && i % 4 === 2) drums.push({ kind: 'tabla', t: t, midi: 45 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr, vel: 0.34 });
-            if (stage >= 3 && i % 2 === 1 && rnd() < 0.7) drums.push({ kind: 'tabla', t: t, midi: 52 + tr, vel: 0.2 });
+            if (stage >= 3 && i % 4 === 1 && rnd() < 0.5) drums.push({ kind: 'tabla', t: t, midi: 52 + tr, vel: 0.16 });
           } else {
             var kickMain = sp.drums === 'strong' ? (i % 8 === 0 || i % 8 === 4) : (i === 0 || (i === 12 && cy % 2 === 0));
             if (kickMain) drums.push({ kind: 'kick', t: t, vel: 0.95 });
             if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t + (rnd() - 0.5) * 0.012, vel: sp.drums === 'sparse' ? 0.28 : 0.42 });
-            if (cy % 4 === 3 && i >= 24 && i % 2 === 0) drums.push({ kind: 'kick', t: t, vel: 0.35 });
+
           }
         }
         if (i % 16 === 0) bassline.push({ t: t, midi: 45 + tr, vel: 0.75 });
@@ -1968,24 +1976,18 @@
           }
         } else if (sid === 'grow') {
           if (!drumLead) {
-            var steps = GROW_STEPS[stage];
-            if (steps.indexOf(i) >= 0 && rnd() < density) {
-              var gm = 60 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
-              melody.push({ t: t, midi: gm, vel: 0.55 + stage * 0.1 + rnd() * 0.1 });
-              if (stage >= 1) {
-                var csteps = [[8, 24], [4, 12, 20, 28], [2, 6, 10, 14, 18, 22, 26, 30], [2, 8, 14, 20, 26]][stage];
-                if (csteps.indexOf(i) >= 0 && rnd() < 0.72) {
-                  var cpool = [];
-                  for (var ci2 = 0; ci2 < scaleArr.length; ci2++) cpool.push(48 + scaleArr[ci2] + tr);
-                  var cm = cpool[Math.floor(rnd() * cpool.length)];
-                  for (var ct2 = 0; ct2 < 3; ct2++) {
-                    if (Math.abs(cm - prevCounter) <= 5) break;
-                    cm = cpool[Math.floor(rnd() * cpool.length)];
-                  }
-                  prevCounter = cm;
-                  counter.push({ t: t + 0.125, midi: cm, vel: 0.16 + stage * 0.02 });
-                }
-              }
+            var mR = MOTIF_R[stage % 4];
+            var mT = MOTIF_T[stage % 4];
+            if (mR.indexOf(i) >= 0) {
+              var mIdx = mR.indexOf(i);
+              var dgr = (motifDeg[mIdx] + mT + scaleArr.length * 2) % scaleArr.length;
+              var gmMidi = 60 + scaleArr[dgr] + tr;
+              if (mIdx === mR.length - 1 && rnd() < 0.22) gmMidi += 12;
+              melody.push({ t: t, midi: gmMidi, vel: 0.5 + stage * 0.06 + rnd() * 0.05 });
+            }
+            if (stage >= 2 && (i === 2 || i === 14) && rnd() < 0.6) {
+              var cdeg = (motifDeg[0] + 2) % scaleArr.length;
+              counter.push({ t: t + 0.125, midi: 48 + scaleArr[cdeg] + tr, vel: 0.13 });
             }
           }
         } else {
@@ -1995,25 +1997,21 @@
               drums.push({ kind: sid === 'pulse' ? 'tabla' : 'fdrum', t: t, midi: dm, vel: i % 8 === 0 ? 0.8 : 0.45 + rnd() * 0.2 });
             }
           }
-          if (!hasPad && !drumLead && compKind === 'arp' && i % 4 === 0) {
+          if (!hasPad && !drumLead && compKind === 'arp' && i % 8 === 0) {
             arp.push({ t: t, midi: 60 + scaleArr[Math.floor((i / 4) % scaleArr.length)] + tr, vel: 0.2 });
           }
           if (compKind === 'bell' && i % 8 === 4) {
             sparkles.push({ t: t, midi: 72 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr, vel: 0.18 });
           }
-          var cpat = CYCLE_PATS[cy % CYCLE_PATS.length];
-          if (cpat.indexOf(i) >= 0 && rnd() < (drumLead ? density * 0.3 : density)) {
-            var pool = [];
-            for (var pi2 = 0; pi2 < scaleArr.length; pi2++) pool.push(60 + scaleArr[pi2] + tr);
-            var cand = pool[Math.floor(rnd() * pool.length)];
-            for (var try2 = 0; try2 < 3; try2++) {
-              if (Math.abs(cand - prevLead) <= 7) break;
-              cand = pool[Math.floor(rnd() * pool.length)];
-            }
-            if (rnd() < 0.12) cand += 12;
-            prevLead = cand;
-            melody.push({ t: t, midi: cand, vel: 0.6 + rnd() * 0.22 });
-            if (rnd() < 0.1) sparkles.push({ t: t + 0.125, midi: cand + 12, vel: 0.16 });
+          var mRg = MOTIF_R[cy % 4];
+          var mTg = MOTIF_T[cy % 4];
+          if (mRg.indexOf(i) >= 0 && rnd() < (drumLead ? 0.25 : 0.92)) {
+            var gIdx = mRg.indexOf(i);
+            var dgi = (motifDeg[gIdx] + mTg + scaleArr.length * 2) % scaleArr.length;
+            var cnd = 60 + scaleArr[dgi] + tr;
+            if (gIdx === mRg.length - 1 && rnd() < 0.2) cnd += 12;
+            melody.push({ t: t, midi: cnd, vel: 0.55 + (gIdx === 0 ? 0.1 : 0) + rnd() * 0.05 });
+            if (rnd() < 0.08) sparkles.push({ t: t + 0.125, midi: cnd + 12, vel: 0.14 });
           }
         }
       }
@@ -2392,23 +2390,21 @@
       Audio.note(dMidi, { when: t, vel: i % 8 === 0 ? 0.8 : 0.5, wet: 0.35, inst: orig.styleId === 'pulse' ? 'tabla' : 'framedrum', bus: bus });
       visQueue.push({ t: t, kind: 'note', midi: dMidi });
     }
-    if (!orig.hasPad && orig.compKind === 'arp' && i % 4 === 0) {
+    if (!orig.hasPad && orig.compKind === 'arp' && i % 8 === 0) {
       var csc = orig.scale || [0, 2, 4, 7, 9, 12];
-      Audio.note(60 + csc[Math.floor((i / 4) % csc.length)] + trP, { when: t, vel: 0.18 + (phrase % 3) * 0.02, wet: 0.5, inst: orig.compInst || 'marimba', bus: bus });
+      Audio.note(60 + csc[Math.floor((i / 8) % csc.length)] + trP, { when: t, vel: 0.12, wet: 0.5, inst: orig.compInst || 'marimba', bus: bus });
     }
-    if (!orig.drumLead && patP.indexOf(i16) >= 0 && Math.random() < (orig.density || 0.34)) {
-      var sc = orig.scale || [0, 2, 4, 7, 9, 12];
-      var pool = [];
-      for (var pi = 0; pi < sc.length; pi++) pool.push(60 + sc[pi] + trP);
-      var midi = pool[Math.floor(Math.random() * pool.length)];
-      for (var k = 0; k < 3; k++) {
-        if (Math.abs(midi - (orig.prevMidi || 60)) <= 7) break;
-        midi = pool[Math.floor(Math.random() * pool.length)];
-      }
-      orig.prevMidi = midi;
-      if (Math.random() < 0.1) midi += 12;
-      Audio.note(midi, { when: t, vel: 0.7 + Math.random() * 0.2, wet: 0.45, inst: orig.inst, bus: bus });
-      visQueue.push({ t: t, kind: 'note', midi: midi });
+    var mRo = orig.motifR ? orig.motifR[phrase % 4] : [0, 4, 8, 12];
+    var mTo = orig.motifT ? orig.motifT[phrase % 4] : 0;
+    if (!orig.drumLead && orig.motif && mRo.indexOf(i16) >= 0 && Math.random() < 0.92) {
+      var mIo = mRo.indexOf(i16);
+      var scM = orig.scale || [0, 2, 4, 7, 9, 12];
+      var degM = (orig.motif[mIo] + mTo + scM.length * 2) % scM.length;
+      var midiM = 60 + scM[degM] + trP;
+      if (mIo === mRo.length - 1 && Math.random() < 0.25) midiM += 12;
+      orig.prevMidi = midiM;
+      Audio.note(midiM, { when: t, vel: 0.68 + Math.random() * 0.12, wet: 0.45, inst: orig.inst, bus: bus });
+      visQueue.push({ t: t, kind: 'note', midi: midiM });
       visQueue.push({ t: t, kind: 'harmonic', amt: INST_OVERTONES[orig.inst] || 0.45 });
     }
   }
@@ -2452,6 +2448,16 @@
     orig.styleId = sid;
     orig.mood = styleById(sid).mood || '优美';
     orig.scale = sp.scale;
+    orig.motif = [];
+    var m0o = Math.floor(Math.random() * sp.scale.length);
+    orig.motif.push(m0o);
+    for (var mo = 0; mo < 3; mo++) {
+      var stepM = [1, 1, 2, -1, 2][Math.floor(Math.random() * 5)];
+      orig.motif.push((orig.motif[orig.motif.length - 1] + stepM + sp.scale.length * 2) % sp.scale.length);
+    }
+    orig.motifR = [[0, 4, 8, 12], [0, 6, 8, 14], [0, 4, 8, 14], [0, 4, 10, 12]];
+    orig.motifT = [0, 1, -1, 2];
+    orig.cycle = 0;
     orig.density = sp.density;
     orig.drums = sp.drums;
     orig.bpm = sp.bpm;
