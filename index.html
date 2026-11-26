@@ -546,7 +546,7 @@
   var R_WORLD = 7.5;
   var isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent) ||
                  Math.min(window.screen.width, window.screen.height) < 560;
-  var COUNT = isMobile ? 42000 : 82000;
+  var COUNT = isMobile ? 46000 : 88000;
   var LUT_N = 1024;
 
   var posArr = new Float32Array(COUNT * 3);
@@ -636,6 +636,7 @@
     'attribute float aPrev;',
     'attribute float aCur;',
     'attribute float aSeed;',
+    'uniform vec3 uColorB;',
     'uniform mat4 uProj;',
     'uniform mat4 uView;',
     'uniform float uMix;',
@@ -653,9 +654,13 @@
     'varying vec3 vColor;',
     'void main(){',
     '  float r = length(aPos.xz) / uR;',
-    '  vec4 mv = uView * vec4(aPos, 1.0);',
+    '  float wob = sin(uTime * 1.6 + aSeed * 53.0) * 0.012 * uR;',
+    '  vec3 p = aPos;',
+    '  p.x += cos(aSeed * 31.0 + uTime * 0.7) * wob;',
+    '  p.z += sin(aSeed * 37.0 + uTime * 0.8) * wob;',
+    '  vec4 mv = uView * vec4(p, 1.0);',
     '  gl_Position = uProj * mv;',
-    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0);',
+    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0) * (0.85 + 0.25 * sin(uTime * 2.2 + aSeed * 40.0));',
     '  if (uDbg > 2.5 && uDbg < 3.5) {',
     '    gl_Position = vec4(aPos.x * 0.1, aPos.z * 0.1, 0.0, 1.0);',
     '    gl_PointSize = 12.0;',
@@ -663,19 +668,19 @@
     '    gl_PointSize = 8.0;',
     '  }',
     '  float val = mix(aPrev, aCur, uMix);',
+    '  val *= 0.94 + 0.06 * sin(uTime * 0.9 + aSeed * 6.2831);',
     '  float glow = exp(-val * uSharp);',
-    '  glow = pow(glow, 1.15);',
-    '  float edge = 1.0 - smoothstep(0.88, 1.0, r);',
-    '  float shimmer = 0.88 + 0.12 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
-    '  float b = glow * uPulse * edge * shimmer * (0.62 + aSeed * 0.7) * uGain;',
+    '  glow = pow(glow, 1.12);',
+    '  float edge = 1.0 - smoothstep(0.86, 1.0, r);',
+    '  float shimmer = 0.86 + 0.14 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
+    '  float b = glow * uPulse * edge * shimmer * (0.6 + aSeed * 0.75) * uGain;',
     '  float wr = uWave * 1.25;',
     '  float wq = (r - wr) * 7.5;',
-    '  float ring = exp(-wq * wq) * uWaveAmp;',
-    '  b += ring * edge * 1.1;',
+    '  b += exp(-wq * wq) * uWaveAmp * edge * 1.1;',
     '  if (uDbg > 2.5) {',
     '    vColor = vec3(0.0, 1.0, 1.0);',
     '  } else {',
-    '    vColor = uColor * b;',
+    '    vColor = mix(uColorB, uColor, clamp(b * 2.2, 0.0, 1.0)) * b;',
     '  }',
     '}'
   ].join('\n');
@@ -686,8 +691,8 @@
     'void main(){',
     '  vec2 p = gl_PointCoord - 0.5;',
     '  float d = length(p) * 2.0;',
-    '  float a = max(0.0, 1.0 - d);',
-    '  a = a * a;',
+    '  float a = exp(-d * d * 3.2);',
+    '  a *= (0.88 + 0.12 * (1.0 - d));',
     '  gl_FragColor = vec4(vColor * a, 1.0);',
     '}'
   ].join('\n');
@@ -718,7 +723,7 @@
   ['aPos', 'aPrev', 'aCur', 'aSeed'].forEach(function (n) {
     A[n] = gl.getAttribLocation(prog, n);
   });
-  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor'].forEach(function (n) {
+  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor', 'uColorB'].forEach(function (n) {
     U[n] = gl.getUniformLocation(prog, n);
   });
 
@@ -809,7 +814,7 @@
     lastAiT: 0
   };
 
-  var POINT_SIZE = isMobile ? 2.0 : 1.7;
+  var POINT_SIZE = isMobile ? 1.8 : 1.5;
   var HALO = false;
 
   function setMode(aIdx, bIdx, frac) {
@@ -6740,6 +6745,10 @@
     gl.uniform1f(U.uWaveAmp, state.waveAmp);
     gl.uniform1f(U.uDbg, DEBUG ? (parseFloat(DEBUG) || 0) : 0);
     gl.uniform3f(U.uColor, rgb[0], rgb[1], rgb[2]);
+    if (U.uColorB) {
+      var colB = hslToRgb((state.hue + 0.52) % 1, 0.72, 0.42);
+      gl.uniform3f(U.uColorB, colB[0], colB[1], colB[2]);
+    }
 
     if (HALO) {
       gl.uniform1f(U.uPx, POINT_SIZE * 2.4 * vs.point);
