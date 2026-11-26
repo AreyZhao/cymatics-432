@@ -715,7 +715,9 @@
     '  if (uDbg > 2.5) {',
     '    vColor = vec3(0.0, 1.0, 1.0);',
     '  } else {',
-    '    vColor = mix(uColorB, uColor, clamp(b * 2.2, 0.0, 1.0)) * b;',
+    '    vec3 tone = mix(uColorB, uColor, clamp(b * 2.0, 0.0, 1.0));',
+    '    tone = mix(tone, vec3(1.0), 0.22 * clamp(b * 1.6, 0.0, 1.0));',
+    '    vColor = tone * b;',
     '  }',
     '}'
   ].join('\n');
@@ -6737,7 +6739,7 @@
     if (hd < -0.5) hd += 1;
     state.hue += hd * Math.min(1, dt * (2.2 + vs.hue));
     state.hue = ((state.hue % 1) + 1) % 1;
-    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.95, 0.58);
+    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.82, 0.6);
     rgb[0] = col[0]; rgb[1] = col[1]; rgb[2] = col[2];
 
     /* 让钢琴键/面板颜色跟随音流图案的实时色相 */
@@ -6797,13 +6799,13 @@
     gl.uniform3f(U.uColor, rgb[0], rgb[1], rgb[2]);
     if (U.uFlow) gl.uniform1f(U.uFlow, 0.035 + 0.16 * vEnergy + 0.05 * state.waveAmp);
     if (U.uColorB) {
-      var colB = hslToRgb((state.hue + 0.52) % 1, 0.72, 0.42);
+      var colB = hslToRgb((state.hue + 0.06) % 1, 0.55, 0.32);
       gl.uniform3f(U.uColorB, colB[0], colB[1], colB[2]);
     }
 
     if (HALO) {
-      gl.uniform1f(U.uPx, POINT_SIZE * 2.6 * vs.point);
-      gl.uniform1f(U.uGain, 0.032 * vs.point);
+      gl.uniform1f(U.uPx, POINT_SIZE * 2.4 * vs.point);
+      gl.uniform1f(U.uGain, 0.02 * vs.point);
       gl.drawArrays(gl.POINTS, 0, COUNT);
     }
     gl.uniform1f(U.uPx, POINT_SIZE * (0.85 + 0.5 * vEnergy) * vs.point);
