@@ -4554,7 +4554,9 @@
     var p = snapshotCurrent();
     if (!p) return null;
     saveLibraryPiece(p);
-    return libraryItemForCurrent();
+    if (state.currentPiece && !state.currentPiece.id) state.currentPiece.id = p.id;
+    for (var i = 0; i < library.length; i++) if (library[i].id === p.id) return library[i];
+    return null;
   }
   function toggleTitleMenu() {
     if (!titleMenu || !nowTitle || nowTitle.hidden) return;
@@ -4572,12 +4574,18 @@
     var row1 = document.createElement('div');
     row1.className = 'tm-row';
     row1.appendChild(addBtn('⭐ 收藏', function () {
+      var wasLive = !(state.currentPiece && state.currentPiece.id);
       var item = saveCurrentToLibrary();
       if (!item) { hideTitleMenu(); return; }
       item.preset = true;
       saveLibrary();
+      if (state.currentPiece && wasLive) {
+        state.currentPiece.id = item.id;
+        state.currentPiece.name = item.name;
+        showNowTitle(state.currentPiece);
+      }
       renderLibrary();
-      toast('⭐ 已收藏「' + esc(item.name) + '」', 2200);
+      toast('已命名并收藏：<b>' + esc(item.name) + '</b>', 2600);
       hideTitleMenu();
     }));
     row1.appendChild(addBtn('💾 保存', function () {
@@ -4585,10 +4593,9 @@
       toast(item ? ('💾 已保存「' + esc(item.name) + '」') : '保存失败', 2200);
       hideTitleMenu();
     }));
-    row1.appendChild(addBtn('⤓ 导出', function () {
-      var item = saveCurrentToLibrary();
-      if (item) exportPieceMidi(item);
+    row1.appendChild(addBtn('📚 曲库', function () {
       hideTitleMenu();
+      openLibrary();
     }));
     row1.appendChild(addBtn('🎹 乐器', function () { instRow.hidden = !instRow.hidden; }));
     row1.appendChild(addBtn('🎛 创作', function () {
@@ -5868,8 +5875,7 @@
       body.appendChild(mkItem('🎧', '音源', sourceLabel(), function () { sheetGo('sources'); }));
       body.appendChild(mkItem('🎹', '音色', instName(state.instrument), function () { sheetGo('instruments'); }));
       body.appendChild(mkItem('🎨', '外观', '配色 · 琴键', function () { sheetGo('look'); }));
-      body.appendChild(mkItem('🎛', '创作', state.seqOn ? '播放中' : '生成 / 录音 / 曲库', function () { sheetGo('create'); }));
-      body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
+      body.appendChild(mkItem('🎛', '创作', state.seqOn ? '播放中' : '生成 / 录音 / 曲库 / 哼唱', function () { sheetGo('create'); }));
     } else if (id === 'sources') {
       var box = document.createElement('div');
       box.className = 'sheet-sub';
@@ -5915,11 +5921,39 @@
       });
       body.appendChild(rowi);
     } else if (id === 'create') {
+      var genNote = document.createElement('div');
+      genNote.className = 'sheet-note';
+      genNote.textContent = '生成 / 曲库';
+      body.appendChild(genNote);
       body.appendChild(mkItem('🎲', '换一首', '生成并存入曲库', function () { restartSeq(); }));
       body.appendChild(mkItem('🎨', '生成风格', state.genStyle === 'auto' ? '自动随机' : styleById(state.genStyle).name, function () { sheetGo('genstyle'); }));
       body.appendChild(mkItem('⭐', '精选曲目', PRESET_PIECES.length + ' 首', function () { libFilter = 'preset'; closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('📚', '曲库', (library.length || 0) + ' 首', function () { closeSheet(); openLibrary(); }));
-      body.appendChild(mkItem('🎤', '哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '回放 / 保存', function () { sheetGo('hum'); }));
+      function sheetNote(text) {
+        var d = document.createElement('div');
+        d.className = 'sheet-note';
+        d.textContent = text;
+        body.appendChild(d);
+      }
+      sheetNote('哼唱 / 录音');
+      body.appendChild(mkItem('🎤', state.humOn ? '哼唱 · 开' : '哼唱', state.humOn ? '正在收音' : '开启收音', function () {
+        toggleHum();
+        renderSheet();
+      }));
+      body.appendChild(mkItem('▶', '回放哼唱', state.humNotes.length ? state.humNotes.length + ' 个音' : '还没有', function () { playHum(); }));
+      body.appendChild(mkItem(rec.active ? '⏹' : '⏺', rec.active ? '停止并保存' : '录音', rec.active ? '录制中' : (state.recSecs ? state.recSecs + ' 秒' : '手动'), function () {
+        if (rec.active) { stopRec(); } else { startRec(state.recSecs); }
+        renderSheet();
+      }));
+      body.appendChild(mkItem('⏱', '录音时长', state.recSecs ? state.recSecs + ' 秒' : '手动', function () { sheetGo('recdur'); }));
+      body.appendChild(mkItem('🎼', 'TTA 编曲', '需要 TTA 服务', function () { humTTAGenerate(); }));
+      body.appendChild(mkItem('💾', '保存哼唱 MIDI', '', function () { saveHumMidi(); }));
+      body.appendChild(mkItem('🗑', '清除哼唱', '', function () {
+        state.humNotes = [];
+        state.humLastMidi = 0;
+        renderSheet();
+        toast('已清除哼唱', 1800);
+      }));
     } else if (id === 'genstyle') {
       var rowg = document.createElement('div');
       rowg.className = 'sheet-sub';
