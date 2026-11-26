@@ -991,9 +991,9 @@
       if (inst === 'strings') inst = 'ep';
       if (inst === 'organ') inst = 'handpan';
       if (inst === 'pluck' || inst === 'guitar') inst = 'oboe';
-      var wet = inst === 'flute' ? 0.55 : (inst === 'oboe' ? 0.52 : (inst === 'horn' ? 0.55 : (inst === 'clarinet' ? 0.5 : (inst === 'ep' ? 0.45 : (inst === 'handpan' ? 0.5 : (inst === 'bell' ? 0.45 : (inst === 'marimba' ? 0.42 : 0.34)))))));
+      var wet = inst === 'flute' ? 0.55 : (inst === 'oboe' ? 0.52 : (inst === 'horn' ? 0.55 : (inst === 'clarinet' ? 0.5 : (inst === 'ep' ? 0.45 : (inst === 'handpan' ? 0.5 : (inst === 'bell' ? 0.45 : (inst === 'marimba' ? 0.42 : (inst === 'guzheng' ? 0.42 : (inst === 'pipa' ? 0.38 : (inst === 'bianzhong' ? 0.55 : (inst === 'framedrum' ? 0.3 : (inst === 'tabla' ? 0.32 : 0.34))))))))))));
       var out = outBus(wet, opts.bus);
-      var INST_TRIM = { musicbox: 0.95, piano: 1.0, oboe: 0.62, ep: 0.85, flute: 0.72, bell: 0.78, handpan: 0.85, synth: 0.58, horn: 0.62, marimba: 0.8, clarinet: 0.66 };
+      var INST_TRIM = { musicbox: 0.95, piano: 1.0, oboe: 0.62, ep: 0.85, flute: 0.72, bell: 0.78, handpan: 0.85, synth: 0.58, horn: 0.62, marimba: 0.8, clarinet: 0.66, guzheng: 0.7, pipa: 0.66, bianzhong: 0.72, framedrum: 0.9, tabla: 0.8 };
       out.gain.value = INST_TRIM[inst] || 1;
       var o, g, o2, g2, lp, lfo, lfoG;
 
@@ -1144,6 +1144,82 @@
         o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
         o.start(t); o2.start(t); o.stop(t + 1.5); o2.stop(t + 1.5);
         clLfo.start(t); clLfo.stop(t + 1.5);
+      } else if (inst === 'guzheng') {
+        o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(f * 2, t);
+        var gzLp = c.createBiquadFilter(); gzLp.type = 'lowpass'; gzLp.Q.value = 1.2;
+        gzLp.frequency.setValueAtTime(Math.min(7000, f * 8), t);
+        gzLp.frequency.exponentialRampToValueAtTime(Math.max(400, f * 2), t + 0.6);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.2 * vel, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 1.6);
+        o.connect(gzLp); o2.connect(gzLp); gzLp.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 1.7); o2.stop(t + 1.7);
+        try { o.frequency.exponentialRampToValueAtTime(f * 0.994, t + 0.9); } catch (e) {}
+      } else if (inst === 'pipa') {
+        o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+        o2 = c.createOscillator(); o2.type = 'square'; o2.frequency.setValueAtTime(f * 1.003, t);
+        var ppBp = c.createBiquadFilter(); ppBp.type = 'bandpass'; ppBp.Q.value = 2; ppBp.frequency.value = Math.min(3600, f * 3);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.18 * vel, t + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 0.7);
+        o.connect(ppBp); o2.connect(ppBp); ppBp.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 0.8); o2.stop(t + 0.8);
+        var g2p = c.createGain();
+        g2p.gain.setValueAtTime(0.0001, t + 0.06);
+        g2p.gain.linearRampToValueAtTime(0.09 * vel, t + 0.065);
+        g2p.gain.exponentialRampToValueAtTime(0.0002, t + 0.45);
+        o.connect(g2p); g2p.connect(out);
+      } else if (inst === 'bianzhong') {
+        var bzParts = [[1, 0.13 * vel, 3.0], [2.4, 0.06 * vel, 2.0], [3.7, 0.03 * vel, 1.2], [5.2, 0.015 * vel, 0.8]];
+        for (var bzi = 0; bzi < bzParts.length; bzi++) {
+          var bzo = c.createOscillator(); bzo.type = 'sine';
+          bzo.frequency.setValueAtTime(f * bzParts[bzi][0], t);
+          var bzg = c.createGain();
+          bzg.gain.setValueAtTime(0.0001, t);
+          bzg.gain.linearRampToValueAtTime(bzParts[bzi][1], t + 0.004);
+          bzg.gain.exponentialRampToValueAtTime(0.0002, t + bzParts[bzi][2]);
+          bzo.connect(bzg); bzg.connect(out);
+          bzo.start(t); bzo.stop(t + bzParts[bzi][2] + 0.1);
+        }
+      } else if (inst === 'framedrum') {
+        var fdF = Math.max(40, f / 4);
+        o = c.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(fdF * 1.25, t);
+        o.frequency.exponentialRampToValueAtTime(fdF, t + 0.18);
+        var fdLp = c.createBiquadFilter(); fdLp.type = 'lowpass'; fdLp.frequency.value = 340;
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.34 * vel, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 1.4);
+        o.connect(fdLp); fdLp.connect(g); g.connect(out);
+        o.start(t); o.stop(t + 1.5);
+        var fdN = c.createBufferSource(); fdN.buffer = noiseBuf;
+        var fdBp = c.createBiquadFilter(); fdBp.type = 'lowpass'; fdBp.frequency.value = 500;
+        var fdNg = c.createGain();
+        fdNg.gain.setValueAtTime(0.06 * vel, t);
+        fdNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.12);
+        fdN.connect(fdBp); fdBp.connect(fdNg); fdNg.connect(out);
+        fdN.start(t); fdN.stop(t + 0.14);
+      } else if (inst === 'tabla') {
+        o = c.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(f * 1.12, t);
+        o.frequency.exponentialRampToValueAtTime(f, t + 0.09);
+        g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.26 * vel, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 0.42);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + 0.45);
+        var tbN = c.createBufferSource(); tbN.buffer = noiseBuf;
+        var tbBp = c.createBiquadFilter(); tbBp.type = 'bandpass'; tbBp.frequency.value = Math.min(4000, f * 4); tbBp.Q.value = 1.2;
+        var tbNg = c.createGain();
+        tbNg.gain.setValueAtTime(0.07 * vel, t);
+        tbNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.06);
+        tbN.connect(tbBp); tbBp.connect(tbNg); tbNg.connect(out);
+        tbN.start(t); tbN.stop(t + 0.08);
       } else {
         o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
         o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.004, t);
@@ -1288,9 +1364,9 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [70, 76], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep'] } },
-    { id: 'night',  name: '夜色 · 心动', icon: '🌃', mood: '优美', bpm: 104, bpmRange: [100, 110], scale: 'major', drums: 'soft', wet: 0.45, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, altScales: ['penta'], palette: { lead: ['ep', 'piano'], comp: ['bell', 'piano', 'musicbox'] } },
-    { id: 'neon',   name: '霓虹 · 律动', icon: '🌈', mood: '律动', bpm: 126, bpmRange: [120, 134], scale: 'penta', drums: 'epic', wet: 0.35, octave: 24, bright: true, school: 'reich', soloChance: 0.2, altScales: ['minorPenta'], palette: { lead: ['synth', 'marimba'], comp: ['marimba', 'bell', 'ep'] } },
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [70, 76], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'horn'], comp: ['marimba', 'bell', 'ep', 'bianzhong'] } },
+    { id: 'night',  name: '夜色 · 心动', icon: '🌃', mood: '优美', bpm: 104, bpmRange: [100, 110], scale: 'major', drums: 'soft', wet: 0.45, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, altScales: ['penta'], palette: { lead: ['ep', 'piano', 'guzheng', 'pipa'], comp: ['bell', 'piano', 'musicbox', 'pipa'] } },
+    { id: 'neon',   name: '霓虹 · 律动', icon: '🌈', mood: '律动', bpm: 126, bpmRange: [120, 134], scale: 'penta', drums: 'epic', wet: 0.35, octave: 24, bright: true, school: 'reich', soloChance: 0.2, altScales: ['minorPenta'], palette: { lead: ['synth', 'marimba', 'pipa'], comp: ['marimba', 'bell', 'tabla', 'framedrum'] } },
     { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 92, bpmRange: [88, 96], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, altScales: ['minorPenta', 'dorian'], palette: { lead: ['horn', 'clarinet'], comp: ['handpan', 'marimba', 'ep'] } },
     { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 104, bpmRange: [100, 110], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, altScales: ['penta', 'dorian'], palette: { lead: ['marimba', 'bell'], comp: ['bell', 'ep', 'marimba'] } },
   ];
@@ -1730,7 +1806,8 @@
     /* 编配随机：不是每首都带鼓和铺底；没有铺底时用旋律层替代 */
     var arrange = rnd();
     var hasDrums = arrange < 0.62;
-    var hasPad = arrange >= 0.18 && arrange < 0.86;
+    var hasPad = rnd() < 0.14;                 // 86% 不带管弦铺底
+    var drumLead = sid === 'pulse' ? rnd() < 0.7 : rnd() < 0.15;   // 鼓声可当主旋律
     var compKind = rnd() < 0.5 ? 'arp' : (rnd() < 0.5 ? 'bell' : 'none');
     var melody = [], chords = [], drums = [], sparkles = [], bassline = [], arp = [], counter = [];
     for (var cy = 0; cy < cycles; cy++) {
@@ -1748,13 +1825,19 @@
         }
         if (i % 16 === 0) bassline.push({ t: t, midi: 45 + tr, vel: 0.75 });
         if (hasPad && i % 32 === 0) chords.push({ t: t, midis: [48 + tr, 55 + tr, 60 + tr], vel: 0.8 });
-        if (!hasPad && compKind === 'arp' && i % 4 === 0) {
+        if (drumLead) {
+          if (i % 4 === 0 && (i % 8 !== 6 || rnd() < 0.6)) {
+            var dm = 48 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
+            drums.push({ kind: sid === 'pulse' ? 'tabla' : 'fdrum', t: t, midi: dm, vel: i % 8 === 0 ? 0.8 : 0.45 + rnd() * 0.2 });
+          }
+        }
+        if (!hasPad && !drumLead && compKind === 'arp' && i % 4 === 0) {
           arp.push({ t: t, midi: 60 + scaleArr[Math.floor((i / 4) % scaleArr.length)] + tr, vel: 0.2 });
         }
         if (compKind === 'bell' && i % 8 === 4) {
           sparkles.push({ t: t, midi: 72 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr, vel: 0.18 });
         }
-        if (i % 2 === 0 && rnd() < density) {
+        if (i % 2 === 0 && rnd() < (drumLead ? density * 0.3 : density)) {
           var midi = 60 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
           if (rnd() < 0.18) midi += 12;
           melody.push({ t: t, midi: midi, vel: 0.62 + rnd() * 0.2 });
@@ -1769,7 +1852,7 @@
       styleId: sid, mood: styleById(sid).mood || '优美', bpm: bpm,
       root: 48 + rootShift, scaleName: styleById(sid).scale, instrument: inst,
       seed: seed, bars: cycles * 2, created: opts.created || Date.now(),
-      wet: 0.5, engine: 'original', mode: hasDrums ? 'ensemble' : 'duo',
+      wet: 0.5, engine: 'original', mode: hasDrums || drumLead ? 'ensemble' : 'duo', drumLead: !!drumLead,
       melody: melody, chords: chords, drums: drums, sparkles: sparkles, bassline: bassline,
       arp: arp, counter: counter, arpInst: sp.comp, counterInst: sp.comp, sparkInst: 'bell'
     };
@@ -2024,7 +2107,7 @@
     (p.bassline || []).forEach(function (b) { ev.push({ t: b.t, kind: 'bass', midi: b.midi, vel: b.vel }); });
     (p.arp || []).forEach(function (a2) { ev.push({ t: a2.t, kind: 'arp', midi: a2.midi, vel: a2.vel }); });
     (p.counter || []).forEach(function (c2) { ev.push({ t: c2.t, kind: 'counter', midi: c2.midi, vel: c2.vel }); });
-    (p.drums || []).forEach(function (d) { ev.push({ t: d.t, kind: d.kind, vel: d.vel }); });
+    (p.drums || []).forEach(function (d) { ev.push({ t: d.t, kind: d.kind, vel: d.vel, midi: d.midi }); });
     ev.sort(function (a, b) { return a.t - b.t; });
     return ev;
   }
@@ -2046,6 +2129,9 @@
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
     } else if (ev.kind === 'counter') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: p.counterInst || 'handpan', bus: bus });
+    } else if (ev.kind === 'tabla' || ev.kind === 'fdrum') {
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.35, inst: ev.kind === 'tabla' ? 'tabla' : 'framedrum', bus: bus });
+      visQueue.push({ t: when, kind: 'note', midi: ev.midi });
     } else if (ev.kind === 'kick') {
       Audio.kick(when, ev.vel, bus);
       visQueue.push({ t: when, kind: 'beat', amt: ev.vel });
@@ -2120,11 +2206,17 @@
       if (drums !== 'sparse' && (i === 3 || i === 11 || i === 19 || i === 27) && Math.random() < 0.4) Audio.hat(t, 0.16, bus);
     }
     if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
+    if (orig.drumLead && i % 4 === 0) {
+      var dsc = orig.scale || [0, 2, 4, 7, 9, 12];
+      var dMidi = 48 + dsc[Math.floor(Math.random() * dsc.length)] + tr;
+      Audio.note(dMidi, { when: t, vel: i % 8 === 0 ? 0.8 : 0.5, wet: 0.35, inst: orig.styleId === 'pulse' ? 'tabla' : 'framedrum', bus: bus });
+      visQueue.push({ t: t, kind: 'note', midi: dMidi });
+    }
     if (!orig.hasPad && orig.compKind === 'arp' && i % 4 === 0) {
       var csc = orig.scale || [0, 2, 4, 7, 9, 12];
       Audio.note(60 + csc[Math.floor((i / 4) % csc.length)] + tr, { when: t, vel: 0.2, wet: 0.5, inst: orig.compInst || 'marimba', bus: bus });
     }
-    if (i % 2 === 0 && Math.random() < (orig.density || 0.34)) {
+    if (!orig.drumLead && i % 2 === 0 && Math.random() < (orig.density || 0.34)) {
       var sc = orig.scale || [0, 2, 4, 7, 9, 12];
       var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
       Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, bus: bus });
@@ -2177,7 +2269,8 @@
     orig.bpm = sp.bpm;
     orig.compInst = sp.comp;
     orig.hasDrums = Math.random() < 0.62;
-    orig.hasPad = Math.random() < 0.7;
+    orig.hasPad = Math.random() < 0.14;
+    orig.drumLead = sid === 'pulse' ? Math.random() < 0.7 : Math.random() < 0.15;
     orig.compKind = Math.random() < 0.5 ? 'arp' : 'none';
     orig.bus = Audio.bus();
     orig.bus.gain.value = 1;
@@ -4737,7 +4830,7 @@
     return new Blob([new Uint8Array(header.concat(chunks))], { type: 'audio/midi' });
   }
 
-  var INST_PROGRAM = { musicbox: 10, piano: 0, ep: 4, flute: 73, oboe: 68, clarinet: 71, horn: 60, marimba: 12, bell: 9, handpan: 114, synth: 81 };
+  var INST_PROGRAM = { musicbox: 10, piano: 0, ep: 4, flute: 73, oboe: 68, clarinet: 71, horn: 60, marimba: 12, bell: 9, handpan: 114, synth: 81, guzheng: 107, pipa: 105, bianzhong: 14, framedrum: 116, tabla: 115 };
 
   function exportPieceMidi(item) {
     var p = pieceFromSaved(item);
@@ -5412,6 +5505,11 @@
     { id: 'horn', name: '🎺 圆号' },
     { id: 'marimba', name: '🎶 马林巴' },
     { id: 'clarinet', name: '🪈 单簧管' },
+    { id: 'guzheng', name: '🎶 古筝' },
+    { id: 'pipa', name: '🎵 琵琶' },
+    { id: 'bianzhong', name: '🔔 编钟' },
+    { id: 'framedrum', name: '🥁 框鼓' },
+    { id: 'tabla', name: '🪘 塔布拉' },
     { id: 'synth', name: '🌌 合成器' }
   ];
   function markInstBtns(id) {
