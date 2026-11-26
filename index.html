@@ -4564,6 +4564,7 @@
     var r = nowTitle.getBoundingClientRect();
     titleMenu.innerHTML = '';
     titleMenu.hidden = false;
+    var instOpen = false;
     function addBtn(label, fn) {
       var b = document.createElement('button');
       b.className = 'tm-btn';
@@ -4597,7 +4598,12 @@
       hideTitleMenu();
       openLibrary();
     }));
-    row1.appendChild(addBtn('🎹 乐器', function () { instRow.hidden = !instRow.hidden; }));
+    var instBtn = addBtn('🎹 乐器 ▾', function () {
+      instOpen = !instOpen;
+      instRow.hidden = !instOpen;
+      instBtn.textContent = instOpen ? '🎹 收起 ▴' : '🎹 乐器 ▾';
+    });
+    row1.appendChild(instBtn);
     row1.appendChild(addBtn('🎛 创作', function () {
       hideTitleMenu();
       openSheet();
@@ -4607,7 +4613,7 @@
 
     var instRow = document.createElement('div');
     instRow.className = 'tm-row tm-inst';
-    instRow.hidden = true;
+    instRow.hidden = true;   // 默认收起，只有点「乐器」才展开
     INSTRUMENTS.forEach(function (ins) {
       var b = document.createElement('button');
       b.className = 'tm-chip' + (state.instrument === ins.id ? ' on' : '');
