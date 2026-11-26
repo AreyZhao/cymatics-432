@@ -683,10 +683,7 @@
     '  if (uDbg > 2.5) {',
     '    vColor = vec3(0.0, 1.0, 1.0);',
     '  } else {',
-    '    vec3 colA = uColor;',
-    '    vec3 colB = uColor.gbr;',
-    '    vec3 col = mix(colA, colB, aSeed * 0.28 + blink * 0.1);',
-    '    vColor = col * b;',
+    '    vColor = uColor * b;',
     '  }',
     '}'
   ].join('\n');
@@ -6691,9 +6688,9 @@
     var hd = state.hueTarget - state.hue;
     if (hd > 0.5) hd -= 1;
     if (hd < -0.5) hd += 1;
-    state.hue += hd * Math.min(1, dt * (3.4 + vs.hue * 1.8)) + dt * 0.014;
+    state.hue += hd * Math.min(1, dt * (2.2 + vs.hue));
     state.hue = ((state.hue % 1) + 1) % 1;
-    var col = hslToRgb(state.hue + state.energy * 0.03 + state.centroid * 0.09, 0.95, 0.58);
+    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.95, 0.58);
     rgb[0] = col[0]; rgb[1] = col[1]; rgb[2] = col[2];
 
     /* 让钢琴键/面板颜色跟随音流图案的实时色相 */
