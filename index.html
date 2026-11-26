@@ -546,39 +546,32 @@
   var R_WORLD = 7.5;
   var isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent) ||
                  Math.min(window.screen.width, window.screen.height) < 560;
-  var COUNT = isMobile ? 44000 : 82000;
+  var COUNT = isMobile ? 42000 : 82000;
   var LUT_N = 1024;
 
   var posArr = new Float32Array(COUNT * 3);
-  var thArr = new Float32Array(COUNT);
-  var driftArr = new Float32Array(COUNT * 2);
-  var dAX = new Float32Array(COUNT), dAZ = new Float32Array(COUNT);
-  var dBX = new Float32Array(COUNT), dBZ = new Float32Array(COUNT);
   var seedArr = new Float32Array(COUNT);
   var prevArr = new Float32Array(COUNT);
   var curArr = new Float32Array(COUNT);
   var scratch = new Float32Array(COUNT);
   var lutIdx = new Float32Array(COUNT);
-  var cosM = [], sinM = [];
-  var cosT = new Float32Array(COUNT), sinT = new Float32Array(COUNT);
+  var cosM = [];
   var scratchA = new Float32Array(COUNT);
   var scratchB = new Float32Array(COUNT);
   var lutCache = {};
 
   (function buildPoints() {
-    for (var m = 0; m < 6; m++) { cosM.push(new Float32Array(COUNT)); sinM.push(new Float32Array(COUNT)); }
+    for (var m = 0; m < 6; m++) cosM.push(new Float32Array(COUNT));
     for (var i = 0; i < COUNT; i++) {
       var r = Math.sqrt(Math.random());          // 圆盘内均匀分布
       var th = Math.random() * TAU;
       posArr[i * 3] = Math.cos(th) * r * R_WORLD;
       posArr[i * 3 + 1] = 0;
       posArr[i * 3 + 2] = Math.sin(th) * r * R_WORLD;
-      thArr[i] = th;
-      cosT[i] = Math.cos(th); sinT[i] = Math.sin(th);
       seedArr[i] = Math.random();
       lutIdx[i] = r * (LUT_N - 1);
       cosM[0][i] = 1;
-      for (var k = 1; k < 6; k++) { cosM[k][i] = Math.cos(k * th); sinM[k][i] = Math.sin(k * th); }
+      for (var k = 1; k < 6; k++) cosM[k][i] = Math.cos(k * th);
     }
   })();
 
@@ -607,31 +600,6 @@
   }
 
   /* 计算单个模态的振幅场 */
-  function computeGrad(m, z, ox, oz) {
-    var L = getLut(m, z);
-    var inv = 1 / Math.max(1e-6, z / (LUT_N - 1));
-    for (var i = 0; i < COUNT; i++) {
-      var fi = lutIdx[i];
-      var i0 = fi | 0;
-      var fr = fi - i0;
-      var j0 = L[i0], j1 = L[i0 + 1];
-      var j = j0 + (j1 - j0) * fr;
-      var jd = (j1 - j0) * inv;
-      var c = cosT[i], sn = sinT[i];
-      var cmc = cosM[m][i], sm = sinM[m][i];
-      var vr = jd * cmc;
-      var vt = -j * m * sm;
-      var rr = Math.max(0.05, lutIdx[i] / (LUT_N - 1));
-      var gx = vr * c - vt * sn / rr;
-      var gz = vr * sn + vt * c / rr;
-      var len = Math.sqrt(gx * gx + gz * gz);
-      if (len < 1e-6) { ox[i] = 0; oz[i] = 0; continue; }
-      var sgn = (j * cmc) >= 0 ? 1 : -1;
-      ox[i] = -sgn * gx / len;
-      oz[i] = -sgn * gz / len;
-    }
-  }
-
   function computeMode(m, z, out) {
     var L = getLut(m, z);
     var cm = cosM[m];
@@ -668,9 +636,6 @@
     'attribute float aPrev;',
     'attribute float aCur;',
     'attribute float aSeed;',
-    'attribute vec2 aDrift;',
-    'uniform vec3 uColorB;',
-    'uniform float uFlow;',
     'uniform mat4 uProj;',
     'uniform mat4 uView;',
     'uniform float uMix;',
@@ -684,49 +649,33 @@
     'uniform float uWave;',
     'uniform float uDbg;',
     'uniform float uWaveAmp;',
-    'uniform float uLayer;',
     'uniform vec3 uColor;',
     'varying vec3 vColor;',
     'void main(){',
     '  float r = length(aPos.xz) / uR;',
-    '  float wob = sin(uTime * 1.6 + aSeed * 53.0) * 0.012 * uR;',
-    '  float flow = uFlow * (0.45 + 0.55 * sin(uTime * 1.35 + aSeed * 6.2831));',
-    '  vec3 p = aPos;',
-    '  p.x += cos(aSeed * 31.0 + uTime * 0.7) * wob + aDrift.x * flow;',
-    '  p.z += sin(aSeed * 37.0 + uTime * 0.8) * wob + aDrift.y * flow;',
-    '  vec4 mv = uView * vec4(p, 1.0);',
+    '  vec4 mv = uView * vec4(aPos, 1.0);',
     '  gl_Position = uProj * mv;',
-    '  float basePx = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0) * (0.85 + 0.25 * sin(uTime * 2.2 + aSeed * 40.0));',
-    '  float val = mix(aPrev, aCur, uMix);',
-    '  val *= 0.94 + 0.06 * sin(uTime * 0.9 + aSeed * 6.2831);',
-    '  float glow = exp(-val * uSharp);',
-    '  float edge = 1.0 - smoothstep(0.86, 1.0, r);',
-    '  float shimmer = 0.86 + 0.14 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
-    '  float wr = uWave * 1.25;',
-    '  float wq = (r - wr) * 7.5;',
-    '  float ring = exp(-wq * wq) * uWaveAmp * edge;',
-    '  float b;',
-    '  if (uLayer < 0.5) {',
-    '    b = (0.016 + 0.022 * aSeed) * (0.5 + 0.5 * glow) * edge * shimmer * uPulse;',
-    '    vColor = uColorB * b;',
-    '    gl_PointSize = basePx * 0.85;',
-    '  } else if (uLayer < 1.5) {',
-    '    b = pow(glow, 3.4) * edge * shimmer * (0.7 + 0.3 * aSeed) * uPulse + ring * 0.55;',
-    '    vColor = mix(uColor, vec3(1.0), 0.38) * b * uGain;',
-    '    gl_PointSize = basePx * 1.0;',
-    '  } else {',
-    '    b = pow(glow, 4.0) * edge * 0.22 + ring * 0.2;',
-    '    vColor = mix(uColor, vec3(1.0), 0.6) * b * uGain;',
-    '    gl_PointSize = basePx * 2.2;',
-    '  }',
-    '  if (b < 0.002) { gl_PointSize = 0.0; vColor = vec3(0.0); return; }',
+    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0);',
     '  if (uDbg > 2.5 && uDbg < 3.5) {',
     '    gl_Position = vec4(aPos.x * 0.1, aPos.z * 0.1, 0.0, 1.0);',
     '    gl_PointSize = 12.0;',
-    '    vColor = vec3(0.0, 1.0, 1.0);',
     '  } else if (uDbg > 3.5 && uDbg < 4.5) {',
     '    gl_PointSize = 8.0;',
+    '  }',
+    '  float val = mix(aPrev, aCur, uMix);',
+    '  float glow = exp(-val * uSharp);',
+    '  glow = pow(glow, 1.15);',
+    '  float edge = 1.0 - smoothstep(0.88, 1.0, r);',
+    '  float shimmer = 0.88 + 0.12 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
+    '  float b = glow * uPulse * edge * shimmer * (0.62 + aSeed * 0.7) * uGain;',
+    '  float wr = uWave * 1.25;',
+    '  float wq = (r - wr) * 7.5;',
+    '  float ring = exp(-wq * wq) * uWaveAmp;',
+    '  b += ring * edge * 1.1;',
+    '  if (uDbg > 2.5) {',
     '    vColor = vec3(0.0, 1.0, 1.0);',
+    '  } else {',
+    '    vColor = uColor * b;',
     '  }',
     '}'
   ].join('\n');
@@ -737,8 +686,8 @@
     'void main(){',
     '  vec2 p = gl_PointCoord - 0.5;',
     '  float d = length(p) * 2.0;',
-    '  float a = exp(-d * d * 3.2);',
-    '  a *= (0.88 + 0.12 * (1.0 - d));',
+    '  float a = max(0.0, 1.0 - d);',
+    '  a = a * a;',
     '  gl_FragColor = vec4(vColor * a, 1.0);',
     '}'
   ].join('\n');
@@ -766,10 +715,10 @@
   }
   gl.useProgram(prog);
 
-  ['aPos', 'aPrev', 'aCur', 'aSeed', 'aDrift'].forEach(function (n) {
+  ['aPos', 'aPrev', 'aCur', 'aSeed'].forEach(function (n) {
     A[n] = gl.getAttribLocation(prog, n);
   });
-  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor', 'uColorB', 'uFlow', 'uLayer'].forEach(function (n) {
+  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor'].forEach(function (n) {
     U[n] = gl.getUniformLocation(prog, n);
   });
 
@@ -781,7 +730,6 @@
   }
   var posBuf = makeBuffer(posArr, gl.STATIC_DRAW);
   var seedBuf = makeBuffer(seedArr, gl.STATIC_DRAW);
-  var driftBuf = makeBuffer(driftArr, gl.STATIC_DRAW);
   var prevBuf = makeBuffer(prevArr, gl.DYNAMIC_DRAW);
   var curBuf = makeBuffer(curArr, gl.DYNAMIC_DRAW);
 
@@ -795,7 +743,6 @@
   bindAttr(A.aPrev, prevBuf, 1);
   bindAttr(A.aCur, curBuf, 1);
   bindAttr(A.aSeed, seedBuf, 1);
-  bindAttr(A.aDrift, driftBuf, 2);
 
   gl.disable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);
@@ -862,8 +809,8 @@
     lastAiT: 0
   };
 
-  var POINT_SIZE = isMobile ? 1.9 : 1.7;
-  var HALO = false;   /* 关掉雾状光晕，保持沙粒清晰 */
+  var POINT_SIZE = isMobile ? 2.0 : 1.7;
+  var HALO = false;
 
   function setMode(aIdx, bIdx, frac) {
     var A = MODES[aIdx] || MODES[0];
@@ -879,23 +826,10 @@
     for (var k = 0; k < COUNT; k++) prevArr[k] = prevArr[k] * (1 - mix) + curArr[k] * mix;
     curArr.set(scratch);
 
-    computeGrad(A.m, A.z, dAX, dAZ);
-    if (B !== A && frac > 0.001) computeGrad(B.m, B.z, dBX, dBZ);
-    else { dBX.set(dAX); dBZ.set(dAZ); }
-    for (var di = 0; di < COUNT; di++) {
-      var dx = dAX[di] * (1 - frac) + dBX[di] * frac;
-      var dz = dAZ[di] * (1 - frac) + dBZ[di] * frac;
-      var l2 = Math.sqrt(dx * dx + dz * dz) || 1;
-      driftArr[di * 2] = dx / l2;
-      driftArr[di * 2 + 1] = dz / l2;
-    }
-
     gl.bindBuffer(gl.ARRAY_BUFFER, prevBuf);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, prevArr);
     gl.bindBuffer(gl.ARRAY_BUFFER, curBuf);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, curArr);
-    gl.bindBuffer(gl.ARRAY_BUFFER, driftBuf);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, driftArr);
 
     state.transMix = 0;
   }
@@ -6748,7 +6682,7 @@
     if (hd < -0.5) hd += 1;
     state.hue += hd * Math.min(1, dt * (2.2 + vs.hue));
     state.hue = ((state.hue % 1) + 1) % 1;
-    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.82, 0.6);
+    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.95, 0.58);
     rgb[0] = col[0]; rgb[1] = col[1]; rgb[2] = col[2];
 
     /* 让钢琴键/面板颜色跟随音流图案的实时色相 */
@@ -6787,7 +6721,7 @@
       if (state.wave > 1.45) state.waveAmp = 0;
     }
     var pulse = 0.88 + (1.75 * vs.pulse) * vEnergy + 0.06 * Math.sin(t * 1.2);
-    var sharp = 36.0 + 14.0 * (1.0 - Math.min(1, vEnergy));
+    var sharp = 16.5 - 6.0 * vs.point * vEnergy - 1.2 * state.harmonicEnv;
 
     gl.clearColor(0, 0, 0, 1);
     if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
@@ -6806,26 +6740,14 @@
     gl.uniform1f(U.uWaveAmp, state.waveAmp);
     gl.uniform1f(U.uDbg, DEBUG ? (parseFloat(DEBUG) || 0) : 0);
     gl.uniform3f(U.uColor, rgb[0], rgb[1], rgb[2]);
-    if (U.uFlow) gl.uniform1f(U.uFlow, 0.035 + 0.16 * vEnergy + 0.05 * state.waveAmp);
-    if (U.uColorB) {
-      var colB = hslToRgb((state.hue + 0.06) % 1, 0.55, 0.32);
-      gl.uniform3f(U.uColorB, colB[0], colB[1], colB[2]);
+
+    if (HALO) {
+      gl.uniform1f(U.uPx, POINT_SIZE * 2.4 * vs.point);
+      gl.uniform1f(U.uGain, 0.045 * vs.point);
+      gl.drawArrays(gl.POINTS, 0, COUNT);
     }
-
-    /* 三层：细尘底 → 节线 → 柔光 */
-    gl.uniform1f(U.uLayer, 0);
-    gl.uniform1f(U.uPx, POINT_SIZE * 0.85 * vs.point);
-    gl.uniform1f(U.uGain, 0.5);
-    gl.drawArrays(gl.POINTS, 0, COUNT);
-
-    gl.uniform1f(U.uLayer, 1);
-    gl.uniform1f(U.uPx, POINT_SIZE * (0.9 + 0.35 * vEnergy) * vs.point);
-    gl.uniform1f(U.uGain, 0.8);
-    gl.drawArrays(gl.POINTS, 0, COUNT);
-
-    gl.uniform1f(U.uLayer, 2);
-    gl.uniform1f(U.uPx, POINT_SIZE * 2.1 * vs.point);
-    gl.uniform1f(U.uGain, 0.3);
+    gl.uniform1f(U.uPx, POINT_SIZE * (0.85 + 0.5 * vEnergy) * vs.point);
+    gl.uniform1f(U.uGain, 0.92);
     gl.drawArrays(gl.POINTS, 0, COUNT);
 
     if (DEBUG && dbgFrames % 20 === 0) {
