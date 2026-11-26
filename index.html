@@ -546,7 +546,7 @@
   var R_WORLD = 7.5;
   var isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent) ||
                  Math.min(window.screen.width, window.screen.height) < 560;
-  var COUNT = isMobile ? 46000 : 88000;
+  var COUNT = isMobile ? 38000 : 76000;
   var LUT_N = 1024;
 
   var posArr = new Float32Array(COUNT * 3);
@@ -705,18 +705,20 @@
     '  float val = mix(aPrev, aCur, uMix);',
     '  val *= 0.94 + 0.06 * sin(uTime * 0.9 + aSeed * 6.2831);',
     '  float glow = exp(-val * uSharp);',
-    '  glow = pow(glow, 1.12);',
+    '  glow = pow(glow, 2.6);',
     '  float edge = 1.0 - smoothstep(0.86, 1.0, r);',
     '  float shimmer = 0.86 + 0.14 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
     '  float b = glow * uPulse * edge * shimmer * (0.6 + aSeed * 0.75) * uGain;',
     '  float wr = uWave * 1.25;',
     '  float wq = (r - wr) * 7.5;',
     '  b += exp(-wq * wq) * uWaveAmp * edge * 1.1;',
+    '  b = (b - 0.05) * 1.55;',
+    '  if (b < 0.005) { gl_PointSize = 0.0; vColor = vec3(0.0); return; }',
     '  if (uDbg > 2.5) {',
     '    vColor = vec3(0.0, 1.0, 1.0);',
     '  } else {',
     '    vec3 tone = mix(uColorB, uColor, clamp(b * 2.0, 0.0, 1.0));',
-    '    tone = mix(tone, vec3(1.0), 0.22 * clamp(b * 1.6, 0.0, 1.0));',
+    '    tone = mix(tone, vec3(1.0), 0.5 * clamp(b * 1.6, 0.0, 1.0));',
     '    vColor = tone * b;',
     '  }',
     '}'
@@ -854,7 +856,7 @@
   };
 
   var POINT_SIZE = isMobile ? 1.8 : 1.5;
-  var HALO = true;    /* 叠加一层低亮度柔光，画面更有氛围 */
+  var HALO = false;   /* 关掉雾状光晕，保持沙粒清晰 */
 
   function setMode(aIdx, bIdx, frac) {
     var A = MODES[aIdx] || MODES[0];
@@ -6778,7 +6780,7 @@
       if (state.wave > 1.45) state.waveAmp = 0;
     }
     var pulse = 0.88 + (1.75 * vs.pulse) * vEnergy + 0.06 * Math.sin(t * 1.2);
-    var sharp = 16.5 - 6.0 * vs.point * vEnergy - 1.2 * state.harmonicEnv;
+    var sharp = 24.0 + 10.0 * (1.0 - Math.min(1, vEnergy));
 
     gl.clearColor(0, 0, 0, 1);
     if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
