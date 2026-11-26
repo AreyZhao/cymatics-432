@@ -210,6 +210,27 @@
   }
   #nowTitle b{color:#fff;font-weight:600}
   #nowTitle:active{cursor:grabbing}
+  #titleMenu{
+    position:fixed; z-index:26; display:flex; flex-direction:column; gap:6px;
+    padding:8px; border-radius:14px; border:1px solid var(--accent-line);
+    background:rgba(8,11,16,.94); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    box-shadow:0 12px 40px rgba(0,0,0,.6);
+    max-width:min(340px, calc(100vw - 16px));
+  }
+  #titleMenu[hidden]{display:none}
+  .tm-row{display:flex; gap:6px; flex-wrap:wrap}
+  .tm-btn{
+    appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);
+    background:rgba(255,255,255,.05);color:var(--text);font-size:11px;font-family:inherit;
+    padding:7px 9px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  }
+  .tm-btn:hover{background:rgba(255,255,255,.12)}
+  .tm-inst{max-height:110px; overflow:auto}
+  .tm-chip{
+    border:1px solid var(--stroke);background:rgba(255,255,255,.04);color:var(--muted);
+    font-size:10px;padding:5px 7px;border-radius:7px;cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  .tm-chip.on{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600}
   #lib{
     position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
     padding:12px;background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
@@ -333,6 +354,7 @@
 
 <div id="toast"></div>
 <div id="nowTitle" hidden></div>
+<div id="titleMenu" hidden></div>
 <div id="dbg"></div>
 
 <header id="top-bar" class="ui-layer">
@@ -4501,7 +4523,105 @@
     nowTitle.hidden = false;
     placeTitle();
   }
-  function hideNowTitle() { if (nowTitle) nowTitle.hidden = true; }
+  function hideNowTitle() { if (nowTitle) nowTitle.hidden = true; hideTitleMenu(); }
+
+  /* ---------- 歌名浮窗菜单 ---------- */
+  var titleMenu = $('titleMenu');
+  function hideTitleMenu() {
+    if (titleMenu) { titleMenu.hidden = true; titleMenu.innerHTML = ''; }
+  }
+  function libraryItemForCurrent() {
+    var p = state.currentPiece;
+    if (!p || !p.id) return null;
+    for (var i = 0; i < library.length; i++) if (library[i].id === p.id) return library[i];
+    return null;
+  }
+  function snapshotCurrent() {
+    if (!state.currentPiece) return null;
+    var sid = state.currentPiece.styleId || 'aurora';
+    var sp = ORIG_STYLE_PARAMS[sid] || ORIG_STYLE_PARAMS.aurora;
+    return composeOriginalPiece({
+      seed: ((Date.now() * 2654435761) >>> 0),
+      styleId: sid,
+      bpm: state.currentPiece.bpm || sp.bpm,
+      name: pickName(),
+      instrument: state.instrument || sp.inst
+    });
+  }
+  function saveCurrentToLibrary() {
+    var item = libraryItemForCurrent();
+    if (item) return item;
+    var p = snapshotCurrent();
+    if (!p) return null;
+    saveLibraryPiece(p);
+    return libraryItemForCurrent();
+  }
+  function toggleTitleMenu() {
+    if (!titleMenu || !nowTitle || nowTitle.hidden) return;
+    if (!titleMenu.hidden) { hideTitleMenu(); return; }
+    var r = nowTitle.getBoundingClientRect();
+    titleMenu.innerHTML = '';
+    titleMenu.hidden = false;
+    function addBtn(label, fn) {
+      var b = document.createElement('button');
+      b.className = 'tm-btn';
+      b.textContent = label;
+      b.addEventListener('click', function (e) { e.stopPropagation(); fn(); });
+      return b;
+    }
+    var row1 = document.createElement('div');
+    row1.className = 'tm-row';
+    row1.appendChild(addBtn('⭐ 收藏', function () {
+      var item = saveCurrentToLibrary();
+      if (!item) { hideTitleMenu(); return; }
+      item.preset = true;
+      saveLibrary();
+      renderLibrary();
+      toast('⭐ 已收藏「' + esc(item.name) + '」', 2200);
+      hideTitleMenu();
+    }));
+    row1.appendChild(addBtn('💾 保存', function () {
+      var item = saveCurrentToLibrary();
+      toast(item ? ('💾 已保存「' + esc(item.name) + '」') : '保存失败', 2200);
+      hideTitleMenu();
+    }));
+    row1.appendChild(addBtn('⤓ 导出', function () {
+      var item = saveCurrentToLibrary();
+      if (item) exportPieceMidi(item);
+      hideTitleMenu();
+    }));
+    row1.appendChild(addBtn('🎹 乐器', function () { instRow.hidden = !instRow.hidden; }));
+    row1.appendChild(addBtn('🎛 创作', function () {
+      hideTitleMenu();
+      openSheet();
+      sheetGo('create');
+    }));
+    titleMenu.appendChild(row1);
+
+    var instRow = document.createElement('div');
+    instRow.className = 'tm-row tm-inst';
+    instRow.hidden = true;
+    INSTRUMENTS.forEach(function (ins) {
+      var b = document.createElement('button');
+      b.className = 'tm-chip' + (state.instrument === ins.id ? ' on' : '');
+      b.textContent = ins.name;
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        state.instrument = ins.id;
+        if (typeof orig !== 'undefined' && orig.on) orig.inst = ins.id;
+        toast('🎹 已换成 ' + ins.name, 1800);
+        hideTitleMenu();
+      });
+      instRow.appendChild(b);
+    });
+    titleMenu.appendChild(instRow);
+
+    titleMenu.style.left = Math.max(8, Math.min(window.innerWidth - 320, r.left)) + 'px';
+    titleMenu.style.top = Math.min(window.innerHeight - 150, r.bottom + 10) + 'px';
+  }
+  document.addEventListener('pointerdown', function (e) {
+    if (titleMenu && !titleMenu.hidden && e.target !== nowTitle && !titleMenu.contains(e.target)) hideTitleMenu();
+  }, true);
   (function titleDrag() {
     if (!nowTitle) return;
     var drag = null, moved = false;
@@ -4528,7 +4648,7 @@
       var isTap = !moved;
       drag = null;
       try { localStorage.setItem('cz_title_pos', JSON.stringify(titlePos)); } catch (err) {}
-      if (isTap) { openSheet(); sheetGo('create'); }
+      if (isTap) { toggleTitleMenu(); }
     });
   })();
 
