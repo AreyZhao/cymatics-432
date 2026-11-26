@@ -755,6 +755,8 @@
     bpm: 0,
     wave: 0,
     waveAmp: 0,
+    harmonicEnv: 0,
+    smoothEnergy: 0,
     silent: 0,
     silentHinted: false,
     prevBass: 0,
@@ -783,7 +785,7 @@
     lastAiT: 0
   };
 
-  var POINT_SIZE = isMobile ? 2.6 : 2.2;
+  var POINT_SIZE = isMobile ? 2.0 : 1.7;
   var HALO = false;
 
   function setMode(aIdx, bIdx, frac) {
@@ -1840,6 +1842,19 @@
     framedrum: { char: 'perc' }, tabla: { char: 'perc' }
   };
 
+  var INST_OVERTONES = {
+    guzheng: 0.85, pipa: 0.9, bell: 0.7, bianzhong: 0.75, piano: 0.6, marimba: 0.55, musicbox: 0.5,
+    flute: 0.3, oboe: 0.42, clarinet: 0.4, horn: 0.44, ep: 0.45, handpan: 0.6, synth: 0.5,
+    framedrum: 0.35, tabla: 0.4
+  };
+  var VIS_STYLE = {
+    aurora: { rot: 0.045, zoom: 0.05, pulse: 0.85, point: 0.85, hue: 0.2, wave: 1.1, gap: 220 },
+    night:  { rot: 0.055, zoom: 0.06, pulse: 0.95, point: 0.9, hue: 0.28, wave: 1.0, gap: 190 },
+    neon:   { rot: 0.085, zoom: 0.075, pulse: 1.08, point: 0.95, hue: 0.5, wave: 1.25, gap: 140 },
+    pulse:  { rot: 0.075, zoom: 0.07, pulse: 1.05, point: 0.95, hue: 0.45, wave: 1.3, gap: 150 },
+    grow:   { rot: 0.065, zoom: 0.065, pulse: 1.0, point: 0.9, hue: 0.4, wave: 1.2, gap: 160 }
+  };
+
   var ORIG_STYLE_PARAMS = {
     aurora: { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 120, density: 0.34, drums: 'lite', inst: 'musicbox', comp: 'marimba', leads: ['musicbox', 'flute', 'horn', 'guzheng'] },
     night:  { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 104, density: 0.46, drums: 'lite', inst: 'ep', comp: 'piano', leads: ['ep', 'piano', 'guzheng', 'pipa'] },
@@ -1874,7 +1889,7 @@
     var prof = INST_PROFILES[inst] || { char: 'sustain' };
     var arrange = rnd();
     var hasDrums = arrange < 0.62;
-    var hasPad = prof.char === 'pluck' ? false : rnd() < 0.14;
+    var hasPad = false;                          // 彻底不要背景管弦铺底
     var drumLead = prof.char === 'perc' ? true : (sid === 'pulse' ? rnd() < 0.7 : rnd() < 0.15);
     var compKind = prof.char === 'pluck' ? 'arp' : (rnd() < 0.5 ? 'arp' : (rnd() < 0.5 ? 'bell' : 'none'));
     var densityBase = sp.density + (prof.char === 'pluck' ? 0.06 : (prof.char === 'sustain' ? -0.04 : 0.02));
@@ -1888,9 +1903,6 @@
           var kickMain = sp.drums === 'strong' ? (i % 8 === 0 || i % 8 === 4) : (i === 0 || i === 12);
           if (kickMain) drums.push({ kind: 'kick', t: t, vel: 0.95 });
           if (i === 6 || i === 22) drums.push({ kind: 'kick', t: t + (rnd() - 0.5) * 0.012, vel: sp.drums === 'sparse' ? 0.28 : 0.42 });
-          if (sp.drums !== 'sparse' && (i === 3 || i === 11 || i === 19 || i === 27) && rnd() < 0.42) {
-            drums.push({ kind: 'hat', t: t + (rnd() - 0.5) * 0.02, vel: 0.16 });
-          }
         }
         if (i % 16 === 0) bassline.push({ t: t, midi: 45 + tr, vel: 0.75 });
         if (hasPad && i % 32 === 0) chords.push({ t: t, midis: [48 + tr, 55 + tr, 60 + tr], vel: 0.8 });
@@ -2185,16 +2197,18 @@
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: p.instrument, bus: bus });
       if (p.mode !== 'solo') Audio.note(ev.midi + 12, { when: when + 0.16, vel: ev.vel * 0.13, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
+      visQueue.push({ t: when, kind: 'harmonic', amt: INST_OVERTONES[p.instrument] || 0.45 });
     } else if (ev.kind === 'sparkle') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
     } else if (ev.kind === 'pad') {
-      Audio.pad(when, ev.midis, ev.vel, bus);
       visQueue.push({ t: when, kind: 'chord', midi: ev.midis[0] });
+      visQueue.push({ t: when, kind: 'harmonic', amt: 0.25 });
     } else if (ev.kind === 'bass') {
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'arp') {
       Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: p.arpInst || 'ep', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
+      visQueue.push({ t: when, kind: 'harmonic', amt: (INST_OVERTONES[p.arpInst] || 0.4) * 0.6 });
     } else if (ev.kind === 'counter') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: p.counterInst || 'handpan', bus: bus });
     } else if (ev.kind === 'tabla' || ev.kind === 'fdrum') {
@@ -2271,7 +2285,6 @@
     if (orig.hasDrums !== false) {
       if (i % 8 === 0 || (drums === 'strong' && i % 8 === 4)) { Audio.kick(t, 1, bus); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
       if (i === 6 || i === 22) { Audio.kick(t, drums === 'sparse' ? 0.28 : 0.38, bus); visQueue.push({ t: t, kind: 'beat', amt: 0.38 }); }
-      if (drums !== 'sparse' && (i === 3 || i === 11 || i === 19 || i === 27) && Math.random() < 0.4) Audio.hat(t, 0.16, bus);
     }
     if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
     if (orig.drumLead && i % 4 === 0) {
@@ -2289,6 +2302,7 @@
       var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
       Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, inst: orig.inst, bus: bus });
       visQueue.push({ t: t, kind: 'note', midi: midi });
+      visQueue.push({ t: t, kind: 'harmonic', amt: INST_OVERTONES[orig.inst] || 0.45 });
     }
     if (orig.hasPad !== false && i % 32 === 0) Audio.pad(t, [48 + tr, 55 + tr, 60 + tr], 0.9, bus);
   }
@@ -2341,7 +2355,7 @@
     var lprof = INST_PROFILES[orig.inst] || { char: 'sustain' };
     orig.density = sp.density + (lprof.char === 'pluck' ? 0.06 : (lprof.char === 'sustain' ? -0.04 : 0.02));
     orig.hasDrums = Math.random() < 0.62;
-    orig.hasPad = Math.random() < 0.14;
+    orig.hasPad = false;
     orig.drumLead = sid === 'pulse' ? Math.random() < 0.7 : Math.random() < 0.15;
     orig.compKind = Math.random() < 0.5 ? 'arp' : 'none';
     orig.bus = Audio.bus();
@@ -6184,6 +6198,12 @@
     }
 
     /* 视觉事件队列（按音频时钟对齐） */
+    var curStyle = 'aurora';
+    if (state.seqOn) {
+      if (state.currentPiece && state.currentPiece.styleId) curStyle = state.currentPiece.styleId;
+      else if (typeof orig !== 'undefined' && orig.styleId) curStyle = orig.styleId;
+    }
+    var vs = VIS_STYLE[curStyle] || VIS_STYLE.aurora;
     var c = Audio.ctx();
     var nowT = c ? c.currentTime : 0;
     while (visQueue.length && visQueue[0].t <= nowT + 0.02) {
@@ -6201,9 +6221,11 @@
         state.beatEnv = Math.min(1.9, state.beatEnv + 0.5);
         state.wave = 0;
         state.waveAmp = Math.min(1.5, state.waveAmp + 0.45);
+      } else if (ev.kind === 'harmonic') {
+        state.harmonicEnv = Math.min(1.4, state.harmonicEnv + (ev.amt || 0.4) * 0.45);
       } else if (ev.kind === 'note') {
         var nowVis = performance.now();
-        var gap = state.seqOn ? (state.mood === '空灵' ? 160 : (state.mood === '震撼' ? 120 : (state.mood === '律动' ? 140 : 150))) : 0;
+        var gap = state.seqOn ? vs.gap : 0;
         if (nowVis - (state.lastVisFreq || 0) >= gap) {
           state.lastVisFreq = nowVis;
           setFreq(ev.freq || midiToFreq(ev.midi));
@@ -6215,19 +6237,22 @@
       }
     }
 
-    var ambient = state.seqOn ? (0.46 + 0.08 * Math.sin(t * 0.65)) : 0;
+    state.harmonicEnv *= Math.exp(-dt * 2.0);
+    var ambient = state.seqOn ? (0.44 + 0.07 * Math.sin(t * 0.65)) : 0;
     state.energy = Math.max(state.beatEnv * 0.95, state.level * 0.95, ambient);
     var visMood = state.seqOn ? (state.mood || '优美') : '优美';
-    var moodGain = visMood === '空灵' ? 0.92 : (visMood === '震撼' ? 1.28 : (visMood === '律动' ? 1.06 : 1.0));
-    var vEnergy = Math.min(1.5, state.energy * moodGain) * (1 + 0.07 * Math.sin(t * 0.85));
-    vEnergy = Math.max(0, vEnergy);
-    var zoom = 1 - 0.075 * vEnergy;
+    var moodGain = visMood === '空灵' ? 0.92 : (visMood === '震撼' ? 1.22 : (visMood === '律动' ? 1.04 : 1.0));
+    var vEnergyRaw = Math.min(1.5, state.energy * moodGain) * (1 + 0.07 * Math.sin(t * 0.85)) * (1 + 0.2 * state.harmonicEnv);
+    vEnergyRaw = Math.max(0, vEnergyRaw);
+    state.smoothEnergy += (vEnergyRaw - state.smoothEnergy) * Math.min(1, dt * 3.0);
+    var vEnergy = state.smoothEnergy;
+    var zoom = 1 - vs.zoom * vEnergy + 0.008 * Math.sin(t * 0.5);
 
     /* ---- 色调 ---- */
     var hd = state.hueTarget - state.hue;
     if (hd > 0.5) hd -= 1;
     if (hd < -0.5) hd += 1;
-    state.hue += hd * Math.min(1, dt * 3.2);
+    state.hue += hd * Math.min(1, dt * (2.2 + vs.hue));
     state.hue = ((state.hue % 1) + 1) % 1;
     var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.95, 0.58);
     rgb[0] = col[0]; rgb[1] = col[1]; rgb[2] = col[2];
@@ -6246,7 +6271,7 @@
 
     /* ---- 相机（按气质放慢/加快） ---- */
     var mood = state.seqOn ? (state.mood || '优美') : '优美';
-    var autoSpeed = mood === '空灵' ? 0.05 : (mood === '震撼' ? 0.09 : (mood === '律动' ? 0.08 : 0.07));
+    var autoSpeed = vs.rot;
     if (performance.now() - lastInteract > 2800) cam.tTheta += dt * autoSpeed;
     var ks = 1 - Math.exp(-dt * 7);
     cam.theta += (cam.tTheta - cam.theta) * ks;
@@ -6264,11 +6289,11 @@
     /* ---- 绘制 ---- */
     if (state.waveAmp > 0.01) {
       state.wave += dt * 2.0;
-      state.waveAmp *= Math.exp(-dt * 3.0);
+      state.waveAmp *= Math.exp(-dt * (3.4 / vs.wave));
       if (state.wave > 1.45) state.waveAmp = 0;
     }
-    var pulse = 0.92 + 2.05 * vEnergy + 0.05 * Math.sin(t * 1.3);
-    var sharp = 14.5 - 8.5 * vEnergy;
+    var pulse = 0.88 + (1.75 * vs.pulse) * vEnergy + 0.06 * Math.sin(t * 1.2);
+    var sharp = 16.5 - 6.0 * vs.point * vEnergy - 1.2 * state.harmonicEnv;
 
     gl.clearColor(0, 0, 0, 1);
     if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
@@ -6289,12 +6314,12 @@
     gl.uniform3f(U.uColor, rgb[0], rgb[1], rgb[2]);
 
     if (HALO) {
-      gl.uniform1f(U.uPx, POINT_SIZE * 3.1);
-      gl.uniform1f(U.uGain, 0.085);
+      gl.uniform1f(U.uPx, POINT_SIZE * 2.4 * vs.point);
+      gl.uniform1f(U.uGain, 0.045 * vs.point);
       gl.drawArrays(gl.POINTS, 0, COUNT);
     }
-    gl.uniform1f(U.uPx, POINT_SIZE * (1 + 0.75 * vEnergy));
-    gl.uniform1f(U.uGain, 1.15);
+    gl.uniform1f(U.uPx, POINT_SIZE * (0.85 + 0.5 * vEnergy) * vs.point);
+    gl.uniform1f(U.uGain, 0.92);
     gl.drawArrays(gl.POINTS, 0, COUNT);
 
     if (DEBUG && dbgFrames % 20 === 0) {
