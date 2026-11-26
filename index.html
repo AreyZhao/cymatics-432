@@ -546,7 +546,7 @@
   var R_WORLD = 7.5;
   var isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent) ||
                  Math.min(window.screen.width, window.screen.height) < 560;
-  var COUNT = isMobile ? 38000 : 76000;
+  var COUNT = isMobile ? 56000 : 100000;
   var LUT_N = 1024;
 
   var posArr = new Float32Array(COUNT * 3);
@@ -684,6 +684,7 @@
     'uniform float uWave;',
     'uniform float uDbg;',
     'uniform float uWaveAmp;',
+    'uniform float uLayer;',
     'uniform vec3 uColor;',
     'varying vec3 vColor;',
     'void main(){',
@@ -695,31 +696,37 @@
     '  p.z += sin(aSeed * 37.0 + uTime * 0.8) * wob + aDrift.y * flow;',
     '  vec4 mv = uView * vec4(p, 1.0);',
     '  gl_Position = uProj * mv;',
-    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0) * (0.85 + 0.25 * sin(uTime * 2.2 + aSeed * 40.0)) * (1.0 + 0.35 * length(aDrift) * uFlow * 6.0);',
-    '  if (uDbg > 2.5 && uDbg < 3.5) {',
-    '    gl_Position = vec4(aPos.x * 0.1, aPos.z * 0.1, 0.0, 1.0);',
-    '    gl_PointSize = 12.0;',
-    '  } else if (uDbg > 3.5 && uDbg < 4.5) {',
-    '    gl_PointSize = 8.0;',
-    '  }',
+    '  float basePx = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0) * (0.85 + 0.25 * sin(uTime * 2.2 + aSeed * 40.0));',
     '  float val = mix(aPrev, aCur, uMix);',
     '  val *= 0.94 + 0.06 * sin(uTime * 0.9 + aSeed * 6.2831);',
     '  float glow = exp(-val * uSharp);',
-    '  glow = pow(glow, 2.6);',
     '  float edge = 1.0 - smoothstep(0.86, 1.0, r);',
     '  float shimmer = 0.86 + 0.14 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
-    '  float b = glow * uPulse * edge * shimmer * (0.6 + aSeed * 0.75) * uGain;',
     '  float wr = uWave * 1.25;',
     '  float wq = (r - wr) * 7.5;',
-    '  b += exp(-wq * wq) * uWaveAmp * edge * 1.1;',
-    '  b = (b - 0.05) * 1.55;',
-    '  if (b < 0.005) { gl_PointSize = 0.0; vColor = vec3(0.0); return; }',
-    '  if (uDbg > 2.5) {',
-    '    vColor = vec3(0.0, 1.0, 1.0);',
+    '  float ring = exp(-wq * wq) * uWaveAmp * edge;',
+    '  float b;',
+    '  if (uLayer < 0.5) {',
+    '    b = (0.05 + 0.055 * aSeed) * (0.55 + 0.45 * glow) * edge * shimmer * uPulse;',
+    '    vColor = uColorB * b;',
+    '    gl_PointSize = basePx * 0.9;',
+    '  } else if (uLayer < 1.5) {',
+    '    b = pow(glow, 2.2) * edge * shimmer * (0.72 + 0.28 * aSeed) * uPulse + ring * 0.85;',
+    '    vColor = mix(uColor, vec3(1.0), 0.55) * b * uGain;',
+    '    gl_PointSize = basePx * 1.12;',
     '  } else {',
-    '    vec3 tone = mix(uColorB, uColor, clamp(b * 2.0, 0.0, 1.0));',
-    '    tone = mix(tone, vec3(1.0), 0.5 * clamp(b * 1.6, 0.0, 1.0));',
-    '    vColor = tone * b;',
+    '    b = pow(glow, 3.2) * edge * 0.4 + ring * 0.35;',
+    '    vColor = mix(uColor, vec3(1.0), 0.7) * b * uGain;',
+    '    gl_PointSize = basePx * 2.6;',
+    '  }',
+    '  if (b < 0.002) { gl_PointSize = 0.0; vColor = vec3(0.0); return; }',
+    '  if (uDbg > 2.5 && uDbg < 3.5) {',
+    '    gl_Position = vec4(aPos.x * 0.1, aPos.z * 0.1, 0.0, 1.0);',
+    '    gl_PointSize = 12.0;',
+    '    vColor = vec3(0.0, 1.0, 1.0);',
+    '  } else if (uDbg > 3.5 && uDbg < 4.5) {',
+    '    gl_PointSize = 8.0;',
+    '    vColor = vec3(0.0, 1.0, 1.0);',
     '  }',
     '}'
   ].join('\n');
@@ -762,7 +769,7 @@
   ['aPos', 'aPrev', 'aCur', 'aSeed', 'aDrift'].forEach(function (n) {
     A[n] = gl.getAttribLocation(prog, n);
   });
-  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor', 'uColorB', 'uFlow'].forEach(function (n) {
+  ['uProj', 'uView', 'uMix', 'uSharp', 'uPx', 'uDpr', 'uPulse', 'uGain', 'uR', 'uTime', 'uWave', 'uWaveAmp', 'uDbg', 'uColor', 'uColorB', 'uFlow', 'uLayer'].forEach(function (n) {
     U[n] = gl.getUniformLocation(prog, n);
   });
 
@@ -855,7 +862,7 @@
     lastAiT: 0
   };
 
-  var POINT_SIZE = isMobile ? 1.8 : 1.5;
+  var POINT_SIZE = isMobile ? 2.1 : 1.9;
   var HALO = false;   /* 关掉雾状光晕，保持沙粒清晰 */
 
   function setMode(aIdx, bIdx, frac) {
@@ -6805,13 +6812,20 @@
       gl.uniform3f(U.uColorB, colB[0], colB[1], colB[2]);
     }
 
-    if (HALO) {
-      gl.uniform1f(U.uPx, POINT_SIZE * 2.4 * vs.point);
-      gl.uniform1f(U.uGain, 0.02 * vs.point);
-      gl.drawArrays(gl.POINTS, 0, COUNT);
-    }
-    gl.uniform1f(U.uPx, POINT_SIZE * (0.85 + 0.5 * vEnergy) * vs.point);
-    gl.uniform1f(U.uGain, 0.92);
+    /* 三层：细尘底 → 节线 → 柔光 */
+    gl.uniform1f(U.uLayer, 0);
+    gl.uniform1f(U.uPx, POINT_SIZE * 0.9 * vs.point);
+    gl.uniform1f(U.uGain, 0.55);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+
+    gl.uniform1f(U.uLayer, 1);
+    gl.uniform1f(U.uPx, POINT_SIZE * (0.95 + 0.45 * vEnergy) * vs.point);
+    gl.uniform1f(U.uGain, 1.0);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+
+    gl.uniform1f(U.uLayer, 2);
+    gl.uniform1f(U.uPx, POINT_SIZE * 2.6 * vs.point);
+    gl.uniform1f(U.uGain, 0.55);
     gl.drawArrays(gl.POINTS, 0, COUNT);
 
     if (DEBUG && dbgFrames % 20 === 0) {
