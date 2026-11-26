@@ -653,9 +653,16 @@
     'varying vec3 vColor;',
     'void main(){',
     '  float r = length(aPos.xz) / uR;',
-    '  vec4 mv = uView * vec4(aPos, 1.0);',
+    '  float fly = 0.1 + 0.26 * aSeed;',
+    '  float fx = sin(uTime * (0.5 + aSeed * 1.1) + aSeed * 31.0) * fly;',
+    '  float fz = cos(uTime * (0.6 + aSeed * 0.95) + aSeed * 47.0) * fly;',
+    '  float fy = sin(uTime * (0.8 + aSeed * 1.3) + aSeed * 59.0) * fly * 0.35;',
+    '  vec3 fp = aPos + vec3(fx, fy, fz);',
+    '  vec4 mv = uView * vec4(fp, 1.0);',
     '  gl_Position = uProj * mv;',
-    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0);',
+    '  float fl = 0.5 + 0.5 * sin(uTime * (2.0 + aSeed * 4.6) + aSeed * 40.0);',
+    '  float blink = pow(fl, 4.0);',
+    '  gl_PointSize = clamp(uPx * uDpr * (24.0 / max(8.0, -mv.z)), 1.0, 30.0) * (0.7 + 0.65 * blink);',
     '  if (uDbg > 2.5 && uDbg < 3.5) {',
     '    gl_Position = vec4(aPos.x * 0.1, aPos.z * 0.1, 0.0, 1.0);',
     '    gl_PointSize = 12.0;',
@@ -668,6 +675,7 @@
     '  float edge = 1.0 - smoothstep(0.88, 1.0, r);',
     '  float shimmer = 0.88 + 0.12 * sin(r * 15.0 - uTime * 1.3 + aSeed * 6.2831);',
     '  float b = glow * uPulse * edge * shimmer * (0.62 + aSeed * 0.7) * uGain;',
+    '  b *= (0.45 + 1.05 * blink);',
     '  float wr = uWave * 1.25;',
     '  float wq = (r - wr) * 7.5;',
     '  float ring = exp(-wq * wq) * uWaveAmp;',
@@ -675,7 +683,10 @@
     '  if (uDbg > 2.5) {',
     '    vColor = vec3(0.0, 1.0, 1.0);',
     '  } else {',
-    '    vColor = uColor * b;',
+    '    vec3 colA = uColor;',
+    '    vec3 colB = uColor.gbr;',
+    '    vec3 col = mix(colA, colB, aSeed * 0.28 + blink * 0.1);',
+    '    vColor = col * b;',
     '  }',
     '}'
   ].join('\n');
@@ -6680,9 +6691,9 @@
     var hd = state.hueTarget - state.hue;
     if (hd > 0.5) hd -= 1;
     if (hd < -0.5) hd += 1;
-    state.hue += hd * Math.min(1, dt * (2.2 + vs.hue));
+    state.hue += hd * Math.min(1, dt * (3.4 + vs.hue * 1.8)) + dt * 0.014;
     state.hue = ((state.hue % 1) + 1) % 1;
-    var col = hslToRgb(state.hue + state.energy * 0.02 + state.centroid * 0.05, 0.95, 0.58);
+    var col = hslToRgb(state.hue + state.energy * 0.03 + state.centroid * 0.09, 0.95, 0.58);
     rgb[0] = col[0]; rgb[1] = col[1]; rgb[2] = col[2];
 
     /* 让钢琴键/面板颜色跟随音流图案的实时色相 */
