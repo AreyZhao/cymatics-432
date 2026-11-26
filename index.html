@@ -1037,7 +1037,7 @@
       var WET_BY_INST = { flute: 0.55, oboe: 0.52, horn: 0.55, clarinet: 0.5, ep: 0.45, handpan: 0.5, bell: 0.45, marimba: 0.42, guzheng: 0.5, pipa: 0.45, bianzhong: 0.55, framedrum: 0.3, tabla: 0.32, violin: 0.5, harp: 0.45, piccolo: 0.5, hulusi: 0.48, melodica: 0.4, ocarina: 0.5 };
       var wet = (inst in WET_BY_INST) ? WET_BY_INST[inst] : 0.34;
       var out = outBus(wet, opts.bus);
-      var INST_TRIM = { musicbox: 0.95, piano: 1.0, oboe: 0.62, ep: 0.85, flute: 0.72, bell: 0.78, handpan: 0.85, synth: 0.58, horn: 0.62, marimba: 0.8, clarinet: 0.66, guzheng: 0.72, pipa: 0.68, bianzhong: 0.72, framedrum: 0.9, tabla: 0.8, violin: 0.6, harp: 0.8, piccolo: 0.6, hulusi: 0.62, melodica: 0.62, ocarina: 0.66 };
+      var INST_TRIM = { musicbox: 0.95, piano: 1.0, oboe: 1.0, ep: 0.85, flute: 1.15, bell: 0.78, handpan: 0.85, synth: 0.58, horn: 0.66, marimba: 0.8, clarinet: 1.05, guzheng: 0.72, pipa: 0.68, bianzhong: 0.72, framedrum: 1.25, tabla: 1.15, violin: 0.95, harp: 0.95, piccolo: 1.0, hulusi: 0.95, melodica: 0.7, ocarina: 0.9 };
       out.gain.value = INST_TRIM[inst] || 1;
       var o, g, o2, g2, lp, lfo, lfoG;
 
@@ -1087,8 +1087,8 @@
         lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = (2500 + R * 1100) * (0.65 + 0.7 * vel);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.135 * vel, t + 0.05);
-        g.gain.setValueAtTime(0.13 * vel, t + 1.15);
+        g.gain.linearRampToValueAtTime(0.17 * vel, t + 0.05);
+        g.gain.setValueAtTime(0.16 * vel, t + 1.15);
         g.gain.exponentialRampToValueAtTime(0.0003, t + 3.0);
         o.connect(lp); lp.connect(g); g.connect(out);
         o.start(t); o.stop(t + 3.1);
@@ -1096,20 +1096,22 @@
         var flN = c.createBufferSource(); flN.buffer = noiseBuf;
         var flHp = c.createBiquadFilter(); flHp.type = 'highpass'; flHp.frequency.value = 2200;
         var flNg = c.createGain();
-        flNg.gain.setValueAtTime((0.006 + Math.random() * 0.008) * vel, t);
-        flNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.12);
-        flN.connect(flHp); flHp.connect(flNg); flNg.connect(out); flN.start(t); flN.stop(t + 0.14);
+        flNg.gain.setValueAtTime(0.0001, t);
+        flNg.gain.linearRampToValueAtTime((0.025 + Math.random() * 0.012) * vel, t + 0.09);
+        flNg.gain.setValueAtTime((0.016 + Math.random() * 0.008) * vel, t + 1.0);
+        flNg.gain.exponentialRampToValueAtTime(0.0002, t + 2.2);
+        flN.connect(flHp); flHp.connect(flNg); flNg.connect(out); flN.start(t); flN.stop(t + 2.3);
         var fl2o = c.createOscillator(); fl2o.type = 'sine'; fl2o.frequency.setValueAtTime(f * 2, t);
         var fl2g = c.createGain();
         fl2g.gain.setValueAtTime(0.0001, t);
-        fl2g.gain.linearRampToValueAtTime(0.024 * vel, t + 0.06);
+        fl2g.gain.linearRampToValueAtTime(0.042 * vel, t + 0.06);
         fl2g.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
         fl2o.connect(fl2g); fl2g.connect(out); fl2o.start(t); fl2o.stop(t + 1.1);
       } else if (inst === 'oboe') {
         /* 双簧管：双簧鼻音、2/3 次泛音、轻颤与簧片气息 */
-        var obParts = [[1, 0.1], [2, 0.045], [3, 0.026], [4, 0.012], [5, 0.007]];
+        var obParts = [[1, 0.15], [2, 0.07], [3, 0.045], [4, 0.02], [5, 0.012]];
         var obLp2 = c.createBiquadFilter(); obLp2.type = 'lowpass';
-        obLp2.frequency.value = Math.min(3600, 1100 + f * 2.2) * (0.7 + 0.6 * vel); obLp2.Q.value = 0.8;
+        obLp2.frequency.value = Math.min(4600, 1500 + f * 2.6) * (0.75 + 0.6 * vel); obLp2.Q.value = 0.7;
         var obForm2 = c.createBiquadFilter(); obForm2.type = 'peaking';
         obForm2.frequency.value = Math.min(2200, Math.max(1000, f * 2.6)); obForm2.Q.value = 1.6; obForm2.gain.value = 6;
         var obVib2 = c.createOscillator(); obVib2.type = 'sine'; obVib2.frequency.value = 4.6 + R * 1.2;
@@ -1128,8 +1130,8 @@
         obLp2.connect(obForm2); obForm2.connect(obBus2);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.13 * vel, t + 0.05);
-        g.gain.setValueAtTime(0.115 * vel, t + 1.0);
+        g.gain.linearRampToValueAtTime(0.17 * vel, t + 0.05);
+        g.gain.setValueAtTime(0.15 * vel, t + 1.0);
         g.gain.exponentialRampToValueAtTime(0.0003, t + 2.7);
         obBus2.connect(g); g.connect(out);
         var obN2 = c.createBufferSource(); obN2.buffer = noiseBuf;
@@ -1207,13 +1209,13 @@
         }
       } else if (inst === 'clarinet') {
         /* 单簧管：柱形管奇次泛音 1/3/5/7，暖而空 */
-        var clParts = [[1, 0.11], [3, 0.05], [5, 0.022], [7, 0.009]];
+        var clParts = [[1, 0.16], [3, 0.08], [5, 0.038], [7, 0.018], [9, 0.009]];
         var clVib = c.createOscillator(); clVib.type = 'sine'; clVib.frequency.value = 4.8 + R * 1.2;
         var clVibG = c.createGain(); clVibG.gain.setValueAtTime(0, t);
         clVibG.gain.linearRampToValueAtTime(f * 0.0018, t + 0.3);
         clVib.connect(clVibG);
         var clLp = c.createBiquadFilter(); clLp.type = 'lowpass';
-        clLp.frequency.value = Math.min(3000, f * 7) * (0.7 + 0.6 * vel); clLp.Q.value = 0.6;
+        clLp.frequency.value = Math.min(3800, f * 8) * (0.75 + 0.6 * vel); clLp.Q.value = 0.6;
         var clBus = c.createGain(); clBus.gain.value = 1;
         for (var cli = 0; cli < clParts.length; cli++) {
           var clo = c.createOscillator(); clo.type = 'sine';
@@ -1226,8 +1228,8 @@
         clLp.connect(clBus);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.14 * vel, t + 0.05);
-        g.gain.setValueAtTime(0.12 * vel, t + 1.1);
+        g.gain.linearRampToValueAtTime(0.19 * vel, t + 0.05);
+        g.gain.setValueAtTime(0.16 * vel, t + 1.1);
         g.gain.exponentialRampToValueAtTime(0.0003, t + 3.0);
         clBus.connect(g); g.connect(out);
         clVib.start(t); clVib.stop(t + 3.1);
@@ -1316,7 +1318,7 @@
         var fdLp = c.createBiquadFilter(); fdLp.type = 'lowpass'; fdLp.frequency.value = 340;
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.34 * vel, t + 0.012);
+        g.gain.linearRampToValueAtTime(0.46 * vel, t + 0.012);
         g.gain.exponentialRampToValueAtTime(0.0003, t + 1.4);
         o.connect(fdLp); fdLp.connect(g); g.connect(out);
         o.start(t); o.stop(t + 1.5);
@@ -1333,7 +1335,7 @@
         o.frequency.exponentialRampToValueAtTime(f, t + 0.09);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.26 * vel, t + 0.004);
+        g.gain.linearRampToValueAtTime(0.34 * vel, t + 0.004);
         g.gain.exponentialRampToValueAtTime(0.0003, t + 0.42);
         o.connect(g); g.connect(out);
         o.start(t); o.stop(t + 0.45);
@@ -1345,23 +1347,36 @@
         tbN.connect(tbBp); tbBp.connect(tbNg); tbNg.connect(out);
         tbN.start(t); tbN.stop(t + 0.08);
       } else if (inst === 'violin') {
-        o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f, t);
-        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.004, t);
-        var viLfo = c.createOscillator(); viLfo.type = 'sine'; viLfo.frequency.value = 5.0 + R * 1.2;
-        var viLfoG = c.createGain(); viLfoG.gain.setValueAtTime(0, t);
-        viLfoG.gain.linearRampToValueAtTime(f * 0.0035, t + 0.35);
-        viLfo.connect(viLfoG); viLfoG.connect(o.frequency); viLfoG.connect(o2.frequency);
+        /* 小提琴：多根微失谐弓弦、慢起弓、持续连奏、弓压噪声 */
         var viLp = c.createBiquadFilter(); viLp.type = 'lowpass';
-        viLp.frequency.value = Math.min(4200, 1600 + f * 2) * (0.75 + 0.5 * vel); viLp.Q.value = 0.7;
+        viLp.frequency.value = Math.min(3400, 1200 + f * 1.8) * (0.8 + 0.4 * vel); viLp.Q.value = 1.1;
         var viForm = c.createBiquadFilter(); viForm.type = 'peaking';
-        viForm.frequency.value = Math.min(1800, f * 2.2); viForm.Q.value = 1; viForm.gain.value = 4;
+        viForm.frequency.value = Math.min(1400, f * 2); viForm.Q.value = 1.2; viForm.gain.value = 5;
+        var viVib = c.createOscillator(); viVib.type = 'sine'; viVib.frequency.value = 4.8 + R * 1.2;
+        var viVibG = c.createGain(); viVibG.gain.setValueAtTime(0, t);
+        viVibG.gain.linearRampToValueAtTime(f * 0.004, t + 0.4);
+        viVib.connect(viVibG);
+        var viBus = c.createGain(); viBus.gain.value = 0.26;
+        var viDet = [-0.004, 0.0, 0.0045];
+        for (var vii = 0; vii < viDet.length; vii++) {
+          var vio = c.createOscillator(); vio.type = 'sawtooth';
+          vio.frequency.setValueAtTime(f * (1 + viDet[vii]), t);
+          viVibG.connect(vio.frequency);
+          vio.connect(viLp); vio.start(t); vio.stop(t + 3.3);
+        }
+        viLp.connect(viForm); viForm.connect(viBus);
+        var viBow = c.createBufferSource(); viBow.buffer = noiseBuf;
+        var viBp = c.createBiquadFilter(); viBp.type = 'bandpass'; viBp.frequency.value = 2200; viBp.Q.value = 1.2;
+        var viNg = c.createGain(); viNg.gain.setValueAtTime((0.012 + Math.random() * 0.008) * vel, t);
+        viNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.3);
+        viBow.connect(viBp); viBp.connect(viNg); viNg.connect(viBus); viBow.start(t); viBow.stop(t + 0.3);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.13 * vel, t + 0.14);
-        g.gain.setValueAtTime(0.11 * vel, t + 1.4);
-        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.8);
-        o.connect(viLp); o2.connect(viLp); viLp.connect(viForm); viForm.connect(g); g.connect(out);
-        o.start(t); o2.start(t); o.stop(t + 2.9); o2.stop(t + 2.9); viLfo.start(t); viLfo.stop(t + 2.9);
+        g.gain.linearRampToValueAtTime(0.17 * vel, t + 0.13);
+        g.gain.setValueAtTime(0.15 * vel, t + 1.5);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 3.2);
+        viBus.connect(g); g.connect(out);
+        viVib.start(t); viVib.stop(t + 3.3);
       } else if (inst === 'harp') {
         var hpParts = [[1, 0.16, 2.2], [2, 0.06, 1.4], [3, 0.032, 0.9], [4, 0.012, 0.6]];
         for (var hpi = 0; hpi < hpParts.length; hpi++) {
@@ -1401,27 +1416,33 @@
         piNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.12);
         piN.connect(piHp); piHp.connect(piNg); piNg.connect(out); piN.start(t); piN.stop(t + 0.14);
       } else if (inst === 'hulusi') {
+        /* 葫芦丝：簧管鼻音、强基频 + 少量簧片谐波、气息与轻颤 */
         o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f * 0.985, t);
-        o.frequency.exponentialRampToValueAtTime(f, t + 0.09);
-        o2 = c.createOscillator(); o2.type = 'triangle'; o2.frequency.setValueAtTime(f * 2, t);
-        var huLfo = c.createOscillator(); huLfo.type = 'sine'; huLfo.frequency.value = 5.6 + R;
-        var huLfoG = c.createGain(); huLfoG.gain.setValueAtTime(0, t);
-        huLfoG.gain.linearRampToValueAtTime(f * 0.004, t + 0.2);
-        huLfo.connect(huLfoG); huLfoG.connect(o.frequency);
+        o.frequency.exponentialRampToValueAtTime(f, t + 0.08);
+        o2 = c.createOscillator(); o2.type = 'sawtooth'; o2.frequency.setValueAtTime(f * 1.002, t);
+        var huForm = c.createBiquadFilter(); huForm.type = 'peaking';
+        huForm.frequency.value = Math.min(2000, f * 2.2); huForm.Q.value = 1.6; huForm.gain.value = 7;
         var huLp = c.createBiquadFilter(); huLp.type = 'lowpass';
-        huLp.frequency.value = (2200 + R * 800) * (0.7 + 0.5 * vel);
+        huLp.frequency.value = (2600 + R * 900) * (0.8 + 0.4 * vel);
+        var huVib = c.createOscillator(); huVib.type = 'sine'; huVib.frequency.value = 5.6 + R;
+        var huVibG = c.createGain(); huVibG.gain.setValueAtTime(0, t);
+        huVibG.gain.linearRampToValueAtTime(f * 0.0035, t + 0.25);
+        huVib.connect(huVibG); huVibG.connect(o.frequency); huVibG.connect(o2.frequency);
+        var huG1 = c.createGain(); huG1.gain.value = 0.13;
+        var huG2 = c.createGain(); huG2.gain.value = 0.16;
+        o.connect(huG1); o2.connect(huG2); huG1.connect(huLp); huG2.connect(huLp); huLp.connect(huForm);
         g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.13 * vel, t + 0.06);
-        g.gain.setValueAtTime(0.11 * vel, t + 0.9);
-        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.2);
-        o.connect(huLp); o2.connect(huLp); huLp.connect(g); g.connect(out);
-        o.start(t); o2.start(t); o.stop(t + 2.3); o2.stop(t + 2.3); huLfo.start(t); huLfo.stop(t + 2.3);
+        g.gain.linearRampToValueAtTime(0.15 * vel, t + 0.06);
+        g.gain.setValueAtTime(0.13 * vel, t + 1.1);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + 2.6);
+        huForm.connect(g); g.connect(out);
+        o.start(t); o2.start(t); o.stop(t + 2.7); o2.stop(t + 2.7); huVib.start(t); huVib.stop(t + 2.7);
         var huN = c.createBufferSource(); huN.buffer = noiseBuf;
-        var huF = c.createBiquadFilter(); huF.type = 'bandpass'; huF.frequency.value = 1500; huF.Q.value = 0.8;
-        var huNg = c.createGain(); huNg.gain.setValueAtTime(0.012 * vel, t);
-        huNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.2);
-        huN.connect(huF); huF.connect(huNg); huNg.connect(out); huN.start(t); huN.stop(t + 0.22);
+        var huF = c.createBiquadFilter(); huF.type = 'bandpass'; huF.frequency.value = 2000; huF.Q.value = 0.9;
+        var huNg = c.createGain(); huNg.gain.setValueAtTime(0.022 * vel, t);
+        huNg.gain.exponentialRampToValueAtTime(0.0002, t + 0.25);
+        huN.connect(huF); huF.connect(huNg); huNg.connect(out); huN.start(t); huN.stop(t + 0.27);
       } else if (inst === 'melodica') {
         o = c.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(f, t);
         o2 = c.createOscillator(); o2.type = 'triangle'; o2.frequency.setValueAtTime(f * 1.003, t);
