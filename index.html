@@ -238,6 +238,10 @@
     padding:12px;background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   }
   #lib.on{display:flex}
+  #medLib{position:fixed;inset:0;z-index:82;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  #medLib.on{display:flex}
+  #medLib .lib-panel{width:min(500px,100%);max-height:86vh;display:flex;flex-direction:column;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(9,12,17,.98);box-shadow:0 24px 70px rgba(0,0,0,.85)}
+  .medlib-freq{font-size:11px;color:var(--accent);letter-spacing:.06em}
   #lib .lib-panel{
     width:min(540px,100%);max-height:88vh;display:flex;flex-direction:column;
     padding:14px;border-radius:18px;border:1px solid var(--stroke);
@@ -487,6 +491,13 @@
   <div class="gs-judge" id="gsJudge"></div>
   <div class="gs-instrument" id="gsInstrument"></div>
   <div class="gs-piano" id="gsPiano"></div>
+</div>
+
+<div id="medLib">
+  <div class="lib-panel">
+    <div class="lib-head"><b>🧘 冥想音乐</b><button id="medLibClose" aria-label="关闭">✕</button></div>
+    <div class="lib-list" id="medLibList" style="margin-top:8px"></div>
+  </div>
 </div>
 
 <div id="medUI" hidden>
@@ -4957,7 +4968,7 @@
     var box = $('libFilters');
     if (!box) return;
     box.innerHTML = '';
-    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }, { id: 'med', name: '冥想', icon: '🧘' }, { id: 'trash', name: '回收站', icon: '🗑️' }].concat(STYLES);
+    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }, { id: 'trash', name: '回收站', icon: '🗑️' }].concat(STYLES);
     all.forEach(function (st) {
       var b = document.createElement('button');
       b.className = 'lib-btn' + (libFilter === st.id ? ' primary' : '');
@@ -5032,8 +5043,8 @@
       return;
     }
     var items = library.filter(function (it) {
+      if (it.medFreq) return false;
       if (libFilter === 'preset') return !!it.preset;
-      if (libFilter === 'med') return !!it.medFreq;
       if (libFilter !== 'all' && it.styleId !== libFilter) return false;
       if (!q) return true;
       return (it.name + ' ' + styleById(it.styleId).name + ' ' + styleById(it.styleId).id).toLowerCase().indexOf(q) >= 0;
@@ -5123,6 +5134,55 @@
     if ($('editBpm')) $('editBpm').value = item.bpm;
     if ($('libEdit')) $('libEdit').classList.add('on');
   }
+  function renderMedLib() {
+    var list = $('medLibList');
+    if (!list) return;
+    var items = library.filter(function (it) { return !!it.medFreq; });
+    items.sort(function (a, b) { return (a.medFreq || 0) - (b.medFreq || 0); });
+    list.innerHTML = '';
+    if (!items.length) {
+      list.innerHTML = '<div class="lib-empty">还没有冥想音乐：点底部频率数字即可生成</div>';
+      return;
+    }
+    items.forEach(function (it) {
+      var row = document.createElement('div');
+      row.className = 'lib-item';
+      var t = document.createElement('div');
+      t.className = 't';
+      t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
+        '<div class="medlib-freq">' + it.medFreq + ' Hz · ' + it.bpm + ' BPM</div>';
+      row.appendChild(t);
+      var play = document.createElement('button');
+      play.className = 'lib-btn primary';
+      play.textContent = '▶';
+      play.addEventListener('click', function () {
+        var pc = pieceFromSaved(it);
+        if (pc.medFreq) setFreq(pc.medFreq);
+        playPiece(pc);
+        $('medLib').classList.remove('on');
+      });
+      var del = document.createElement('button');
+      del.className = 'lib-btn danger';
+      del.textContent = '🗑';
+      del.addEventListener('click', function () {
+        library = library.filter(function (x) { return x.id !== it.id; });
+        saveLibrary();
+        renderMedLib();
+      });
+      row.appendChild(play);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+  function openMedLib() {
+    loadLibrary();
+    renderMedLib();
+    $('medLib').classList.add('on');
+  }
+  (function () {
+    var mc = $('medLibClose');
+    if (mc) mc.addEventListener('click', function () { $('medLib').classList.remove('on'); });
+  })();
   function openLibrary() {
     loadLibrary();
     loadTrash();
@@ -6240,6 +6300,7 @@
       body.appendChild(mkItem('🎨', '生成风格', state.genStyle === 'auto' ? '自动随机' : styleById(state.genStyle).name, function () { sheetGo('genstyle'); }));
       body.appendChild(mkItem('⭐', '精选曲目', PRESET_PIECES.length + ' 首', function () { libFilter = 'preset'; closeSheet(); openLibrary(); }));
       body.appendChild(mkItem('📚', '曲库', (library.length || 0) + ' 首', function () { closeSheet(); openLibrary(); }));
+      body.appendChild(mkItem('🧘', '冥想音乐', '疗愈频率曲目', function () { closeSheet(); openMedLib(); }));
       function sheetNote(text) {
         var d = document.createElement('div');
         d.className = 'sheet-note';
@@ -7482,7 +7543,7 @@
       var pick = document.createElement('button');
       pick.className = 'med-big';
       pick.textContent = '📚 选曲 · 冥想音乐';
-      pick.addEventListener('click', function () { el.panel.hidden = true; libFilter = 'med'; openLibrary(); });
+      pick.addEventListener('click', function () { el.panel.hidden = true; openMedLib(); });
       el.panel.appendChild(pick);
       optRow('呼吸节奏', 'pattern', Object.keys(PATS).map(function (k) { return { id: k, label: PATS[k].name }; }), function (id) { cfg.pattern = id; });
       optRow('疗愈频率', 'freq', [174, 285, 396, 417, 432, 528, 639, 741, 852].map(function (f) { return { id: f, label: f }; }), function (id) {
