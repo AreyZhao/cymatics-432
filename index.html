@@ -2335,7 +2335,7 @@
   };
   function ornamentize(melody, t, midi, vel, inst, rnd) {
     var list = ORN_BY_INST[inst];
-    if (!list || rnd() > 0.42) return;
+    if (!list || rnd() > 0.10) return;
     var pick = list[Math.floor(rnd() * list.length)];
     if (pick === 'grace') melody.push({ t: t - 0.07, midi: midi - 2, vel: vel * 0.5 });
     else if (pick === 'bend') {
@@ -2831,7 +2831,7 @@
 
   function ornamentizeLive(inst, t, midi, vel, bus) {
     var list = ORN_BY_INST[inst];
-    if (!list || Math.random() > 0.4) return;
+    if (!list || Math.random() > 0.08) return;
     function hit(dt, dm, v) {
       Audio.note(midi + dm, { when: t + dt, vel: v, wet: 0.45, inst: inst, bus: bus });
       visQueue.push({ t: t + dt, kind: 'note', midi: midi + dm });
