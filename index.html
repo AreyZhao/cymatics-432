@@ -396,7 +396,7 @@
   </div>
 </header>
 <input id="musicFile" type="file" accept="audio/*" hidden>
-<input id="bgImageInput" type="file" accept="image/*" hidden>
+<input id="bgImageInput" type="file" accept="image/*" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
 
 <footer id="bottom-bar" class="ui-layer">
   <div class="bar">
@@ -2437,14 +2437,7 @@
     stopSeq();
     stopAllAudio('seq');
     Audio.ensure();
-    if (piece.medFreq) {
-      setFreq(piece.medFreq);
-      if (typeof Med !== 'undefined') Med.playDrone(piece.medFreq);
-      state.currentPiece = piece;
-      showNowTitle(piece);
-      return;
-    }
-    if (typeof Med !== 'undefined') Med.stopDrone();
+    if (piece.medFreq) setFreq(piece.medFreq);
     player.piece = piece;
     state.currentPiece = piece;
     if (piece.medFreq) setFreq(piece.medFreq);
