@@ -125,7 +125,7 @@
   }
   .presets{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:1px}
   .presets::-webkit-scrollbar{display:none}
-  .chip.alpha-chip{border-style:dashed;color:var(--accent);letter-spacing:.04em}
+  .chip.wave-chip{border-style:dashed;color:var(--accent);letter-spacing:.02em;font-size:11px;padding:6px 7px}
   .chip{
     appearance:none;-webkit-appearance:none;flex:0 0 auto;
     border:1px solid var(--stroke);background:rgba(255,255,255,.04);color:var(--muted);
@@ -467,7 +467,11 @@
     </div>
     <div class="row">
       <div class="presets">
-        <button class="chip alpha-chip" id="alphaBtn">α 波</button>
+        <button class="chip wave-chip" data-wave="delta">δ 波</button>
+        <button class="chip wave-chip" data-wave="theta">θ 波</button>
+        <button class="chip wave-chip" data-wave="alpha">α 波</button>
+        <button class="chip wave-chip" data-wave="beta">β 波</button>
+        <button class="chip wave-chip" data-wave="gamma">γ 波</button>
         <button class="chip" data-freq="174">174</button>
         <button class="chip" data-freq="285">285</button>
         <button class="chip" data-freq="396">396</button>
@@ -2517,11 +2521,12 @@
     stopSeq();
     stopAllAudio('seq');
     Audio.ensure();
-    if (piece.medClass === 'alpha') {
-      if (typeof Alpha !== 'undefined') Alpha.play(10);
+    if (piece.medClass && WAVES[piece.medClass]) {
+      var wv = WAVES[piece.medClass];
+      if (typeof Alpha !== 'undefined') Alpha.play(wv.beat);
       state.currentPiece = piece;
       showNowTitle(piece);
-      toast('🎧 α 波双耳节拍 10Hz · 建议戴耳机', 3200);
+      toast('🎧 ' + wv.name + '双耳节拍 ' + wv.beat + 'Hz · 建议戴耳机', 3200);
       return;
     }
     if (typeof Alpha !== 'undefined') Alpha.stop();
@@ -5152,10 +5157,11 @@
     var list = $('medLibList');
     if (!list) return;
     list.innerHTML = '';
-    var alpha = library.filter(function (it) { return it.medClass === 'alpha'; });
     var freqItems = library.filter(function (it) { return !!it.medFreq; });
-    if (!alpha.length && !freqItems.length) {
-      list.innerHTML = '<div class="lib-empty">还没有冥想音乐：点底部 α 波或频率数字即可生成</div>';
+    var waveItems = {};
+    library.forEach(function (it) { if (it.medClass) (waveItems[it.medClass] = waveItems[it.medClass] || []).push(it); });
+    if (!freqItems.length && !Object.keys(waveItems).length) {
+      list.innerHTML = '<div class="lib-empty">还没有冥想音乐：点底部脑波或频率数字即可生成</div>';
       return;
     }
     function addHead(txt) {
@@ -5193,10 +5199,12 @@
       row.appendChild(del);
       list.appendChild(row);
     }
-    if (alpha.length) {
-      addHead('α 波 · 8–12Hz 放松');
-      alpha.forEach(addRow);
-    }
+    ['delta', 'theta', 'alpha', 'beta', 'gamma'].forEach(function (k) {
+      if (waveItems[k] && waveItems[k].length) {
+        addHead(WAVES[k].name + ' · ' + WAVES[k].range + ' ' + WAVES[k].desc);
+        waveItems[k].forEach(addRow);
+      }
+    });
     var groups = {};
     freqItems.forEach(function (it) {
       var k = it.medFreq;
@@ -6003,33 +6011,40 @@
     });
   });
 
-  function createAlphaMusic() {
-    var name = (typeof pickName === 'function' ? pickName() : '潜意识') + ' · α波';
+  function createWaveMusic(id) {
+    var wv = WAVES[id];
+    if (!wv) return;
+    var name = (typeof pickName === 'function' ? pickName() : '脑波') + ' · ' + wv.name;
     var pc = composeOriginalPiece({
-      seed: ((Date.now() ^ 0x5f3a) >>> 0),
+      seed: ((Date.now() ^ (wv.beat * 977)) >>> 0),
       styleId: 'aurora',
       bpm: 56,
       name: name,
       instrument: 'handpan',
       rootShift: -5
     });
-    pc.medClass = 'alpha';
-    pc.tag = 'α波';
+    pc.medClass = id;
+    pc.tag = wv.name;
+    pc.waveBeat = wv.beat;
     try {
       library.push({
         id: pc.id, name: pc.name, styleId: pc.styleId, bpm: pc.bpm,
         root: pc.root, scaleName: pc.scaleName, instrument: pc.instrument,
         seed: pc.seed, created: pc.created, bars: pc.bars, preset: false, engine: pc.engine || '',
-        medClass: 'alpha', tag: 'α波'
+        medClass: id, tag: wv.name, waveBeat: wv.beat
       });
       saveLibrary();
     } catch (e) {}
     playPiece(pc);
-    toast('🌊 已生成 α 波音乐：<b>' + esc(pc.name) + '</b>', 2600);
+    toast('🎧 已生成 ' + wv.name + '（' + wv.range + '）', 2600);
   }
   (function () {
-    var ab = document.getElementById('alphaBtn');
-    if (ab) ab.addEventListener('click', createAlphaMusic);
+    var wcs = document.querySelectorAll('.wave-chip');
+    for (var i = 0; i < wcs.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function () { createWaveMusic(b.dataset.wave); });
+      })(wcs[i]);
+    }
   })();
 
   /* ============================================================
@@ -7229,6 +7244,13 @@
     });
   })();
 
+  var WAVES = {
+    delta: { name: 'δ 波', beat: 2,  range: '0.5–4Hz', desc: '深睡修复' },
+    theta: { name: 'θ 波', beat: 6,  range: '4–8Hz',  desc: '浅睡冥想' },
+    alpha: { name: 'α 波', beat: 10, range: '8–13Hz', desc: '放松平静' },
+    beta:  { name: 'β 波', beat: 18, range: '13–30Hz', desc: '专注清醒' },
+    gamma: { name: 'γ 波', beat: 40, range: '30–100Hz', desc: '灵感高峰' }
+  };
   /* ================= α 波（双耳节拍） ================= */
   var Alpha = (function () {
     var nodes = null;
