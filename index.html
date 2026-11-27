@@ -243,8 +243,11 @@
   #medLib.on{display:flex}
   #medLib .lib-panel{width:min(500px,100%);max-height:86vh;display:flex;flex-direction:column;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(9,12,17,.98);box-shadow:0 24px 70px rgba(0,0,0,.85)}
   .medlib-freq{font-size:11px;color:var(--accent);letter-spacing:.06em}
-  .medlib-head{font-size:11px;color:var(--accent);letter-spacing:.10em;margin:10px 0 4px;opacity:.85}
-  .medlib-head:first-child{margin-top:0}
+  .medlib-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+  .medlib-tab{flex:0 0 auto;white-space:nowrap;padding:6px 10px;border-radius:9px;border:1px solid var(--stroke);background:rgba(255,255,255,.05);color:var(--text);font-size:12px;cursor:pointer;font-family:inherit}
+  .medlib-tab.on{background:var(--accent);color:#00161c;border-color:transparent;font-weight:600}
+  .medlib-tab.empty{opacity:.45}
+  .medlib-content{margin-top:4px}
   #lib .lib-panel{
     width:min(540px,100%);max-height:88vh;display:flex;flex-direction:column;
     padding:14px;border-radius:18px;border:1px solid var(--stroke);
@@ -5153,67 +5156,81 @@
     if ($('editBpm')) $('editBpm').value = item.bpm;
     if ($('libEdit')) $('libEdit').classList.add('on');
   }
+  var medLibSel = 'alpha';
   function renderMedLib() {
     var list = $('medLibList');
     if (!list) return;
     list.innerHTML = '';
-    var freqItems = library.filter(function (it) { return !!it.medFreq; });
     var waveItems = {};
     library.forEach(function (it) { if (it.medClass) (waveItems[it.medClass] = waveItems[it.medClass] || []).push(it); });
-    if (!freqItems.length && !Object.keys(waveItems).length) {
+    var freqGroups = {};
+    library.forEach(function (it) { if (it.medFreq) (freqGroups[it.medFreq] = freqGroups[it.medFreq] || []).push(it); });
+    var total = 0;
+    Object.keys(waveItems).forEach(function (k) { total += waveItems[k].length; });
+    Object.keys(freqGroups).forEach(function (k) { total += freqGroups[k].length; });
+    if (!total) {
       list.innerHTML = '<div class="lib-empty">还没有冥想音乐：点底部脑波或频率数字即可生成</div>';
       return;
     }
-    function addHead(txt) {
-      var h = document.createElement('div');
-      h.className = 'medlib-head';
-      h.textContent = txt;
-      list.appendChild(h);
-    }
-    function addRow(it) {
-      var row = document.createElement('div');
-      row.className = 'lib-item';
-      var t = document.createElement('div');
-      t.className = 't';
-      t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
-        '<div class="medlib-freq">' + it.medFreq + ' Hz · ' + it.bpm + ' BPM</div>';
-      row.appendChild(t);
-      var play = document.createElement('button');
-      play.className = 'lib-btn primary';
-      play.textContent = '▶';
-      play.addEventListener('click', function () {
-        var pc = pieceFromSaved(it);
-        if (pc.medFreq) setFreq(pc.medFreq);
-        playPiece(pc);
-        $('medLib').classList.remove('on');
-      });
-      var del = document.createElement('button');
-      del.className = 'lib-btn danger';
-      del.textContent = '🗑';
-      del.addEventListener('click', function () {
-        library = library.filter(function (x) { return x.id !== it.id; });
-        saveLibrary();
-        renderMedLib();
-      });
-      row.appendChild(play);
-      row.appendChild(del);
-      list.appendChild(row);
-    }
+    var defs = [];
     ['delta', 'theta', 'alpha', 'beta', 'gamma'].forEach(function (k) {
-      if (waveItems[k] && waveItems[k].length) {
-        addHead(WAVES[k].name + ' · ' + WAVES[k].range + ' ' + WAVES[k].desc);
-        waveItems[k].forEach(addRow);
-      }
+      defs.push({ id: 'w:' + k, label: WAVES[k].name, count: (waveItems[k] || []).length, items: waveItems[k] || [] });
     });
-    var groups = {};
-    freqItems.forEach(function (it) {
-      var k = it.medFreq;
-      (groups[k] = groups[k] || []).push(it);
+    Object.keys(freqGroups).map(Number).sort(function (a, b) { return a - b; }).forEach(function (f) {
+      defs.push({ id: 'f:' + f, label: f + ' Hz', count: freqGroups[f].length, items: freqGroups[f] });
     });
-    Object.keys(groups).map(Number).sort(function (a, b) { return a - b; }).forEach(function (f) {
-      addHead(f + ' Hz');
-      groups[f].forEach(addRow);
+    var exists = defs.some(function (d) { return d.id === medLibSel && d.count > 0; });
+    if (!exists) {
+      var firstNonEmpty = defs.filter(function (d) { return d.count > 0; })[0];
+      medLibSel = firstNonEmpty ? firstNonEmpty.id : (defs[0] ? defs[0].id : '');
+    }
+    var tabs = document.createElement('div');
+    tabs.className = 'medlib-tabs';
+    defs.forEach(function (d) {
+      var btn = document.createElement('button');
+      btn.className = 'medlib-tab' + (medLibSel === d.id ? ' on' : '') + (d.count ? '' : ' empty');
+      btn.textContent = d.label + (d.count ? ' ' + d.count : '');
+      btn.addEventListener('click', function () { medLibSel = d.id; renderMedLib(); });
+      tabs.appendChild(btn);
     });
+    list.appendChild(tabs);
+    var content = document.createElement('div');
+    content.className = 'medlib-content';
+    var sel = defs.filter(function (d) { return d.id === medLibSel; })[0];
+    if (!sel || !sel.items.length) {
+      content.innerHTML = '<div class="lib-empty">这个分类还没有曲目</div>';
+    } else {
+      sel.items.forEach(function (it) {
+        var row = document.createElement('div');
+        row.className = 'lib-item';
+        var t = document.createElement('div');
+        t.className = 't';
+        t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
+          '<div class="medlib-freq">' + (it.medClass ? WAVES[it.medClass].name + ' · ' + WAVES[it.medClass].range : it.medFreq + ' Hz') + ' · ' + it.bpm + ' BPM</div>';
+        row.appendChild(t);
+        var play = document.createElement('button');
+        play.className = 'lib-btn primary';
+        play.textContent = '▶';
+        play.addEventListener('click', function () {
+          var pc = pieceFromSaved(it);
+          if (pc.medFreq) setFreq(pc.medFreq);
+          playPiece(pc);
+          $('medLib').classList.remove('on');
+        });
+        var del = document.createElement('button');
+        del.className = 'lib-btn danger';
+        del.textContent = '🗑';
+        del.addEventListener('click', function () {
+          library = library.filter(function (x) { return x.id !== it.id; });
+          saveLibrary();
+          renderMedLib();
+        });
+        row.appendChild(play);
+        row.appendChild(del);
+        content.appendChild(row);
+      });
+    }
+    list.appendChild(content);
   }
   function openMedLib() {
     loadLibrary();
