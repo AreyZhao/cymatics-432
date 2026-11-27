@@ -354,6 +354,13 @@
   body.ui-hidden #top-bar,body.ui-hidden #bottom-bar,body.ui-hidden #hint{opacity:.05}
   body.ui-hidden #hint{opacity:0}
   @media (prefers-reduced-motion:reduce){.ui-layer,#piano-drawer{transition:none!important}}
+  @media (min-width:900px){
+    #piano-drawer{height:118px}
+    #piano-drawer .key{font-size:9px}
+    .gs-piano{height:170px}
+    .gs-kb{height:180px}
+    .gs-lanes,.gs-piano{width:min(92vw,720px)}
+  }
   /* ---- 音游（独立页面） ---- */
   body.game-active .ui-layer,
   body.game-active #medUI,
@@ -6252,6 +6259,7 @@
       var el = document.createElement('div');
       var white = isWhiteKey(midi);
       el.className = 'key ' + (white ? 'white' : 'black');
+      el.dataset.midi = midi;
       var pc = midi % 12;
       var octave = Math.floor(midi / 12) - 1;
       if (white) {
@@ -6275,6 +6283,24 @@
     state.keyRange = rangeKey;
     try { localStorage.setItem('cz_keys', rangeKey); } catch (e) {}
   }
+
+  var keyDrag = null;
+  pianoInner.addEventListener('pointerdown', function (e) {
+    keyDrag = { lastMidi: null };
+    var el = e.target && e.target.closest ? e.target.closest('.key') : null;
+    if (el && el.dataset.midi) keyDrag.lastMidi = +el.dataset.midi;
+  }, true);
+  window.addEventListener('pointermove', function (e) {
+    if (!keyDrag) return;
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    if (!el || !el.closest) return;
+    var k = el.closest('.key');
+    if (!k || !k.dataset.midi || !pianoInner.contains(k)) return;
+    var midi = +k.dataset.midi;
+    if (midi !== keyDrag.lastMidi) { keyDrag.lastMidi = midi; pressKey(midi); }
+  });
+  window.addEventListener('pointerup', function () { keyDrag = null; });
+  window.addEventListener('pointercancel', function () { keyDrag = null; });
 
   pianoBtn.addEventListener('click', function () {
     var open = pianoDrawer.classList.toggle('open');
