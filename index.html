@@ -352,9 +352,9 @@
   .med-orb{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 50% 42%, var(--accent), transparent 70%);opacity:.9;filter:blur(1px);transition:transform .5s cubic-bezier(.4,0,.2,1)}
   .med-text{font-size:14px;letter-spacing:2px;opacity:.9}
   .med-ctrl{display:flex;gap:10px;justify-content:center}
-  .med-big{appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);background:rgba(255,255,255,.08);color:var(--text);font-size:14px;font-family:inherit;padding:9px 16px;border-radius:12px;cursor:pointer}
-  .med-big.sm{padding:9px 12px}
-  #medPanel{position:fixed;left:0;right:0;bottom:0;max-height:62vh;overflow:auto;background:rgba(10,14,20,.97);border-top:1px solid var(--stroke);padding:12px 16px 22px;border-radius:16px 16px 0 0}
+  .med-big{appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);background:rgba(255,255,255,.08);color:var(--text);font-size:13px;font-family:inherit;padding:8px 12px;border-radius:11px;cursor:pointer}
+  .med-big.sm{padding:8px 10px}
+  #medPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;width:min(92vw,400px);max-height:58vh;overflow:auto;background:rgba(10,14,20,.97);border:1px solid var(--stroke);padding:12px 16px 22px;border-radius:18px}
   .med-panel-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;background:rgba(10,14,20,.97)}
   .med-panel-head span{font-size:14px;opacity:.8}
   .med-panel-head button{border:1px solid var(--stroke);background:transparent;color:var(--text);font-size:13px;padding:5px 10px;border-radius:8px;cursor:pointer}
@@ -4820,21 +4820,24 @@
     } catch (e) {}
     var mflag = 'cz_medpresets_v1';
     try {
-      if (!localStorage.getItem(mflag)) {
-        for (var mi = 0; mi < MEDITATION_PRESETS.length; mi++) {
-          var mcfg = MEDITATION_PRESETS[mi];
-          var mpc = mcfg.engine === 'original' ? composeOriginalPiece(mcfg) : composePiece(mcfg);
-          mpc.preset = true;
-          library.push({
-            id: mpc.id, name: mpc.name, styleId: mpc.styleId, bpm: mpc.bpm,
-            root: mpc.root, scaleName: mpc.scaleName, instrument: mpc.instrument,
-            seed: mpc.seed, created: mpc.created, bars: mpc.bars, preset: true, engine: mpc.engine || '',
-            medFreq: mcfg.medFreq, tag: '冥想'
-          });
-        }
-        saveLibrary();
-        localStorage.setItem(mflag, '1');
+      var have = {};
+      for (var hi = 0; hi < library.length; hi++) have[library[hi].name] = true;
+      var added = false;
+      for (var mi = 0; mi < MEDITATION_PRESETS.length; mi++) {
+        var mcfg = MEDITATION_PRESETS[mi];
+        if (have[mcfg.name]) continue;
+        var mpc = mcfg.engine === 'original' ? composeOriginalPiece(mcfg) : composePiece(mcfg);
+        mpc.preset = true;
+        library.push({
+          id: mpc.id, name: mpc.name, styleId: mpc.styleId, bpm: mpc.bpm,
+          root: mpc.root, scaleName: mpc.scaleName, instrument: mpc.instrument,
+          seed: mpc.seed, created: mpc.created, bars: mpc.bars, preset: true, engine: mpc.engine || '',
+          medFreq: mcfg.medFreq, tag: '冥想'
+        });
+        added = true;
       }
+      if (added) saveLibrary();
+      try { localStorage.setItem(mflag, '1'); } catch (e) {}
     } catch (e) {}
   }
   function pieceFromSaved(item) {
@@ -7146,7 +7149,6 @@
       el.panel.appendChild(head);
       var pick = document.createElement('button');
       pick.className = 'med-big';
-      pick.style.width = '100%';
       pick.textContent = '📚 选曲 · 冥想音乐';
       pick.addEventListener('click', function () { el.panel.hidden = true; libFilter = 'med'; openLibrary(); });
       el.panel.appendChild(pick);
