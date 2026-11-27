@@ -730,6 +730,64 @@
     U[n] = gl.getUniformLocation(prog, n);
   });
 
+  /* ---- 四季渐变背景 ---- */
+  var bgProg = null, bgU = {}, bgA = -1, bgBuf = null;
+  (function initBg() {
+    var bvs = [
+      'attribute vec2 aClip;',
+      'varying vec2 vUv;',
+      'void main(){ vUv = aClip * 0.5 + 0.5; gl_Position = vec4(aClip, 0.0, 1.0); }'
+    ].join('\n');
+    var bfs = [
+      'precision mediump float;',
+      'varying vec2 vUv;',
+      'uniform vec3 uBgA;',
+      'uniform vec3 uBgB;',
+      'uniform float uBgT;',
+      'uniform float uBgAspect;',
+      'void main(){',
+      '  vec2 p = vUv - vec2(0.5, 0.52);',
+      '  p.x *= uBgAspect;',
+      '  float d = length(p);',
+      '  float core = exp(-d * d * 5.2);',
+      '  float halo = exp(-d * d * 1.35);',
+      '  vec3 col = uBgB;',
+      '  col += uBgA * (0.26 * core + 0.08 * halo);',
+      '  float vig = smoothstep(1.05, 0.2, d);',
+      '  col *= (0.48 + 0.52 * vig);',
+      '  float n = fract(sin(dot(vUv * 1024.0, vec2(12.9898, 78.233)) + uBgT) * 43758.5453);',
+      '  col += (n - 0.5) * 0.01;',
+      '  gl_FragColor = vec4(col, 1.0);',
+      '}'
+    ].join('\n');
+    try {
+      bgProg = gl.createProgram();
+      gl.attachShader(bgProg, compile(gl.VERTEX_SHADER, bvs));
+      gl.attachShader(bgProg, compile(gl.FRAGMENT_SHADER, bfs));
+      gl.linkProgram(bgProg);
+      if (!gl.getProgramParameter(bgProg, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(bgProg));
+      bgA = gl.getAttribLocation(bgProg, 'aClip');
+      ['uBgA', 'uBgB', 'uBgT', 'uBgAspect'].forEach(function (n) { bgU[n] = gl.getUniformLocation(bgProg, n); });
+      bgBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+    } catch (e) {
+      bgProg = null;
+    }
+  })();
+  function drawBackground(col, tt, aspect) {
+    if (!bgProg) return;
+    gl.useProgram(bgProg);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
+    gl.enableVertexAttribArray(bgA);
+    gl.vertexAttribPointer(bgA, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform3f(bgU.uBgA, col[0], col[1], col[2]);
+    gl.uniform3f(bgU.uBgB, col[0] * 0.05 + 0.003, col[1] * 0.05 + 0.003, col[2] * 0.05 + 0.006);
+    gl.uniform1f(bgU.uBgT, tt % 500);
+    gl.uniform1f(bgU.uBgAspect, aspect);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
   function makeBuffer(data, usage) {
     var b = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, b);
@@ -747,10 +805,13 @@
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
   }
-  bindAttr(A.aPos, posBuf, 3);
-  bindAttr(A.aPrev, prevBuf, 1);
-  bindAttr(A.aCur, curBuf, 1);
-  bindAttr(A.aSeed, seedBuf, 1);
+  function bindParticleAttrs() {
+    bindAttr(A.aPos, posBuf, 3);
+    bindAttr(A.aPrev, prevBuf, 1);
+    bindAttr(A.aCur, curBuf, 1);
+    bindAttr(A.aSeed, seedBuf, 1);
+  }
+  bindParticleAttrs();
 
   gl.disable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);
@@ -6568,7 +6629,9 @@
     if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     if (DEBUG === '2') return;
+    drawBackground(col, t, canvas.width / Math.max(1, canvas.height));
     gl.useProgram(prog);
+    bindParticleAttrs();
     gl.uniformMatrix4fv(U.uProj, false, matProj);
     gl.uniformMatrix4fv(U.uView, false, matView);
     gl.uniform1f(U.uMix, state.transMix);
