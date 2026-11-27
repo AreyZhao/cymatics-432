@@ -344,7 +344,7 @@
   @media (prefers-reduced-motion:reduce){.ui-layer,#piano-drawer{transition:none!important}}
   /* ---- 冥想模式 ---- */
   body.med-active #nowTitle{opacity:0;pointer-events:none}
-  #medUI{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px}
+  #medUI{position:fixed;z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px;touch-action:none}
   #medUI[hidden]{display:none}
   .med-top{width:100%;display:flex;align-items:center;gap:12px}
   .med-time{font-size:13px;letter-spacing:2px;opacity:.75;font-variant-numeric:tabular-nums}
@@ -7272,27 +7272,83 @@
       optRow('语音引导', 'voice', [{ id: true, label: '开' }, { id: false, label: '关' }], function (id) { cfg.voice = id; });
       optRow('结束方式', 'endFade', [{ id: false, label: '钟声即止' }, { id: true, label: '钟声 + 渐弱' }], function (id) { cfg.endFade = id; });
     }
-    var droneTimer = null;
+    var droneNodes = null;
+    var DR_FAM = { flute: ['sine', 0.3], clarinet: ['sine', 0.35], violin: ['sawtooth', 0.22], synth: ['sawtooth', 0.28], ep: ['triangle', 0.3], piano: ['triangle', 0.22], harp: ['triangle', 0.28], guzheng: ['triangle', 0.24], pipa: ['sawtooth', 0.22], marimba: ['sine', 0.35], musicbox: ['sine', 0.4], bell: ['sine', 0.4], bianzhong: ['sine', 0.4], handpan: ['sine', 0.35], piccolo: ['sine', 0.3] };
     function playDrone(freq) {
       stopDrone();
       Audio.ensure();
+      var c = Audio.ctx(), now = c.currentTime;
       cfg.freq = freq; cfg.drone = true;
-      var midi = Math.round(69 + 12 * Math.log2(freq / 432));
-      function hit() {
-        if (!cfg.drone) return;
-        Audio.note(midi, { vel: 0.16, wet: 0.5, inst: state.instrument || 'musicbox' });
-      }
-      hit();
-      droneTimer = setInterval(hit, 850);
+      var fam = DR_FAM[state.instrument] || ['sine', 0.3];
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.16, now + 1.4);
+      g.connect(Audio.master());
+      var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+      var oscs = [];
+      [[1, 1, fam[0]], [2, fam[1] * 0.5, 'sine'], [3, 0.12, 'sine']].forEach(function (p) {
+        var o = c.createOscillator();
+        o.type = p[2];
+        o.frequency.value = freq * p[0];
+        var og = c.createGain(); og.gain.value = p[1];
+        o.connect(og); og.connect(lp); o.start(); oscs.push(o);
+      });
+      lp.connect(g);
+      var vib = c.createOscillator(); vib.type = 'sine'; vib.frequency.value = 0.6;
+      var vg = c.createGain(); vg.gain.value = 0.8;
+      vib.connect(vg); vg.connect(oscs[0].frequency); vib.start();
+      droneNodes = { g: g, oscs: oscs, lp: lp, vib: vib };
       setFreq(freq);
     }
     function stopDrone() {
       cfg.drone = false;
-      if (droneTimer) { clearInterval(droneTimer); droneTimer = null; }
+      if (!droneNodes) return;
+      try {
+        var now = Audio.ctx().currentTime;
+        droneNodes.g.gain.cancelScheduledValues(now);
+        droneNodes.g.gain.setTargetAtTime(0.0001, now, 0.4);
+        var kill = function (n) { try { n.stop(now + 1.0); } catch (e) {} };
+        droneNodes.oscs.forEach(kill);
+        kill(droneNodes.vib);
+      } catch (e) {}
+      droneNodes = null;
     }
     function init() {
       el.ui = $('medUI'); el.play = $('medPlay'); el.set = $('medSet'); el.panel = $('medPanel');
       orb = $('medOrb'); txt = $('medText'); timeEl = $('medTime');
+      function placePanel() {
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem('cz_med_pos') || 'null'); } catch (e) {}
+        if (saved && saved.x != null) {
+          el.ui.style.left = saved.x + 'px';
+          el.ui.style.top = saved.y + 'px';
+        } else {
+          el.ui.style.left = Math.max(8, Math.round((window.innerWidth - el.ui.offsetWidth) / 2)) + 'px';
+          el.ui.style.top = Math.max(8, window.innerHeight - el.ui.offsetHeight - 150) + 'px';
+        }
+      }
+      var dragState = null;
+      el.ui.addEventListener('pointerdown', function (e) {
+        if (e.target && e.target.closest && e.target.closest('button')) return;
+        dragState = { sx: e.clientX, sy: e.clientY, ox: el.ui.offsetLeft, oy: el.ui.offsetTop, moved: false };
+        try { el.ui.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      el.ui.addEventListener('pointermove', function (e) {
+        if (!dragState) return;
+        var dx = e.clientX - dragState.sx, dy = e.clientY - dragState.sy;
+        if (Math.abs(dx) + Math.abs(dy) > 4) dragState.moved = true;
+        if (!dragState.moved) return;
+        var w = el.ui.offsetWidth, h = el.ui.offsetHeight;
+        var x = Math.max(8, Math.min(window.innerWidth - w - 8, dragState.ox + dx));
+        var y = Math.max(8, Math.min(window.innerHeight - h - 8, dragState.oy + dy));
+        el.ui.style.left = x + 'px'; el.ui.style.top = y + 'px';
+      });
+      el.ui.addEventListener('pointerup', function () {
+        if (dragState && dragState.moved) {
+          try { localStorage.setItem('cz_med_pos', JSON.stringify({ x: parseInt(el.ui.style.left, 10), y: parseInt(el.ui.style.top, 10) })); } catch (e) {}
+        }
+        dragState = null;
+      });
       $('medBtn').addEventListener('click', function () {
         on = true; state.medOn = true;
         document.body.classList.add('med-active');
@@ -7300,6 +7356,7 @@
         el.panel.hidden = true;
         timeEl.textContent = mmss(cfg.mins * 60);
         orb.style.display = 'none'; txt.style.display = 'none';
+        placePanel();
         if (!rafId) rafId = requestAnimationFrame(frame);
       });
       $('medClose').addEventListener('click', stop);
