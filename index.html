@@ -2517,6 +2517,14 @@
     stopSeq();
     stopAllAudio('seq');
     Audio.ensure();
+    if (piece.medClass === 'alpha') {
+      if (typeof Alpha !== 'undefined') Alpha.play(10);
+      state.currentPiece = piece;
+      showNowTitle(piece);
+      toast('🎧 α 波双耳节拍 10Hz · 建议戴耳机', 3200);
+      return;
+    }
+    if (typeof Alpha !== 'undefined') Alpha.stop();
     if (piece.medFreq) setFreq(piece.medFreq);
     player.piece = piece;
     state.currentPiece = piece;
@@ -2648,6 +2656,7 @@
   }
   function stopSeq() {
     stopOriginalMusic();
+    if (typeof Alpha !== 'undefined') Alpha.stop();
     if (tta.on) stopTTA();
     player.on = false;
     clearInterval(player.timer);
@@ -7218,6 +7227,45 @@
       };
       fr.readAsDataURL(f);
     });
+  })();
+
+  /* ================= α 波（双耳节拍） ================= */
+  var Alpha = (function () {
+    var nodes = null;
+    function stop() {
+      if (!nodes) return;
+      try {
+        var c = Audio.ctx();
+        nodes.g.gain.cancelScheduledValues(c.currentTime);
+        nodes.g.gain.setTargetAtTime(0.0001, c.currentTime, 0.4);
+        nodes.oscs.forEach(function (o) { try { o.stop(c.currentTime + 1.2); } catch (e) {} });
+      } catch (e) {}
+      nodes = null;
+    }
+    function play(beatHz) {
+      stop();
+      Audio.ensure();
+      var c = Audio.ctx(), t = c.currentTime;
+      var carrier = 200 + Math.round(Math.random() * 100);
+      var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 0.5;
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.16, t + 2.5);
+      g.connect(Audio.master());
+      lp.connect(g);
+      var L = c.createOscillator(); L.type = 'sine'; L.frequency.value = carrier;
+      var R = c.createOscillator(); R.type = 'sine'; R.frequency.value = carrier + beatHz;
+      var pL = c.createStereoPanner(); pL.pan.value = -1;
+      var pR = c.createStereoPanner(); pR.pan.value = 1;
+      var gL = c.createGain(); gL.gain.value = 0.5;
+      var gR = c.createGain(); gR.gain.value = 0.5;
+      L.connect(gL); gL.connect(pL); pL.connect(lp);
+      R.connect(gR); gR.connect(pR); pR.connect(lp);
+      L.start(); R.start();
+      nodes = { g: g, oscs: [L, R] };
+      return carrier;
+    }
+    return { play: play, stop: stop };
   })();
 
   /* ================= 音游（律动冥想） ================= */
