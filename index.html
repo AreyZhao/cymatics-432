@@ -475,6 +475,7 @@
         <button class="chip wave-chip" data-wave="alpha">α 波</button>
         <button class="chip wave-chip" data-wave="beta">β 波</button>
         <button class="chip wave-chip" data-wave="gamma">γ 波</button>
+        <button class="chip" data-freq="342">342</button>
         <button class="chip" data-freq="174">174</button>
         <button class="chip" data-freq="285">285</button>
         <button class="chip" data-freq="396">396</button>
@@ -1627,6 +1628,7 @@
   var MEDITATION_PRESETS = [
     { name: '净化 · 174', styleId: 'aurora', engine: 'original', seed: 710001, bpm: 58, instrument: 'flute', medFreq: 174, rootShift: medShift(174) },
     { name: '低吟 · 174', styleId: 'grow',    engine: 'original', seed: 710002, bpm: 60, instrument: 'handpan', medFreq: 174, rootShift: medShift(174) },
+    { name: '深源 · 342', styleId: 'aurora', engine: 'original', seed: 710016, bpm: 58, instrument: 'violin', medFreq: 342, rootShift: medShift(342) },
     { name: '复元 · 285', styleId: 'aurora', engine: 'original', seed: 710003, bpm: 58, instrument: 'harp', medFreq: 285, rootShift: medShift(285) },
     { name: '愈合 · 285', styleId: 'night',  engine: 'original', seed: 710004, bpm: 60, instrument: 'ep', medFreq: 285, rootShift: medShift(285) },
     { name: '释怀 · 396', styleId: 'night',  engine: 'original', seed: 710005, bpm: 60, instrument: 'piano', medFreq: 396, rootShift: medShift(396) },
@@ -4949,6 +4951,27 @@
     } catch (e) {}
     var mflag = 'cz_medpresets_v2';
     try {
+      var haveNames = {};
+      for (var hn = 0; hn < library.length; hn++) haveNames[library[hn].name] = true;
+      var needAdd = false;
+      for (var pa = 0; pa < MEDITATION_PRESETS.length; pa++) {
+        if (!haveNames[MEDITATION_PRESETS[pa].name]) { needAdd = true; break; }
+      }
+      if (needAdd) {
+        for (var pi2 = 0; pi2 < MEDITATION_PRESETS.length; pi2++) {
+          var pcfg = MEDITATION_PRESETS[pi2];
+          if (haveNames[pcfg.name]) continue;
+          var ppc = pcfg.engine === 'original' ? composeOriginalPiece(pcfg) : composePiece(pcfg);
+          ppc.preset = true;
+          library.push({
+            id: ppc.id, name: ppc.name, styleId: ppc.styleId, bpm: ppc.bpm,
+            root: ppc.root, scaleName: ppc.scaleName, instrument: ppc.instrument,
+            seed: ppc.seed, created: ppc.created, bars: ppc.bars, preset: true, engine: ppc.engine || '',
+            medFreq: pcfg.medFreq, tag: '冥想', rootShift: pcfg.rootShift
+          });
+        }
+        saveLibrary();
+      }
       if (!localStorage.getItem(mflag)) {
         library = library.filter(function (x) { return !x.medFreq && x.tag !== '冥想'; });
         for (var mi = 0; mi < MEDITATION_PRESETS.length; mi++) {
