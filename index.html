@@ -243,7 +243,9 @@
   #medLib.on{display:flex}
   #medLib .lib-panel{width:min(500px,100%);max-height:86vh;display:flex;flex-direction:column;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(9,12,17,.98);box-shadow:0 24px 70px rgba(0,0,0,.85)}
   .medlib-freq{font-size:11px;color:var(--accent);letter-spacing:.06em}
-  .medlib-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+  .medlib-actions{display:flex;gap:6px;align-items:center;margin-left:auto;flex-shrink:0}
+  .medlib-actions .lib-btn{padding:5px 8px;font-size:11px}
+  .medlib-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px}
   .medlib-tab{flex:0 0 auto;white-space:nowrap;padding:6px 10px;border-radius:9px;border:1px solid var(--stroke);background:rgba(255,255,255,.05);color:var(--text);font-size:12px;cursor:pointer;font-family:inherit}
   .medlib-tab.on{background:var(--accent);color:#00161c;border-color:transparent;font-weight:600}
   .medlib-tab.empty{opacity:.45}
@@ -403,7 +405,6 @@
   .gp-black{position:absolute;top:0;height:62%;background:linear-gradient(180deg,#4a3720,#1a1006 70%,#050302);border-radius:0 0 6px 6px;z-index:2;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,.55);user-select:none}
   .gp-black:active,.gp-black.on{background:linear-gradient(180deg,#3f8ba3,#1d5f74)}
     /* ---- 冥想模式 ---- */
-  body.med-active #nowTitle{opacity:0;pointer-events:none}
   #medUI{position:fixed;z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px;touch-action:none}
   #medUI[hidden]{display:none}
   .med-top{width:100%;display:flex;align-items:center;gap:12px}
@@ -507,8 +508,15 @@
 
 <div id="medLib">
   <div class="lib-panel">
-    <div class="lib-head"><b>🧘 冥想音乐</b><button id="medLibClose" aria-label="关闭">✕</button></div>
-    <div class="lib-list" id="medLibList" style="margin-top:8px"></div>
+    <div class="lib-head">
+      <b>🧘 冥想音乐</b>
+      <div class="medlib-actions">
+        <button id="medLibFav" class="lib-btn">⭐ 收藏</button>
+        <button id="medLibTrash" class="lib-btn">🗑 回收站</button>
+        <button id="medLibClose" aria-label="关闭">✕</button>
+      </div>
+    </div>
+    <div class="lib-list" id="medLibList" style="margin-top:8px;flex:1;overflow:auto"></div>
   </div>
 </div>
 
@@ -1026,6 +1034,7 @@
     humCandidateSince: 0,
     recSecs: 15,
     medOn: false,
+    instOverride: null,
     pitchHz: 0,
     pitchConf: 0,
     rms: 0,
@@ -2463,8 +2472,9 @@
   }
 
   function scheduleEvent(ev, when, p, bus) {
+    var liveInst = state.instOverride || p.instrument;
     if (ev.kind === 'melody') {
-      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: p.instrument, bus: bus });
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: liveInst, bus: bus });
       if (typeof Game !== 'undefined') Game.schedule(ev.midi, when);
       if (p.mode !== 'solo') Audio.note(ev.midi + 12, { when: when + 0.16, vel: ev.vel * 0.13, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
@@ -2477,12 +2487,12 @@
     } else if (ev.kind === 'bass') {
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'arp') {
-      Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: p.arpInst || 'ep', bus: bus });
+      Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: liveInst, bus: bus });
       if (typeof Game !== 'undefined') Game.schedule(ev.midi, when);
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
       visQueue.push({ t: when, kind: 'harmonic', amt: (INST_OVERTONES[p.arpInst] || 0.4) * 0.6 });
     } else if (ev.kind === 'counter') {
-      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: p.counterInst || 'handpan', bus: bus });
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: liveInst, bus: bus });
     } else if (ev.kind === 'tabla' || ev.kind === 'fdrum') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.35, inst: ev.kind === 'tabla' ? 'marimba' : 'handpan', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
@@ -2583,7 +2593,7 @@
     if (!orig.drumLead && i % 2 === 0 && Math.random() < (orig.density || 0.34)) {
       var sc = orig.scale || [0, 2, 4, 7, 9, 12];
       var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
-      Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, inst: orig.inst, bus: bus });
+      Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, inst: (state.instOverride || orig.inst), bus: bus });
       if (typeof Game !== 'undefined') Game.schedule(midi, t);
       visQueue.push({ t: t, kind: 'note', midi: midi });
       visQueue.push({ t: t, kind: 'harmonic', amt: INST_OVERTONES[orig.inst] || 0.45 });
@@ -5181,11 +5191,141 @@
     if ($('editBpm')) $('editBpm').value = item.bpm;
     if ($('libEdit')) $('libEdit').classList.add('on');
   }
-  var medLibSel = 'alpha';
+  var medLibSel = 'alpha', medLibView = 'all';
+  function medDownload(it) {
+    try {
+      Audio.ensure();
+      var c = Audio.ctx();
+      var dest = c.createMediaStreamDestination();
+      Audio.master().connect(dest);
+      var mt = '';
+      try { if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) mt = 'audio/webm'; } catch (e) {}
+      var rec = mt ? new MediaRecorder(dest.stream, { mimeType: mt }) : new MediaRecorder(dest.stream);
+      var chunks = [];
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = function () {
+        try { Audio.master().disconnect(dest); } catch (e) {}
+        var type = mt || 'audio/webm';
+        var blob = new Blob(chunks, { type: type });
+        var url = URL.createObjectURL(blob);
+        var aEl = document.createElement('a');
+        aEl.href = url;
+        aEl.download = (it.name || '冥想音乐') + (type.indexOf('webm') >= 0 ? '.webm' : '.m4a');
+        document.body.appendChild(aEl);
+        aEl.click();
+        setTimeout(function () { URL.revokeObjectURL(url); aEl.remove(); }, 2500);
+        toast('⤓ 已导出音频（10 秒）', 2200);
+      };
+      rec.start();
+      var pc = pieceFromSaved(it);
+      if (pc.medFreq) setFreq(pc.medFreq);
+      playPiece(pc);
+      setTimeout(function () { try { rec.stop(); } catch (e) {} }, 10000);
+      toast('🎙 正在录制 10 秒并导出…', 2200);
+    } catch (e) {
+      toast('导出失败：' + e.message, 2600);
+    }
+  }
+  function medMoveToTrash(it) {
+    trash.unshift({
+      id: it.id, name: it.name, styleId: it.styleId, bpm: it.bpm, root: it.root,
+      scaleName: it.scaleName, instrument: it.instrument, seed: it.seed, created: it.created,
+      bars: it.bars, preset: false, engine: it.engine || '', medFreq: it.medFreq, medClass: it.medClass,
+      tag: it.tag, deletedAt: Date.now()
+    });
+    library = library.filter(function (x) { return x.id !== it.id; });
+    saveTrash();
+    saveLibrary();
+    renderMedLib();
+    toast('已移入回收站', 1800);
+  }
+  function medRow(it, inTrash) {
+    var row = document.createElement('div');
+    row.className = 'lib-item';
+    var t = document.createElement('div');
+    t.className = 't';
+    var meta = it.medClass && WAVES[it.medClass]
+      ? WAVES[it.medClass].name + ' · ' + WAVES[it.medClass].range
+      : (it.medFreq + ' Hz');
+    t.innerHTML = '<div class="nm">' + (it.fav ? '⭐ ' : '') + esc(it.name) + '</div>' +
+      '<div class="medlib-freq">' + meta + ' · ' + it.bpm + ' BPM · ' + fmtDate(it.created) + '</div>';
+    row.appendChild(t);
+    if (inTrash) {
+      var restore = document.createElement('button');
+      restore.className = 'lib-btn primary';
+      restore.textContent = '↩';
+      restore.addEventListener('click', function () {
+        trash = trash.filter(function (x) { return x.id !== it.id; });
+        var back = { id: it.id, name: it.name, styleId: it.styleId, bpm: it.bpm, root: it.root, scaleName: it.scaleName, instrument: it.instrument, seed: it.seed, created: it.created, bars: it.bars, preset: it.preset, engine: it.engine || '', medFreq: it.medFreq, medClass: it.medClass, tag: it.tag };
+        library.push(back);
+        saveTrash();
+        saveLibrary();
+        renderMedLib();
+        toast('已恢复', 1800);
+      });
+      var kill = document.createElement('button');
+      kill.className = 'lib-btn danger';
+      kill.textContent = '✕';
+      kill.addEventListener('click', function () {
+        trash = trash.filter(function (x) { return x.id !== it.id; });
+        saveTrash();
+        renderMedLib();
+        toast('已永久删除', 1800);
+      });
+      row.appendChild(restore);
+      row.appendChild(kill);
+      return row;
+    }
+    var play = document.createElement('button');
+    play.className = 'lib-btn primary';
+    play.textContent = '▶';
+    play.addEventListener('click', function () {
+      var pc = pieceFromSaved(it);
+      if (pc.medFreq) setFreq(pc.medFreq);
+      playPiece(pc);
+      $('medLib').classList.remove('on');
+    });
+    var fav = document.createElement('button');
+    fav.className = 'lib-btn';
+    fav.textContent = it.fav ? '⭐' : '☆';
+    fav.addEventListener('click', function () {
+      it.fav = !it.fav;
+      saveLibrary();
+      renderMedLib();
+    });
+    var dl = document.createElement('button');
+    dl.className = 'lib-btn';
+    dl.textContent = '⤓';
+    dl.addEventListener('click', function () { medDownload(it); });
+    var del = document.createElement('button');
+    del.className = 'lib-btn danger';
+    del.textContent = '🗑';
+    del.addEventListener('click', function () { medMoveToTrash(it); });
+    row.appendChild(play);
+    row.appendChild(fav);
+    row.appendChild(dl);
+    row.appendChild(del);
+    return row;
+  }
   function renderMedLib() {
     var list = $('medLibList');
     if (!list) return;
     list.innerHTML = '';
+    var favBtn = $('medLibFav'), trBtn = $('medLibTrash');
+    if (favBtn) favBtn.classList.toggle('primary', medLibView === 'fav');
+    if (trBtn) trBtn.classList.toggle('primary', medLibView === 'trash');
+    if (medLibView === 'trash') {
+      var mt = trash.filter(function (x) { return x.medFreq || x.medClass; });
+      if (!mt.length) { list.innerHTML = '<div class="lib-empty">回收站是空的</div>'; return; }
+      mt.forEach(function (it) { list.appendChild(medRow(it, true)); });
+      return;
+    }
+    if (medLibView === 'fav') {
+      var favs = library.filter(function (it) { return it.fav; });
+      if (!favs.length) { list.innerHTML = '<div class="lib-empty">还没有收藏的冥想音乐</div>'; return; }
+      favs.forEach(function (it) { list.appendChild(medRow(it, false)); });
+      return;
+    }
     var waveItems = {};
     library.forEach(function (it) { if (it.medClass) (waveItems[it.medClass] = waveItems[it.medClass] || []).push(it); });
     var freqGroups = {};
@@ -5214,57 +5354,34 @@
     defs.forEach(function (d) {
       var btn = document.createElement('button');
       btn.className = 'medlib-tab' + (medLibSel === d.id ? ' on' : '') + (d.count ? '' : ' empty');
-      btn.textContent = d.label + (d.count ? ' ' + d.count : '');
+      btn.textContent = d.label;
       btn.addEventListener('click', function () { medLibSel = d.id; renderMedLib(); });
       tabs.appendChild(btn);
     });
     list.appendChild(tabs);
-    var content = document.createElement('div');
-    content.className = 'medlib-content';
     var sel = defs.filter(function (d) { return d.id === medLibSel; })[0];
     if (!sel || !sel.items.length) {
-      content.innerHTML = '<div class="lib-empty">这个分类还没有曲目</div>';
-    } else {
-      sel.items.forEach(function (it) {
-        var row = document.createElement('div');
-        row.className = 'lib-item';
-        var t = document.createElement('div');
-        t.className = 't';
-        t.innerHTML = '<div class="nm">' + esc(it.name) + '</div>' +
-          '<div class="medlib-freq">' + (it.medClass ? WAVES[it.medClass].name + ' · ' + WAVES[it.medClass].range : it.medFreq + ' Hz') + ' · ' + it.bpm + ' BPM</div>';
-        row.appendChild(t);
-        var play = document.createElement('button');
-        play.className = 'lib-btn primary';
-        play.textContent = '▶';
-        play.addEventListener('click', function () {
-          var pc = pieceFromSaved(it);
-          if (pc.medFreq) setFreq(pc.medFreq);
-          playPiece(pc);
-          $('medLib').classList.remove('on');
-        });
-        var del = document.createElement('button');
-        del.className = 'lib-btn danger';
-        del.textContent = '🗑';
-        del.addEventListener('click', function () {
-          library = library.filter(function (x) { return x.id !== it.id; });
-          saveLibrary();
-          renderMedLib();
-        });
-        row.appendChild(play);
-        row.appendChild(del);
-        content.appendChild(row);
-      });
+      var empty = document.createElement('div');
+      empty.className = 'lib-empty';
+      empty.textContent = '这个分类还没有曲目';
+      list.appendChild(empty);
+      return;
     }
-    list.appendChild(content);
+    sel.items.forEach(function (it) { list.appendChild(medRow(it, false)); });
   }
   function openMedLib() {
     loadLibrary();
+    loadTrash();
+    medLibView = 'all';
     renderMedLib();
     $('medLib').classList.add('on');
   }
   (function () {
     var mc = $('medLibClose');
     if (mc) mc.addEventListener('click', function () { $('medLib').classList.remove('on'); });
+    var fb = $('medLibFav'), tb = $('medLibTrash');
+    if (fb) fb.addEventListener('click', function () { medLibView = (medLibView === 'fav') ? 'all' : 'fav'; renderMedLib(); });
+    if (tb) tb.addEventListener('click', function () { medLibView = (medLibView === 'trash') ? 'all' : 'trash'; renderMedLib(); });
   })();
   function openLibrary() {
     loadLibrary();
@@ -6247,6 +6364,7 @@
   }
   function selectInstrument(id) {
     state.instrument = id;
+    state.instOverride = id;
     markInstBtns(id);
     try { localStorage.setItem('cz_inst', id); } catch (e) {}
   }
