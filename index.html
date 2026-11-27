@@ -342,24 +342,35 @@
   body.ui-hidden #top-bar,body.ui-hidden #bottom-bar,body.ui-hidden #hint{opacity:.05}
   body.ui-hidden #hint{opacity:0}
   @media (prefers-reduced-motion:reduce){.ui-layer,#piano-drawer{transition:none!important}}
-  /* ---- 音游 ---- */
-  #gameUI{position:fixed;inset:0;z-index:45;pointer-events:none;display:flex;align-items:center;justify-content:center;flex-direction:column}
-  #gameUI[hidden]{display:none}
-  .game-score{position:absolute;top:56px;left:50%;transform:translateX(-50%);font-size:30px;font-weight:700;color:#fff;text-shadow:0 0 12px rgba(0,229,255,.8)}
-  .game-combo{position:absolute;top:96px;left:50%;transform:translateX(-50%);font-size:15px;color:#ffd166}
-  .game-ring{width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.55);opacity:0;transition:transform .16s ease, opacity .2s ease}
-  .game-ring.on{opacity:1;transform:scale(1.35)}
-  .game-hint{position:absolute;bottom:168px;left:50%;transform:translateX(-50%);font-size:13px;color:rgba(255,255,255,.72);white-space:nowrap}
-  .game-lanes{position:absolute;bottom:210px;left:50%;transform:translateX(-50%);display:flex;gap:4px;height:40vh;max-height:340px;align-items:flex-end}
-  .g-lane{position:relative;width:38px;height:100%;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
-  .g-lane .g-hit{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.5);border-radius:2px}
-  .g-lane .g-line{position:absolute;bottom:28px;left:0;right:0;height:1px;background:rgba(255,255,255,.18)}
-  .g-note{position:absolute;left:4px;right:4px;height:14px;border-radius:7px;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:gfall linear forwards}
-  @keyframes gfall{from{top:-16px}to{top:calc(100% - 40px)}}
-  .game-pads{position:absolute;bottom:120px;left:50%;transform:translateX(-50%);display:flex;gap:6px;justify-content:center;flex-wrap:nowrap}
-  .g-pad{min-width:34px;padding:8px 6px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#dfe9f2;font-size:11px;text-align:center;pointer-events:auto;cursor:pointer;line-height:1.25}
-  .g-pad:active{background:var(--accent);color:#00161c}
-  /* ---- 冥想模式 ---- */
+  /* ---- 音游（独立页面） ---- */
+  body.game-active .ui-layer,
+  body.game-active #medUI,
+  body.game-active #piano-drawer,
+  body.game-active #nowTitle,
+  body.game-active #titleMenu{display:none!important}
+  #gameStage{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 38%, #0b1520 0%, #02060a 68%, #000 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:14px;box-sizing:border-box}
+  #gameStage[hidden]{display:none}
+  .gs-close{position:absolute;top:14px;right:14px;z-index:2;appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#dfe9f2;font-size:13px;font-family:inherit;padding:8px 12px;border-radius:10px;cursor:pointer}
+  .gs-hud{position:absolute;top:18px;left:50%;transform:translateX(-50%);display:flex;gap:16px;align-items:baseline}
+  #gsScore{font-size:30px;font-weight:700;color:#fff;text-shadow:0 0 14px rgba(0,229,255,.7)}
+  #gsCombo{font-size:14px;color:#ffd166;letter-spacing:1px}
+  .gs-judge{position:absolute;top:72px;left:50%;transform:translateX(-50%);font-size:18px;letter-spacing:3px;font-weight:600;opacity:0;transition:opacity .12s}
+  .gs-judge.show{opacity:1}
+  .gs-lanes{display:flex;gap:6px;height:46vh;max-height:420px;align-items:flex-end}
+  .gs-lane{position:relative;width:44px;height:100%;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.055));border:1px solid rgba(255,255,255,.07);border-radius:10px}
+  .gs-lane .gs-line{position:absolute;bottom:0;left:-1px;right:-1px;height:4px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 12px var(--accent)}
+  .gs-note{position:absolute;left:4px;right:4px;height:15px;border-radius:8px;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:gsfall linear forwards}
+  @keyframes gsfall{from{top:-18px}to{top:calc(100% - 42px)}}
+  .gs-keys{display:flex;gap:8px;margin-top:16px;align-items:flex-end}
+  .gs-key{position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:11px;color:#cfe2ee;cursor:pointer;user-select:none;transition:transform .08s ease, background .12s ease;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16)}
+  .gs-key:active,.gs-key.on{background:var(--accent);color:#00161c;box-shadow:0 0 18px var(--accent);transform:translateY(2px)}
+  .gs-keys.style-strings .gs-key{width:26px;height:118px;border-radius:6px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03))}
+  .gs-keys.style-strings .gs-key:after{content:'';position:absolute;top:6px;bottom:6px;left:50%;width:1px;background:rgba(255,255,255,.35);box-shadow:0 0 6px rgba(255,255,255,.35)}
+  .gs-keys.style-bells .gs-key{width:50px;height:50px;border-radius:50%;align-items:center;padding-bottom:0}
+  .gs-keys.style-keys .gs-key{width:42px;height:108px;border-radius:8px;align-items:flex-end}
+  .gs-keys.style-winds .gs-key{width:42px;height:42px;border-radius:50%;align-items:center;padding-bottom:0}
+  .gs-keys.style-handpan .gs-key{width:48px;height:48px;border-radius:50%;align-items:center;padding-bottom:0;border-width:2px}
+    /* ---- 冥想模式 ---- */
   body.med-active #nowTitle{opacity:0;pointer-events:none}
   #medUI{position:fixed;z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px;touch-action:none}
   #medUI[hidden]{display:none}
@@ -445,13 +456,15 @@
 
 <div id="piano-drawer" aria-hidden="true"><div id="pianoInner" class="piano-inner"></div></div>
 
-<div id="gameUI" hidden>
-  <div class="game-score"><span id="gameScore">0</span></div>
-  <div class="game-combo" id="gameCombo"></div>
-  <div class="game-ring" id="gameRing"></div>
-  <div class="game-lanes" id="gameLanes"></div>
-  <div class="game-pads" id="gamePads"></div>
-  <div class="game-hint" id="gameHint">音符落到线上时，按对应琴键/音键</div>
+<div id="gameStage" hidden>
+  <button id="gsClose" class="gs-close">✕ 退出</button>
+  <div class="gs-hud">
+    <span id="gsScore">0</span>
+    <span id="gsCombo"></span>
+  </div>
+  <div class="gs-judge" id="gsJudge"></div>
+  <div class="gs-lanes" id="gsLanes"></div>
+  <div class="gs-keys" id="gsKeys"></div>
 </div>
 
 <div id="medUI" hidden>
@@ -2406,6 +2419,7 @@
   function scheduleEvent(ev, when, p, bus) {
     if (ev.kind === 'melody') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: p.instrument, bus: bus });
+      if (typeof Game !== 'undefined') Game.schedule(ev.midi, when);
       if (p.mode !== 'solo') Audio.note(ev.midi + 12, { when: when + 0.16, vel: ev.vel * 0.13, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
       visQueue.push({ t: when, kind: 'harmonic', amt: INST_OVERTONES[p.instrument] || 0.45 });
@@ -2418,6 +2432,7 @@
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'arp') {
       Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: p.arpInst || 'ep', bus: bus });
+      if (typeof Game !== 'undefined') Game.schedule(ev.midi, when);
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
       visQueue.push({ t: when, kind: 'harmonic', amt: (INST_OVERTONES[p.arpInst] || 0.4) * 0.6 });
     } else if (ev.kind === 'counter') {
@@ -2514,6 +2529,7 @@
       var sc = orig.scale || [0, 2, 4, 7, 9, 12];
       var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
       Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, inst: orig.inst, bus: bus });
+      if (typeof Game !== 'undefined') Game.schedule(midi, t);
       visQueue.push({ t: t, kind: 'note', midi: midi });
       visQueue.push({ t: t, kind: 'harmonic', amt: INST_OVERTONES[orig.inst] || 0.45 });
     }
@@ -6711,7 +6727,6 @@
         state.wave = 0;
         state.waveAmp = Math.min(1.5, state.waveAmp + 0.22);
         flashKey(keyEls[ev.midi], 420);
-        if (typeof Game !== 'undefined') Game.note(ev.midi, performance.now());
       }
     }
 
@@ -7046,8 +7061,14 @@
     var on = false, score = 0, combo = 0, best = 0;
     var LANES = [60, 62, 64, 65, 67, 69, 71];
     var NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    var el = {}, laneEls = [], padsEl = [], falling = [];
-    var FALL_MS = 1150;
+    var FALL_MS = 1500;
+    var FAMILY = {
+      guzheng: 'strings', pipa: 'strings', harp: 'strings', violin: 'strings',
+      bell: 'bells', bianzhong: 'bells', handpan: 'handpan',
+      flute: 'winds', clarinet: 'winds', piccolo: 'winds',
+      piano: 'keys', ep: 'keys', musicbox: 'keys', marimba: 'keys', synth: 'keys'
+    };
+    var el = {}, laneEls = [], keyEls2 = [], falling = [];
     try { best = parseInt(localStorage.getItem('cz_game_best') || '0', 10) || 0; } catch (e) {}
     function nearestLane(midi) {
       var b = 0, bd = 999;
@@ -7058,30 +7079,44 @@
       el.score.textContent = score;
       el.combo.textContent = combo >= 2 ? combo + ' 连击' : '';
     }
-    function buildLanes() {
+    function judge(txt, color) {
+      el.judge.textContent = txt;
+      el.judge.style.color = color;
+      el.judge.classList.add('show');
+      clearTimeout(el.jt);
+      el.jt = setTimeout(function () { el.judge.classList.remove('show'); }, 420);
+    }
+    function build() {
       el.lanes.innerHTML = '';
       laneEls = [];
       LANES.forEach(function () {
-        var d = document.createElement('div'); d.className = 'g-lane';
-        var line = document.createElement('div'); line.className = 'g-line'; d.appendChild(line);
-        var hit = document.createElement('div'); hit.className = 'g-hit'; d.appendChild(hit);
+        var d = document.createElement('div'); d.className = 'gs-lane';
+        var line = document.createElement('div'); line.className = 'gs-line'; d.appendChild(line);
         el.lanes.appendChild(d); laneEls.push(d);
       });
-      el.pads.innerHTML = '';
-      padsEl = [];
+      el.keys.innerHTML = '';
+      keyEls2 = [];
+      var fam = FAMILY[state.instrument] || 'keys';
+      el.keys.className = 'gs-keys style-' + fam;
       LANES.forEach(function (n, i) {
-        var b = document.createElement('div'); b.className = 'g-pad';
+        var b = document.createElement('div');
+        b.className = 'gs-key';
         b.textContent = NAMES[i];
-        b.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); pressKey(n); });
-        el.pads.appendChild(b); padsEl.push(b);
+        b.addEventListener('pointerdown', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          b.classList.add('on');
+          setTimeout(function () { b.classList.remove('on'); }, 140);
+          pressKey(n);
+        });
+        el.keys.appendChild(b); keyEls2.push(b);
       });
     }
     function spawn(midi) {
       var active = 0;
       for (var i = 0; i < falling.length; i++) if (!falling[i].done) active++;
-      if (active > 12) return;
+      if (active > 14) return;
       var lane = nearestLane(midi);
-      var note = document.createElement('div'); note.className = 'g-note';
+      var note = document.createElement('div'); note.className = 'gs-note';
       note.style.animationDuration = (FALL_MS / 1000) + 's';
       laneEls[lane].appendChild(note);
       var item = { lane: lane, el: note, hitAt: performance.now() + FALL_MS, done: false };
@@ -7091,6 +7126,7 @@
         item.done = true;
         if (note.parentNode) note.remove();
         combo = 0; update();
+        judge('MISS', '#ff7b7b');
       });
     }
     function hitCheck(midi) {
@@ -7102,45 +7138,54 @@
         var d = Math.abs(now - f.hitAt);
         if (d < bd) { bd = d; best = f; }
       }
-      if (best && bd <= 340) {
+      if (best && bd <= 280) {
         best.done = true;
         if (best.el.parentNode) best.el.remove();
-        score++; combo++;
+        combo++;
+        if (bd <= 110) { score += 2; judge('PERFECT', '#7ef0c8'); }
+        else { score += 1; judge('GOOD', '#ffd166'); }
         if (score > best) { best = score; try { localStorage.setItem('cz_game_best', score); } catch (e) {} }
-        el.hint.textContent = '✦ 接住了';
         update();
         return true;
       }
       combo = 0;
-      el.hint.textContent = '再对准一点，音符到线时按';
       update();
+      judge('MISS', '#ff7b7b');
       return false;
     }
     function note(midi) { if (on) spawn(midi); }
+    function schedule(midi, whenSec) {
+      if (!on) return;
+      var c = null;
+      try { c = Audio.ctx(); } catch (e) {}
+      if (!c) { spawn(midi); return; }
+      var lead = (whenSec - c.currentTime) * 1000 - FALL_MS;
+      setTimeout(function () { if (on) spawn(midi); }, Math.max(0, lead));
+    }
     function keyPress(midi) { if (on) hitCheck(midi); }
     function beat() {}
     function toggle() {
       on = !on;
-      el.ui.hidden = !on;
+      el.stage.hidden = !on;
+      document.body.classList.toggle('game-active', on);
+      document.getElementById('gameBtn').classList.toggle('on', on);
       if (on) {
-        if (!state.seqOn && !state.medOn) { toast('先播放 🎵 放歌 或 ✨ 天籁，再开音游', 2600); on = false; el.ui.hidden = true; return; }
         score = 0; combo = 0; falling = [];
-        buildLanes();
-        el.hint.textContent = '音符落到线上时，按对应琴键 / 音键';
+        build();
         update();
       }
-      document.getElementById('gameBtn').classList.toggle('on', on);
     }
     function init() {
-      el.ui = document.getElementById('gameUI');
-      el.score = document.getElementById('gameScore');
-      el.combo = document.getElementById('gameCombo');
-      el.lanes = document.getElementById('gameLanes');
-      el.pads = document.getElementById('gamePads');
-      el.hint = document.getElementById('gameHint');
+      el.stage = document.getElementById('gameStage');
+      el.score = document.getElementById('gsScore');
+      el.combo = document.getElementById('gsCombo');
+      el.judge = document.getElementById('gsJudge');
+      el.lanes = document.getElementById('gsLanes');
+      el.keys = document.getElementById('gsKeys');
       document.getElementById('gameBtn').addEventListener('click', toggle);
+      document.getElementById('gsClose').addEventListener('click', function () { if (on) toggle(); });
     }
-    return { init: init, beat: beat, note: note, keyPress: keyPress, on: function () { return on; } };
+    return { init: init, beat: beat, note: note, schedule: schedule, keyPress: keyPress, on: function () { return on; } };
   })();
   Game.init();
 
