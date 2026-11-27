@@ -1848,7 +1848,7 @@
     { name: '放下 · 396', styleId: 'grow',   engine: 'original', seed: 710006, bpm: 60, instrument: 'clarinet', medFreq: 396, rootShift: medShift(396) },
     { name: '变革 · 417', styleId: 'grow',   engine: 'original', seed: 710007, bpm: 60, instrument: 'guzheng', medFreq: 417, rootShift: medShift(417) },
     { name: '转身 · 417', styleId: 'aurora', engine: 'original', seed: 710008, bpm: 58, instrument: 'piccolo', medFreq: 417, rootShift: medShift(417) },
-    { name: '本源 · 432', styleId: 'aurora', engine: 'original', seed: 710009, bpm: 58, instrument: 'violin', medFreq: 432, rootShift: medShift(432) },
+    { name: '本源 · 432', styleId: 'aurora', engine: 'original', seed: 710009, bpm: 58, instrument: 'harp', medFreq: 432, rootShift: medShift(432) },
     { name: '同心 · 432', styleId: 'night',  engine: 'original', seed: 710010, bpm: 60, instrument: 'musicbox', medFreq: 432, rootShift: medShift(432) },
     { name: '爱意 · 528', styleId: 'night',  engine: 'original', seed: 710011, bpm: 60, instrument: 'harp', medFreq: 528, rootShift: medShift(528) },
     { name: '奇迹 · 528', styleId: 'aurora', engine: 'original', seed: 710012, bpm: 58, instrument: 'bell', medFreq: 528, rootShift: medShift(528) },
@@ -6645,11 +6645,8 @@
     { id: 'guzheng', name: '⚡ 电古筝' },
     { id: 'pipa', name: '⚡ 电琵琶' },
     { id: 'bianzhong', name: '🔔 编钟' },
-    { id: 'violin', name: '🎻 小提琴' },
     { id: 'harp', name: '🎼 竖琴' },
     { id: 'piccolo', name: '🎵 短笛' },
-    { id: 'sax', name: '🎷 萨克斯' },
-    { id: 'trumpet', name: '🎺 小号' },
     { id: 'guitar', name: '🎸 吉他' },
     { id: 'bass', name: '🎸 贝斯' },
     { id: 'recorder', name: '🪈 竖笛' },
@@ -7653,7 +7650,10 @@
     }
     var savedKeys = localStorage.getItem('cz_keys') || '13';
     var savedInst = localStorage.getItem('cz_inst');
-    if (savedInst) { state.instrument = savedInst; markInstBtns(savedInst); }
+    var instOk = false;
+    for (var ii2 = 0; ii2 < INSTRUMENTS.length; ii2++) if (INSTRUMENTS[ii2].id === savedInst) instOk = true;
+    if (savedInst && instOk) { state.instrument = savedInst; markInstBtns(savedInst); }
+    else { state.instrument = 'piano'; markInstBtns('piano'); }
     var savedRec = localStorage.getItem('cz_recsecs');
     if (savedRec !== null) state.recSecs = parseInt(savedRec, 10) || 0;
     applyTheme(savedTheme, false);
