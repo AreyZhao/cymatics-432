@@ -376,6 +376,7 @@
   .gs-stagewrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;margin-top:26px}
   .gs-surface{width:min(94vw,760px);height:min(52vh,440px);position:relative;touch-action:none}
   .gs-surface svg{width:100%;height:100%;display:block}
+  .gs-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;border-radius:16px}
   .gs-ripple{position:absolute;width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);pointer-events:none;transform:translate(-50%,-50%);animation:gsrip .55s ease-out forwards}
   @keyframes gsrip{from{opacity:.95;box-shadow:0 0 10px var(--accent)}to{opacity:0;box-shadow:0 0 34px var(--accent);width:90px;height:90px}}
   .gs-panel{position:absolute;left:14px;top:64px;z-index:5;width:190px;background:rgba(8,12,16,.82);border:1px solid rgba(255,255,255,.14);border-radius:12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 12px 30px rgba(0,0,0,.5);overflow:hidden}
@@ -7614,6 +7615,314 @@
   })();
 
   /* ================= 音游（律动冥想） ================= */
+
+  /* ================= WebGL 3D 乐器渲染 ================= */
+  var G3D = (function () {
+    var canvas = null, gl = null, prog = null, loc = {}, objs = [], raf = 0, hostEl = null, texCache = {};
+    function M() { return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+    function mul(a, b) {
+      var o = new Float32Array(16);
+      for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+        var s = 0; for (var k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+        o[c * 4 + r] = s;
+      }
+      return o;
+    }
+    function persp(fov, asp, n, f) {
+      var t = 1 / Math.tan(fov / 2);
+      return new Float32Array([t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0]);
+    }
+    function lookAt(eye, ctr, up) {
+      var zx = eye[0] - ctr[0], zy = eye[1] - ctr[1], zz = eye[2] - ctr[2];
+      var zl = Math.hypot(zx, zy, zz) || 1; zx /= zl; zy /= zl; zz /= zl;
+      var xx = up[1] * zz - up[2] * zy, xy = up[2] * zx - up[0] * zz, xz = up[0] * zy - up[1] * zx;
+      var xl = Math.hypot(xx, xy, xz) || 1; xx /= xl; xy /= xl; xz /= xl;
+      var yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+      return new Float32Array([xx, yx, zx, 0, xy, yy, zy, 0, xz, yz, zz, 0,
+        -(xx * eye[0] + xy * eye[1] + xz * eye[2]), -(yx * eye[0] + yy * eye[1] + yz * eye[2]), -(zx * eye[0] + zy * eye[1] + zz * eye[2]), 1]);
+    }
+    function T(x, y, z) { var m = M(); m[12] = x; m[13] = y; m[14] = z; return m; }
+    function S(x, y, z) { var m = M(); m[0] = x; m[5] = y; m[10] = z; return m; }
+    function Ry(a) { var c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]); }
+    function Rz(a) { var c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+    function Rx(a) { var c = Math.cos(a), s = Math.sin(a); return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]); }
+    function model(x, y, z, sx, sy, sz, ry, rz) {
+      var m = T(x, y, z);
+      m = mul(m, Ry(ry || 0));
+      m = mul(m, Rz(rz || 0));
+      m = mul(m, S(sx, sy, sz));
+      return m;
+    }
+    var meshCache = {};
+    function mkBox(w, h, d) {
+      var key = 'b' + w + '|' + h + '|' + d;
+      if (meshCache[key]) return meshCache[key];
+      var hw = w / 2, hh = h / 2, hd = d / 2, v = [], idx = [];
+      var faces = [
+        [[-hw, -hh, hd], [hw, -hh, hd], [hw, hh, hd], [-hw, hh, hd], 0, 0, 1],
+        [[hw, -hh, -hd], [-hw, -hh, -hd], [-hw, hh, -hd], [hw, hh, -hd], 0, 0, -1],
+        [[hw, -hh, hd], [hw, -hh, -hd], [hw, hh, -hd], [hw, hh, hd], 1, 0, 0],
+        [[-hw, -hh, -hd], [-hw, -hh, hd], [-hw, hh, hd], [-hw, hh, -hd], -1, 0, 0],
+        [[-hw, hh, hd], [hw, hh, hd], [hw, hh, -hd], [-hw, hh, -hd], 0, 1, 0],
+        [[-hw, -hh, -hd], [hw, -hh, -hd], [hw, -hh, hd], [-hw, -hh, hd], 0, -1, 0]
+      ];
+      faces.forEach(function (f) {
+        var b = v.length / 8;
+        for (var i = 0; i < 4; i++) {
+          v.push(f[i][0], f[i][1], f[i][2], f[4], f[5], f[6], i === 1 || i === 2 ? 1 : 0, i >= 2 ? 1 : 0);
+        }
+        idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      });
+      var m = { v: new Float32Array(v), i: new Uint16Array(idx) };
+      meshCache[key] = m; return m;
+    }
+    function mkCyl(r1, r2, h, seg) {
+      var key = 'c' + r1 + '|' + r2 + '|' + h + '|' + seg;
+      if (meshCache[key]) return meshCache[key];
+      var v = [], idx = [], hy = h / 2;
+      for (var i = 0; i <= seg; i++) {
+        var a = i / seg * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+        v.push(r1 * ca, -hy, r1 * sa, ca, 0, sa, i / seg, 0);
+        v.push(r2 * ca, hy, r2 * sa, ca, 0, sa, i / seg, 1);
+      }
+      for (var j = 0; j < seg; j++) { var b = j * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); }
+      var m = { v: new Float32Array(v), i: new Uint16Array(idx) };
+      meshCache[key] = m; return m;
+    }
+    function mkLathe(pts, seg) {
+      var key = 'l' + seg + '|' + pts.length;
+      for (var pi = 0; pi < pts.length; pi++) key += pts[pi][0].toFixed(2) + ',' + pts[pi][1].toFixed(2) + ';';
+      if (meshCache[key]) return meshCache[key];
+      var v = [], idx = [];
+      for (var p = 0; p < pts.length; p++) {
+        for (var i = 0; i <= seg; i++) {
+          var a = i / seg * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+          v.push(pts[p][0] * ca, pts[p][1], pts[p][0] * sa, ca, 0.4, sa, i / seg, p / (pts.length - 1));
+        }
+      }
+      for (var p2 = 0; p2 < pts.length - 1; p2++) {
+        for (var i2 = 0; i2 < seg; i2++) {
+          var b = p2 * (seg + 1) + i2, c = (p2 + 1) * (seg + 1) + i2;
+          idx.push(b, c, b + 1, b + 1, c, c + 1);
+        }
+      }
+      var m = { v: new Float32Array(v), i: new Uint16Array(idx) };
+      meshCache[key] = m; return m;
+    }
+    function mkSphere(r, seg, rings) {
+      var pts = [];
+      for (var i = 0; i <= rings; i++) {
+        var phi = -Math.PI / 2 + Math.PI * i / rings;
+        pts.push([Math.cos(phi) * r, Math.sin(phi) * r]);
+      }
+      return mkLathe(pts, seg);
+    }
+    function texCanvas(kind) {
+      var cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+      var x = cv.getContext('2d');
+      if (kind === 'wood') {
+        var g = x.createLinearGradient(0, 0, 256, 0);
+        g.addColorStop(0, '#8a5a2c'); g.addColorStop(0.5, '#b87c3f'); g.addColorStop(1, '#7a4c22');
+        x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+        for (var i2 = 0; i2 < 90; i2++) {
+          x.strokeStyle = 'rgba(' + (40 + Math.random() * 50) + ',' + (22 + Math.random() * 30) + ',10,' + (0.08 + Math.random() * 0.18) + ')';
+          x.lineWidth = 0.6 + Math.random() * 1.8;
+          x.beginPath();
+          var yy = Math.random() * 256;
+          x.moveTo(0, yy);
+          for (var xx = 0; xx <= 256; xx += 32) x.lineTo(xx, yy + Math.sin(xx / 30 + i2) * 3);
+          x.stroke();
+        }
+      } else if (kind === 'metal') {
+        var gm = x.createLinearGradient(0, 0, 0, 256);
+        gm.addColorStop(0, '#e6d6b4'); gm.addColorStop(0.45, '#c2a671'); gm.addColorStop(1, '#8e7a52');
+        x.fillStyle = gm; x.fillRect(0, 0, 256, 256);
+        for (var i3 = 0; i3 < 220; i3++) {
+          x.strokeStyle = 'rgba(255,255,255,' + (Math.random() * 0.12) + ')';
+          x.lineWidth = 0.6;
+          var y3 = Math.random() * 256;
+          x.beginPath(); x.moveTo(0, y3); x.lineTo(256, y3 + (Math.random() - 0.5) * 4); x.stroke();
+        }
+      } else if (kind === 'lacquer') {
+        var gl2 = x.createRadialGradient(90, 70, 10, 128, 128, 170);
+        gl2.addColorStop(0, '#4a2a18'); gl2.addColorStop(0.6, '#26130c'); gl2.addColorStop(1, '#140a06');
+        x.fillStyle = gl2; x.fillRect(0, 0, 256, 256);
+        for (var i4 = 0; i4 < 60; i4++) {
+          x.strokeStyle = 'rgba(255,180,90,' + (Math.random() * 0.06) + ')';
+          x.lineWidth = 0.8; x.beginPath(); x.moveTo(Math.random() * 256, Math.random() * 256);
+          x.lineTo(Math.random() * 256, Math.random() * 256); x.stroke();
+        }
+      } else {
+        x.fillStyle = '#2c3138'; x.fillRect(0, 0, 256, 256);
+      }
+      return cv;
+    }
+    function getTex(kind) {
+      if (texCache[kind]) return texCache[kind];
+      var t = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texCanvas(kind));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      texCache[kind] = t;
+      return t;
+    }
+    function compile(vs, fs) {
+      function sh(type, src) {
+        var sh2 = gl.createShader(type); gl.shaderSource(sh2, src); gl.compileShader(sh2);
+        if (!gl.getShaderParameter(sh2, gl.COMPILE_STATUS)) { console.warn('shader', gl.getShaderInfoLog(sh2)); return null; }
+        return sh2;
+      }
+      var v = sh(gl.VERTEX_SHADER, vs), f = sh(gl.FRAGMENT_SHADER, fs);
+      if (!v || !f) return null;
+      var p = gl.createProgram(); gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn('link', gl.getProgramInfoLog(p)); return null; }
+      return p;
+    }
+    function buildObjects(type) {
+      objs = [];
+      function add(mesh, tex, tint, mat) { objs.push({ mesh: mesh, tex: tex, tint: tint, model: mat }); }
+      var WOOD = 'wood', METAL = 'metal', LAC = 'lacquer';
+      var wt = [1.0, 0.92, 0.8], mt = [1.0, 1.0, 1.0], lt = [1.0, 0.9, 0.85];
+      if (type === 'zither') {
+        add(mkBox(3.4, 0.32, 0.9), WOOD, wt, model(0, 0.2, 0, 1, 1, 1, 0, 0));
+        add(mkBox(3.42, 0.06, 0.92), WOOD, [1.05, 1.0, 0.9], model(0, 0.38, 0, 1, 1, 1, 0, 0));
+        for (var i = 0; i < 21; i++) add(mkBox(0.012, 0.012, 0.84), METAL, mt, model(-1.55 + i * 0.155, 0.43, 0, 1, 1, 1, 0, 0));
+        add(mkBox(0.06, 0.12, 0.84), WOOD, [0.7, 0.6, 0.5], model(-0.9, 0.42, 0, 1, 1, 1, 0, 0));
+        add(mkBox(0.06, 0.12, 0.84), WOOD, [0.7, 0.6, 0.5], model(0.95, 0.42, 0, 1, 1, 1, 0, 0));
+      } else if (type === 'lute') {
+        add(mkSphere(0.78, 24, 14), WOOD, wt, model(0, -0.2, 0, 1, 1.15, 0.34, 0, 0));
+        add(mkBox(0.16, 1.05, 0.13), LAC, lt, model(0, 0.85, 0, 1, 1, 1, 0, 0));
+        add(mkBox(0.24, 0.1, 0.1), LAC, lt, model(0, 1.4, 0, 1, 1, 1, 0, 0));
+        for (var i5 = 0; i5 < 4; i5++) add(mkBox(0.012, 1.9, 0.012), METAL, mt, model(-0.09 + i5 * 0.06, 0.15, 0.17, 1, 1, 1, 0, 0));
+      } else if (type === 'harp') {
+        add(mkBox(1.7, 0.14, 0.6), WOOD, wt, model(0, -0.8, 0, 1, 1, 1, 0, 0));
+        add(mkBox(0.16, 1.7, 0.3), WOOD, wt, model(-0.78, 0.05, 0, 1, 1, 1, 0, 0.18));
+        for (var hi = 0; hi < 7; hi++) {
+          var t2 = hi / 6;
+          add(mkBox(0.16, 1.5, 0.26), WOOD, wt, model(-0.7 + t2 * 1.5, 0.75 + Math.sin(t2 * 1.2) * 0.35, 0, 0.7, 1, 1, 0, 0.5 - t2 * 0.9));
+        }
+        for (var hs = 0; hs < 16; hs++) add(mkCyl(0.008, 0.008, 1.55, 6), METAL, mt, model(-0.55 + hs * 0.07, 0.0, 0.16, 1, 1, 1, 0, 0.06));
+      } else if (type === 'violin') {
+        add(mkSphere(0.42, 20, 12), WOOD, wt, model(0, 0.35, 0, 1, 1.18, 0.4, 0, 0));
+        add(mkSphere(0.5, 20, 12), WOOD, wt, model(0, -0.35, 0, 1, 1.05, 0.42, 0, 0));
+        add(mkBox(0.12, 1.15, 0.1), LAC, lt, model(0, 0.95, -0.02, 1, 1, 1, 0, 0));
+        add(mkBox(0.2, 0.08, 0.09), LAC, lt, model(0, 1.5, -0.02, 1, 1, 1, 0, 0));
+        for (var vi = 0; vi < 4; vi++) add(mkBox(0.01, 1.75, 0.01), METAL, mt, model(-0.06 + vi * 0.04, 0.5, 0.14, 1, 1, 1, 0, 0));
+      } else if (type === 'handpan') {
+        var pts = [[0.02, 0.16], [0.35, 0.14], [0.62, 0.07], [0.78, -0.02], [0.74, -0.16], [0.3, -0.22], [0.02, -0.22]];
+        add(mkLathe(pts, 40), METAL, [0.94, 0.92, 0.86], model(0, 0, 0, 1, 1, 1, 0, 0));
+        var angs = [-90, -45, 0, 45, 90, 135, 180, 225];
+        for (var ha = 0; ha < 8; ha++) {
+          var ra2 = angs[ha] * Math.PI / 180;
+          add(mkSphere(0.13, 14, 8), 'metal', [0.8, 0.78, 0.72], model(Math.cos(ra2) * 0.44, 0.05, Math.sin(ra2) * 0.44, 1, 0.28, 1, 0, 0));
+        }
+        add(mkSphere(0.08, 12, 8), 'metal', [0.7, 0.68, 0.62], model(0, 0.06, 0, 1, 0.3, 1, 0, 0));
+      } else if (type === 'marimba') {
+        for (var mi = 0; mi < 10; mi++) {
+          var len = 1.5 + (mi % 5) * 0.16;
+          add(mkBox(0.24, 0.1, len), WOOD, wt, model(-1.3 + mi * 0.29, 0.2, 0, 1, 1, 1, 0, 0));
+        }
+        add(mkBox(3.0, 0.1, 1.9), LAC, lt, model(0, -0.05, 0, 1, 1, 1, 0, 0));
+      } else if (type === 'musicbox') {
+        add(mkBox(1.8, 0.5, 1.2), WOOD, wt, model(0, -0.2, 0, 1, 1, 1, 0, 0));
+        add(mkCyl(0.26, 0.26, 1.7, 20), METAL, mt, model(0, 0.22, 0, 1, 1, 1, 0, Math.PI / 2));
+        for (var ti = 0; ti < 12; ti++) add(mkBox(0.05, 0.34, 0.04), METAL, mt, model(-0.7 + ti * 0.12, 0.45, 0.38, 1, 1, 1, 0, 0));
+      } else if (type === 'bells') {
+        add(mkBox(3.0, 0.12, 0.3), WOOD, wt, model(0, 1.1, 0, 1, 1, 1, 0, 0));
+        for (var bi = 0; bi < 8; bi++) {
+          add(mkCyl(0.02, 0.02, 0.3, 8), METAL, mt, model(-1.15 + bi * 0.33, 0.9, 0, 1, 1, 1, 0, 0));
+          add(mkLathe([[0.02, 0.22], [0.1, 0.2], [0.16, 0.1], [0.19, -0.05], [0.14, -0.14], [0.02, -0.14]], 20), METAL, mt, model(-1.15 + bi * 0.33, 0.55, 0, 1, 1, 1, 0, 0));
+        }
+      } else if (type === 'winds') {
+        add(mkCyl(0.16, 0.16, 3.1, 24), METAL, mt, model(0, 0.05, 0, 1, 1, 1, 0, Math.PI / 2));
+        for (var wi = 0; wi < 7; wi++) add(mkCyl(0.07, 0.07, 0.06, 14), LAC, [0.4, 0.4, 0.4], model(-0.95 + wi * 0.32, 0.23, 0, 1, 1, 1, 0, Math.PI / 2));
+      }
+    }
+    var VS = 'attribute vec3 aPos;attribute vec3 aNrm;attribute vec2 aUV;uniform mat4 uMVP;uniform mat4 uModel;varying vec3 vN;varying vec2 vUV;varying vec3 vP;void main(){vN=mat3(uModel[0].xyz,uModel[1].xyz,uModel[2].xyz)*aNrm;vP=(uModel*vec4(aPos,1.0)).xyz;vUV=aUV;gl_Position=uMVP*vec4(aPos,1.0);}';
+    var FS = 'precision mediump float;varying vec3 vN;varying vec2 vUV;varying vec3 vP;uniform sampler2D uTex;uniform vec3 uTint;uniform float uShine;uniform vec3 uLight;void main(){vec3 N=normalize(vN);vec3 L=normalize(uLight);float d=max(dot(N,L),0.0);vec3 V=normalize(vec3(0.0,0.0,6.0)-vP);vec3 H=normalize(L+V);float sp=pow(max(dot(N,H),0.0),uShine);vec3 base=texture2D(uTex,vUV).rgb*uTint;vec3 col=base*(0.26+0.86*d)+vec3(0.9,0.86,0.8)*sp*0.45;gl_FragColor=vec4(col,1.0);}';
+    function resize() {
+      if (!canvas) return;
+      var w = hostEl.clientWidth || 320, h = hostEl.clientHeight || 200;
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      }
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+    function render(ts) {
+      if (!gl || !canvas) return;
+      raf = requestAnimationFrame(render);
+      resize();
+      var asp = canvas.width / Math.max(1, canvas.height);
+      gl.clearColor(0.024, 0.035, 0.05, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.enable(gl.DEPTH_TEST);
+      gl.disable(gl.CULL_FACE);
+      var view = lookAt([0, 1.1, 5.4], [0, 0.25, 0], [0, 1, 0]);
+      var proj = persp(0.72, asp, 0.1, 60);
+      var spin = Math.sin(ts * 0.00025) * 0.16;
+      var bob = Math.sin(ts * 0.0006) * 0.03;
+      gl.useProgram(prog);
+      gl.uniform3f(loc.light, -0.45, 0.85, 0.65);
+      for (var i = 0; i < objs.length; i++) {
+        var o = objs[i];
+        var mdl = mul(mul(Ry(spin), T(0, bob, 0)), o.model);
+        var mvp = mul(proj, mul(view, mdl));
+        gl.uniformMatrix4fv(loc.mvp, false, mvp);
+        gl.uniformMatrix4fv(loc.model, false, mdl);
+        gl.uniform3fv(loc.tint, o.tint);
+        gl.uniform1f(loc.shine, o.tex === 'metal' ? 42 : 16);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, getTex(o.tex));
+        gl.uniform1i(loc.tex, 0);
+        var b = o.mesh;
+        gl.bindBuffer(gl.ARRAY_BUFFER, b.buf || (b.buf = gl.createBuffer()));
+        gl.bufferData(gl.ARRAY_BUFFER, b.v, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(loc.pos); gl.vertexAttribPointer(loc.pos, 3, gl.FLOAT, false, 32, 0);
+        gl.enableVertexAttribArray(loc.nrm); gl.vertexAttribPointer(loc.nrm, 3, gl.FLOAT, false, 32, 12);
+        gl.enableVertexAttribArray(loc.uv); gl.vertexAttribPointer(loc.uv, 2, gl.FLOAT, false, 32, 24);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ibuf || (b.ibuf = gl.createBuffer()));
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, b.i, gl.STATIC_DRAW);
+        gl.drawElements(gl.TRIANGLES, b.i.length, gl.UNSIGNED_SHORT, 0);
+      }
+    }
+    function mount(host, type) {
+      stop();
+      hostEl = host;
+      canvas = document.createElement('canvas');
+      canvas.className = 'gs-canvas';
+      host.appendChild(canvas);
+      gl = canvas.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: false }) || canvas.getContext('experimental-webgl');
+      if (!gl) { canvas.remove(); canvas = null; hostEl = null; return false; }
+      prog = compile(VS, FS);
+      if (!prog) { canvas.remove(); canvas = null; gl = null; return false; }
+      loc.pos = gl.getAttribLocation(prog, 'aPos');
+      loc.nrm = gl.getAttribLocation(prog, 'aNrm');
+      loc.uv = gl.getAttribLocation(prog, 'aUV');
+      loc.mvp = gl.getUniformLocation(prog, 'uMVP');
+      loc.model = gl.getUniformLocation(prog, 'uModel');
+      loc.tint = gl.getUniformLocation(prog, 'uTint');
+      loc.shine = gl.getUniformLocation(prog, 'uShine');
+      loc.light = gl.getUniformLocation(prog, 'uLight');
+      loc.tex = gl.getUniformLocation(prog, 'uTex');
+      buildObjects(type);
+      texCache = {};
+      try { render(0); } catch (e) { stop(); return false; }
+      return true;
+    }
+    function stop() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      if (canvas) { canvas.remove(); canvas = null; }
+      if (gl) { try { gl.getExtension('WEBGL_lose_context').loseContext(); } catch (e) {} }
+      gl = null; prog = null; objs = []; hostEl = null; texCache = {};
+    }
+    return { mount: mount, stop: stop };
+  })();
+
   var Game = (function () {
     var on = false, el = {}, drag = null, lastIdx = -1, lastT = 0;
     var SCALE = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86];
@@ -7638,6 +7947,12 @@
         '</svg>';
     }
     function buildSurface(type) {
+      el.surface.innerHTML = '';
+      if (typeof G3D !== 'undefined' && G3D.mount(el.surface, type)) {
+        el.surface.dataset.count = type === 'handpan' ? HANDPAN.length : SCALE.length;
+        el.surface.dataset.type = type;
+        return;
+      }
       var i, x, y, w, h, markup = '';
       if (type === 'zither') {
         markup += '<defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cda06a"/><stop offset=".5" stop-color="#8a5f33"/><stop offset="1" stop-color="#5d3d1e"/></linearGradient></defs>';
@@ -7786,6 +8101,7 @@
       var inst = INSTRUMENTS.filter(function (x) { return x.id === state.instrument; })[0] || { name: state.instrument };
       el.title.textContent = inst.name + ' · 自由演奏';
       el.note.textContent = '';
+      if (typeof G3D !== 'undefined') G3D.stop();
       bindSlider();
       if (fam === 'keys') { buildKeys(); showSlider(false); markActive(); return; }
       el.piano.hidden = true;
@@ -7819,6 +8135,7 @@
     }
     function toggle() {
       on = !on;
+      if (!on && typeof G3D !== 'undefined') G3D.stop();
       el.stage.hidden = !on;
       document.body.classList.toggle('game-active', on);
       document.getElementById('gameBtn').classList.toggle('on', on);
