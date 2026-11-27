@@ -2100,6 +2100,42 @@
   }
 
   /* 最初的即兴生成器（固定成曲）：风格化五声/调式 + 逐段演化 */
+  var ORN_BY_INST = {
+    guzheng: ['grace', 'bend', 'run', 'repeat', 'fall', 'ghost'],
+    pipa: ['grace', 'bend', 'run', 'repeat', 'ghost'],
+    harp: ['run', 'grace'],
+    violin: ['scoop', 'fall', 'bend', 'repeat'],
+    flute: ['scoop', 'fall', 'turn', 'ghost'],
+    clarinet: ['scoop', 'fall', 'turn'],
+    piccolo: ['scoop', 'fall'],
+    handpan: ['repeat', 'turn'],
+    marimba: ['run', 'turn', 'repeat'],
+    bell: ['repeat', 'ghost'],
+    bianzhong: ['repeat', 'ghost'],
+    piano: ['grace', 'run'],
+    ep: ['grace', 'ghost'],
+    synth: ['grace', 'fall'],
+    musicbox: ['grace', 'repeat']
+  };
+  function ornamentize(melody, t, midi, vel, inst, rnd) {
+    var list = ORN_BY_INST[inst];
+    if (!list || rnd() > 0.42) return;
+    var pick = list[Math.floor(rnd() * list.length)];
+    if (pick === 'grace') melody.push({ t: t - 0.07, midi: midi - 2, vel: vel * 0.5 });
+    else if (pick === 'bend') {
+      melody.push({ t: t - 0.07, midi: midi - 1, vel: vel * 0.45 });
+      melody.push({ t: t - 0.035, midi: midi, vel: vel * 0.3 });
+    } else if (pick === 'scoop') melody.push({ t: t - 0.08, midi: midi - 3, vel: vel * 0.4 });
+    else if (pick === 'fall') melody.push({ t: t + 0.09, midi: midi - 2, vel: vel * 0.38 });
+    else if (pick === 'turn') {
+      melody.push({ t: t + 0.07, midi: midi + 2, vel: vel * 0.32 });
+      melody.push({ t: t + 0.14, midi: midi, vel: vel * 0.26 });
+    } else if (pick === 'run') {
+      for (var i2 = 1; i2 <= 2; i2++) melody.push({ t: t - 0.06 * i2, midi: midi - i2 * 2, vel: vel * 0.34 });
+    } else if (pick === 'repeat') melody.push({ t: t + 0.055, midi: midi, vel: vel * 0.4 });
+    else if (pick === 'ghost') melody.push({ t: t + 0.01, midi: midi, vel: vel * 0.18 });
+  }
+
   function composeOriginalPiece(opts) {
     opts = opts || {};
     var sid0 = aliasStyleId(opts.styleId);
@@ -2166,6 +2202,7 @@
           } else if (!drumLead && i % 8 === 0 && rnd() < 0.88) {
             var pm = 48 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
             melody.push({ t: t, midi: pm, vel: 0.8 * epic * arc });
+            ornamentize(melody, t, pm, 0.8 * epic * arc, inst, rnd);
             melody.push({ t: t + 0.02, midi: pm - 12, vel: 0.45 * epic });
             if (rnd() < 0.3) melody.push({ t: t + 0.25, midi: pm + 7, vel: 0.35 * epic });
           }
@@ -2175,6 +2212,7 @@
             if (steps.indexOf(i) >= 0 && rnd() < density) {
               var gm = 60 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
               melody.push({ t: t, midi: gm, vel: (0.55 + stage * 0.1 + rnd() * 0.1) * arc });
+              ornamentize(melody, t, gm, 0.6 * arc, inst, rnd);
               if (stage >= 1 && i % 4 === 0) arp.push({ t: t + 0.375, midi: gm + 12, vel: 0.14 });
               if (stage >= 2 && i % 8 === 0) arp.push({ t: t + 0.25, midi: gm + 7, vel: 0.12 });
               if (stage >= 3 && rnd() < 0.4) arp.push({ t: t + 0.125, midi: gm + 19, vel: 0.1 });
@@ -2197,6 +2235,7 @@
             var midi = 60 + scaleArr[Math.floor(rnd() * scaleArr.length)] + tr;
             if (rnd() < 0.18) midi += 12;
             melody.push({ t: t, midi: midi, vel: (0.62 + rnd() * 0.2) * arc });
+            ornamentize(melody, t, midi, 0.7 * arc, inst, rnd);
             if (rnd() < 0.1) sparkles.push({ t: t + 0.125, midi: midi + 12, vel: 0.16 });
           }
         }
@@ -2569,6 +2608,24 @@
   var TRANSPOSES = [0, 2, 3, 5, -3, -5];
   var orig = { on: false, timer: 0, next: 0, step: 0, transpose: 0, bus: null };
 
+  function ornamentizeLive(inst, t, midi, vel, bus) {
+    var list = ORN_BY_INST[inst];
+    if (!list || Math.random() > 0.4) return;
+    function hit(dt, dm, v) {
+      Audio.note(midi + dm, { when: t + dt, vel: v, wet: 0.45, inst: inst, bus: bus });
+      visQueue.push({ t: t + dt, kind: 'note', midi: midi + dm });
+    }
+    var pick = list[Math.floor(Math.random() * list.length)];
+    if (pick === 'grace') hit(-0.07, -2, vel * 0.5);
+    else if (pick === 'bend') { hit(-0.07, -1, vel * 0.45); hit(-0.035, 0, vel * 0.3); }
+    else if (pick === 'scoop') hit(-0.08, -3, vel * 0.4);
+    else if (pick === 'fall') hit(0.09, -2, vel * 0.38);
+    else if (pick === 'turn') { hit(0.07, 2, vel * 0.32); hit(0.14, 0, vel * 0.26); }
+    else if (pick === 'run') { for (var i3 = 1; i3 <= 2; i3++) hit(-0.06 * i3, -i3 * 2, vel * 0.34); }
+    else if (pick === 'repeat') hit(0.055, 0, vel * 0.4);
+    else if (pick === 'ghost') hit(0.01, 0, vel * 0.18);
+  }
+
   function origSchedule(i, t, bus) {
     var tr = orig.transpose;
     var drums = orig.drums || 'lite';
@@ -2591,7 +2648,7 @@
       var sc = orig.scale || [0, 2, 4, 7, 9, 12];
       var midi = 60 + sc[Math.floor(Math.random() * sc.length)] + tr;
       Audio.note(midi, { when: t, vel: 0.75, wet: 0.45, inst: (state.instOverride || orig.inst), bus: bus });
-      if (typeof Game !== 'undefined') Game.schedule(midi, t);
+      ornamentizeLive((state.instOverride || orig.inst), t, midi, 0.7, bus);
       visQueue.push({ t: t, kind: 'note', midi: midi });
       visQueue.push({ t: t, kind: 'harmonic', amt: INST_OVERTONES[orig.inst] || 0.45 });
     }
