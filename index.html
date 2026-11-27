@@ -356,20 +356,18 @@
   #gsCombo{font-size:14px;color:#ffd166;letter-spacing:1px}
   .gs-judge{position:absolute;top:72px;left:50%;transform:translateX(-50%);font-size:18px;letter-spacing:3px;font-weight:600;opacity:0;transition:opacity .12s}
   .gs-judge.show{opacity:1}
-  .gs-lanes{display:flex;gap:6px;height:46vh;max-height:420px;align-items:flex-end}
-  .gs-lane{position:relative;width:44px;height:100%;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.055));border:1px solid rgba(255,255,255,.07);border-radius:10px}
+  .gs-lanes,.gs-piano{width:min(94vw,480px)}
+  .gs-lanes{display:flex;height:46vh;max-height:420px;align-items:flex-end}
+  .gs-lane{position:relative;flex:1;height:100%;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.055));border-left:1px solid rgba(255,255,255,.05);border-right:1px solid rgba(255,255,255,.05)}
   .gs-lane .gs-line{position:absolute;bottom:0;left:-1px;right:-1px;height:4px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 12px var(--accent)}
   .gs-note{position:absolute;left:4px;right:4px;height:15px;border-radius:8px;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:gsfall linear forwards}
   @keyframes gsfall{from{top:-18px}to{top:calc(100% - 42px)}}
-  .gs-keys{display:flex;gap:8px;margin-top:16px;align-items:flex-end}
-  .gs-key{position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:11px;color:#cfe2ee;cursor:pointer;user-select:none;transition:transform .08s ease, background .12s ease;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16)}
-  .gs-key:active,.gs-key.on{background:var(--accent);color:#00161c;box-shadow:0 0 18px var(--accent);transform:translateY(2px)}
-  .gs-keys.style-strings .gs-key{width:26px;height:118px;border-radius:6px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03))}
-  .gs-keys.style-strings .gs-key:after{content:'';position:absolute;top:6px;bottom:6px;left:50%;width:1px;background:rgba(255,255,255,.35);box-shadow:0 0 6px rgba(255,255,255,.35)}
-  .gs-keys.style-bells .gs-key{width:50px;height:50px;border-radius:50%;align-items:center;padding-bottom:0}
-  .gs-keys.style-keys .gs-key{width:42px;height:108px;border-radius:8px;align-items:flex-end}
-  .gs-keys.style-winds .gs-key{width:42px;height:42px;border-radius:50%;align-items:center;padding-bottom:0}
-  .gs-keys.style-handpan .gs-key{width:48px;height:48px;border-radius:50%;align-items:center;padding-bottom:0;border-width:2px}
+  .gs-piano{position:relative;height:140px;margin-top:12px;display:flex;border-radius:0 0 10px 10px;overflow:hidden}
+  .gp-white{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;color:#3a3a34;cursor:pointer;background:linear-gradient(180deg,#fbfbf6,#d9d9d0 86%,#c9c9c0);border-right:1px solid #aeaea4;box-shadow:inset 0 -6px 10px rgba(0,0,0,.18);user-select:none;transition:background .08s}
+  .gp-white:last-child{border-right:none}
+  .gp-white:active,.gp-white.on{background:linear-gradient(180deg,#cdeefc,#8fd4ea 80%,#6fbcd6)}
+  .gp-black{position:absolute;top:0;height:62%;background:linear-gradient(180deg,#3a3a3a,#0c0c0c 70%,#000);border-radius:0 0 6px 6px;z-index:2;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,.55);user-select:none}
+  .gp-black:active,.gp-black.on{background:linear-gradient(180deg,#3f8ba3,#1d5f74)}
     /* ---- 冥想模式 ---- */
   body.med-active #nowTitle{opacity:0;pointer-events:none}
   #medUI{position:fixed;z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px;touch-action:none}
@@ -464,7 +462,7 @@
   </div>
   <div class="gs-judge" id="gsJudge"></div>
   <div class="gs-lanes" id="gsLanes"></div>
-  <div class="gs-keys" id="gsKeys"></div>
+  <div class="gs-piano" id="gsPiano"></div>
 </div>
 
 <div id="medUI" hidden>
@@ -7094,21 +7092,34 @@
         var line = document.createElement('div'); line.className = 'gs-line'; d.appendChild(line);
         el.lanes.appendChild(d); laneEls.push(d);
       });
-      el.keys.innerHTML = '';
+      el.piano.innerHTML = '';
       keyEls2 = [];
-      var fam = FAMILY[state.instrument] || 'keys';
-      el.keys.className = 'gs-keys style-' + fam;
-      LANES.forEach(function (n, i) {
+      var WHITE = [60, 62, 64, 65, 67, 69, 71];
+      var BLACK = [{ n: 61, after: 0 }, { n: 63, after: 1 }, { n: 66, after: 3 }, { n: 68, after: 4 }, { n: 70, after: 5 }];
+      WHITE.forEach(function (n, i) {
         var b = document.createElement('div');
-        b.className = 'gs-key';
+        b.className = 'gp-white';
         b.textContent = NAMES[i];
         b.addEventListener('pointerdown', function (e) {
           e.preventDefault(); e.stopPropagation();
           b.classList.add('on');
-          setTimeout(function () { b.classList.remove('on'); }, 140);
+          setTimeout(function () { b.classList.remove('on'); }, 150);
           pressKey(n);
         });
-        el.keys.appendChild(b); keyEls2.push(b);
+        el.piano.appendChild(b); keyEls2.push(b);
+      });
+      BLACK.forEach(function (bk) {
+        var b = document.createElement('div');
+        b.className = 'gp-black';
+        b.style.left = 'calc(' + ((bk.after + 1) / 7 * 100) + '% - 4.4%)';
+        b.style.width = '8.8%';
+        b.addEventListener('pointerdown', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          b.classList.add('on');
+          setTimeout(function () { b.classList.remove('on'); }, 150);
+          pressKey(bk.n);
+        });
+        el.piano.appendChild(b); keyEls2.push(b);
       });
     }
     function spawn(midi) {
@@ -7181,7 +7192,7 @@
       el.combo = document.getElementById('gsCombo');
       el.judge = document.getElementById('gsJudge');
       el.lanes = document.getElementById('gsLanes');
-      el.keys = document.getElementById('gsKeys');
+      el.piano = document.getElementById('gsPiano');
       document.getElementById('gameBtn').addEventListener('click', toggle);
       document.getElementById('gsClose').addEventListener('click', function () { if (on) toggle(); });
     }
