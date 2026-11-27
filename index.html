@@ -943,7 +943,7 @@
     bgTex = tex;
   }
   function drawBackground(col, tt, aspect) {
-    if (!bgProg || state.bgMode === 'black' || state.bgMode === 'white') return;
+    if (!bgProg || state.bgMode === 'black') return;
     gl.useProgram(bgProg);
     gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
     gl.enableVertexAttribArray(bgA);
@@ -6505,7 +6505,7 @@
       body.appendChild(bgnote);
       var rowbg = document.createElement('div');
       rowbg.className = 'sheet-sub';
-      [{ id: 'season', name: '四季渐变' }, { id: 'image', name: '自设图片' }, { id: 'black', name: '纯黑' }, { id: 'white', name: '纯白' }].forEach(function (o) {
+      [{ id: 'season', name: '四季渐变' }, { id: 'image', name: '自设图片' }, { id: 'black', name: '纯黑' }].forEach(function (o) {
         var b = document.createElement('button');
         b.className = 'size-btn' + (state.bgMode === o.id ? ' on' : '');
         b.textContent = o.name;
@@ -6516,7 +6516,6 @@
             return;
           }
           state.bgMode = o.id;
-          document.body.classList.toggle('light-mode', o.id === 'white');
           try { localStorage.setItem('cz_bgmode', o.id); } catch (e) {}
           renderSheet();
         });
@@ -7200,8 +7199,7 @@
     var pulse = 0.88 + (1.75 * vs.pulse) * vEnergy + 0.06 * Math.sin(t * 1.2);
     var sharp = 16.5 - 6.0 * vs.point * vEnergy - 1.2 * state.harmonicEnv;
 
-    if (state.bgMode === 'white') gl.clearColor(1, 1, 1, 1);
-    else gl.clearColor(0, 0, 0, 1);
+    gl.clearColor(0, 0, 0, 1);
     if (DEBUG === '2') gl.clearColor(0.9, 0.05, 0.05, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     if (DEBUG === '2') return;
@@ -7209,8 +7207,7 @@
     state.bgG = (state.bgG == null) ? col[1] : state.bgG + (col[1] - state.bgG) * Math.min(1, dt * 1.2);
     state.bgB = (state.bgB == null) ? col[2] : state.bgB + (col[2] - state.bgB) * Math.min(1, dt * 1.2);
     drawBackground([state.bgR, state.bgG, state.bgB], t, canvas.width / Math.max(1, canvas.height));
-    if (state.bgMode === 'white') gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_COLOR);
-    else gl.blendFunc(gl.ONE, gl.ONE);
+    gl.blendFunc(gl.ONE, gl.ONE);
     gl.useProgram(prog);
     bindParticleAttrs();
     gl.uniformMatrix4fv(U.uProj, false, matProj);
@@ -7359,8 +7356,8 @@
     if (savedSeason === 'auto') savedSeason = 'cycle';
     if (SEASONS[savedSeason] || savedSeason === 'cycle') state.season = savedSeason;
     var savedBg = localStorage.getItem('cz_bgmode') || 'black';
-    state.bgMode = (savedBg === 'image' || savedBg === 'black' || savedBg === 'white') ? savedBg : 'black';
-    document.body.classList.toggle('light-mode', state.bgMode === 'white');
+    state.bgMode = (savedBg === 'image' || savedBg === 'black' || savedBg === 'season') ? savedBg : 'black';
+    document.body.classList.remove('light-mode');
     if (state.bgMode === 'image') {
       var savedImg = localStorage.getItem('cz_bgimage');
       if (savedImg) {
