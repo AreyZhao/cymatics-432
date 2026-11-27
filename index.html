@@ -349,7 +349,16 @@
   .game-combo{position:absolute;top:96px;left:50%;transform:translateX(-50%);font-size:15px;color:#ffd166}
   .game-ring{width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.55);opacity:0;transition:transform .16s ease, opacity .2s ease}
   .game-ring.on{opacity:1;transform:scale(1.35)}
-  .game-hint{position:absolute;bottom:150px;left:50%;transform:translateX(-50%);font-size:14px;color:rgba(255,255,255,.7)}
+  .game-hint{position:absolute;bottom:168px;left:50%;transform:translateX(-50%);font-size:13px;color:rgba(255,255,255,.72);white-space:nowrap}
+  .game-lanes{position:absolute;bottom:210px;left:50%;transform:translateX(-50%);display:flex;gap:4px;height:40vh;max-height:340px;align-items:flex-end}
+  .g-lane{position:relative;width:38px;height:100%;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+  .g-lane .g-hit{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.5);border-radius:2px}
+  .g-lane .g-line{position:absolute;bottom:28px;left:0;right:0;height:1px;background:rgba(255,255,255,.18)}
+  .g-note{position:absolute;left:4px;right:4px;height:14px;border-radius:7px;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:gfall linear forwards}
+  @keyframes gfall{from{top:-16px}to{top:calc(100% - 40px)}}
+  .game-pads{position:absolute;bottom:120px;left:50%;transform:translateX(-50%);display:flex;gap:6px;justify-content:center;flex-wrap:nowrap}
+  .g-pad{min-width:34px;padding:8px 6px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#dfe9f2;font-size:11px;text-align:center;pointer-events:auto;cursor:pointer;line-height:1.25}
+  .g-pad:active{background:var(--accent);color:#00161c}
   /* ---- 冥想模式 ---- */
   body.med-active #nowTitle{opacity:0;pointer-events:none}
   #medUI{position:fixed;z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px;touch-action:none}
@@ -440,7 +449,9 @@
   <div class="game-score"><span id="gameScore">0</span></div>
   <div class="game-combo" id="gameCombo"></div>
   <div class="game-ring" id="gameRing"></div>
-  <div class="game-hint" id="gameHint">跟着节拍点屏幕</div>
+  <div class="game-lanes" id="gameLanes"></div>
+  <div class="game-pads" id="gamePads"></div>
+  <div class="game-hint" id="gameHint">音符落到线上时，按对应琴键/音键</div>
 </div>
 
 <div id="medUI" hidden>
@@ -7032,53 +7043,90 @@
 
   /* ================= 音游（律动冥想） ================= */
   var Game = (function () {
-    var on = false, score = 0, combo = 0, best = 0, lastBeat = 0, targetMidi = null, targetTime = 0;
-    var el = {};
+    var on = false, score = 0, combo = 0, best = 0;
+    var LANES = [60, 62, 64, 65, 67, 69, 71];
+    var NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    var el = {}, laneEls = [], padsEl = [], falling = [];
+    var FALL_MS = 1150;
     try { best = parseInt(localStorage.getItem('cz_game_best') || '0', 10) || 0; } catch (e) {}
+    function nearestLane(midi) {
+      var b = 0, bd = 999;
+      for (var i = 0; i < LANES.length; i++) { var d = Math.abs(midi - LANES[i]); if (d < bd) { bd = d; b = i; } }
+      return b;
+    }
     function update() {
       el.score.textContent = score;
       el.combo.textContent = combo >= 2 ? combo + ' 连击' : '';
     }
-    function pulse() {
-      el.ring.classList.remove('on');
-      void el.ring.offsetWidth;
-      el.ring.classList.add('on');
-      setTimeout(function () { el.ring.classList.remove('on'); }, 220);
+    function buildLanes() {
+      el.lanes.innerHTML = '';
+      laneEls = [];
+      LANES.forEach(function () {
+        var d = document.createElement('div'); d.className = 'g-lane';
+        var line = document.createElement('div'); line.className = 'g-line'; d.appendChild(line);
+        var hit = document.createElement('div'); hit.className = 'g-hit'; d.appendChild(hit);
+        el.lanes.appendChild(d); laneEls.push(d);
+      });
+      el.pads.innerHTML = '';
+      padsEl = [];
+      LANES.forEach(function (n, i) {
+        var b = document.createElement('div'); b.className = 'g-pad';
+        b.textContent = NAMES[i];
+        b.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); pressKey(n); });
+        el.pads.appendChild(b); padsEl.push(b);
+      });
     }
-    function beat(ms) { lastBeat = ms; if (on) pulse(); }
-    function note(midi, ms) {
-      if (!on) return;
-      targetMidi = midi; targetTime = ms;
-      if (keyEls && keyEls[midi]) flashKey(keyEls[midi], 560);
+    function spawn(midi) {
+      var active = 0;
+      for (var i = 0; i < falling.length; i++) if (!falling[i].done) active++;
+      if (active > 12) return;
+      var lane = nearestLane(midi);
+      var note = document.createElement('div'); note.className = 'g-note';
+      note.style.animationDuration = (FALL_MS / 1000) + 's';
+      laneEls[lane].appendChild(note);
+      var item = { lane: lane, el: note, hitAt: performance.now() + FALL_MS, done: false };
+      falling.push(item);
+      note.addEventListener('animationend', function () {
+        if (item.done) return;
+        item.done = true;
+        if (note.parentNode) note.remove();
+        combo = 0; update();
+      });
     }
-    function keyPress(midi) {
-      if (!on) return;
-      if (targetMidi == null) { el.hint.textContent = '等高亮的琴键出现再弹'; return; }
-      var d = Math.abs(performance.now() - targetTime);
-      if (midi === targetMidi && d <= 480) {
-        score++; combo++;
-        if (score > best) { best = score; try { localStorage.setItem('cz_game_best', best); } catch (e) {} }
-        el.hint.textContent = '✦ 接住了';
-      } else {
-        combo = 0;
-        el.hint.textContent = '错键或时机不对，再试';
+    function hitCheck(midi) {
+      var lane = nearestLane(midi);
+      var now = performance.now(), best = null, bd = 1e9;
+      for (var i = 0; i < falling.length; i++) {
+        var f = falling[i];
+        if (f.done || f.lane !== lane) continue;
+        var d = Math.abs(now - f.hitAt);
+        if (d < bd) { bd = d; best = f; }
       }
+      if (best && bd <= 340) {
+        best.done = true;
+        if (best.el.parentNode) best.el.remove();
+        score++; combo++;
+        if (score > best) { best = score; try { localStorage.setItem('cz_game_best', score); } catch (e) {} }
+        el.hint.textContent = '✦ 接住了';
+        update();
+        return true;
+      }
+      combo = 0;
+      el.hint.textContent = '再对准一点，音符到线时按';
       update();
+      return false;
     }
+    function note(midi) { if (on) spawn(midi); }
+    function keyPress(midi) { if (on) hitCheck(midi); }
+    function beat() {}
     function toggle() {
       on = !on;
       el.ui.hidden = !on;
       if (on) {
         if (!state.seqOn && !state.medOn) { toast('先播放 🎵 放歌 或 ✨ 天籁，再开音游', 2600); on = false; el.ui.hidden = true; return; }
-        score = 0; combo = 0; targetMidi = null;
-        el.hint.textContent = '高亮的琴键出现时，弹出对应音';
-        if (!pianoDrawer.classList.contains('open')) {
-          pianoDrawer.classList.add('open');
-          document.body.classList.add('piano-open');
-          pianoBtn.textContent = '⬇ 收起';
-          pianoBtn.classList.add('primary', 'on');
-          buildPiano(state.keyRange || '13');
-        }
+        score = 0; combo = 0; falling = [];
+        buildLanes();
+        el.hint.textContent = '音符落到线上时，按对应琴键 / 音键';
         update();
       }
       document.getElementById('gameBtn').classList.toggle('on', on);
@@ -7087,7 +7135,8 @@
       el.ui = document.getElementById('gameUI');
       el.score = document.getElementById('gameScore');
       el.combo = document.getElementById('gameCombo');
-      el.ring = document.getElementById('gameRing');
+      el.lanes = document.getElementById('gameLanes');
+      el.pads = document.getElementById('gamePads');
       el.hint = document.getElementById('gameHint');
       document.getElementById('gameBtn').addEventListener('click', toggle);
     }
