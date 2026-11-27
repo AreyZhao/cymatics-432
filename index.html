@@ -7646,10 +7646,11 @@
     function Ry(a) { var c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]); }
     function Rz(a) { var c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
     function Rx(a) { var c = Math.cos(a), s = Math.sin(a); return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]); }
-    function model(x, y, z, sx, sy, sz, ry, rz) {
+    function model(x, y, z, sx, sy, sz, ry, rz, rx) {
       var m = T(x, y, z);
       m = mul(m, Ry(ry || 0));
       m = mul(m, Rz(rz || 0));
+      m = mul(m, Rx(rx || 0));
       m = mul(m, S(sx, sy, sz));
       return m;
     }
@@ -7722,38 +7723,65 @@
       var x = cv.getContext('2d');
       if (kind === 'wood') {
         var g = x.createLinearGradient(0, 0, 256, 0);
-        g.addColorStop(0, '#8a5a2c'); g.addColorStop(0.5, '#b87c3f'); g.addColorStop(1, '#7a4c22');
+        g.addColorStop(0, '#7d4f25'); g.addColorStop(0.45, '#b57a3d'); g.addColorStop(1, '#74461d');
         x.fillStyle = g; x.fillRect(0, 0, 256, 256);
-        for (var i2 = 0; i2 < 90; i2++) {
-          x.strokeStyle = 'rgba(' + (40 + Math.random() * 50) + ',' + (22 + Math.random() * 30) + ',10,' + (0.08 + Math.random() * 0.18) + ')';
-          x.lineWidth = 0.6 + Math.random() * 1.8;
+        for (var i2 = 0; i2 < 140; i2++) {
+          x.strokeStyle = 'rgba(' + (36 + Math.random() * 46) + ',' + (20 + Math.random() * 26) + ',8,' + (0.06 + Math.random() * 0.2) + ')';
+          x.lineWidth = 0.5 + Math.random() * 2.2;
           x.beginPath();
           var yy = Math.random() * 256;
           x.moveTo(0, yy);
-          for (var xx = 0; xx <= 256; xx += 32) x.lineTo(xx, yy + Math.sin(xx / 30 + i2) * 3);
+          for (var xx = 0; xx <= 256; xx += 24) x.lineTo(xx, yy + Math.sin(xx / 34 + i2 * 0.7) * 3.4);
           x.stroke();
+        }
+        for (var p2 = 0; p2 < 700; p2++) {
+          x.fillStyle = 'rgba(30,16,6,' + (0.05 + Math.random() * 0.16) + ')';
+          x.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random(), 1 + Math.random() * 2);
+        }
+        for (var k2 = 0; k2 < 3; k2++) {
+          var kx = 50 + Math.random() * 160, ky = 50 + Math.random() * 160;
+          var kg = x.createRadialGradient(kx, ky, 1, kx, ky, 12 + Math.random() * 12);
+          kg.addColorStop(0, 'rgba(40,20,8,.55)'); kg.addColorStop(1, 'rgba(40,20,8,0)');
+          x.fillStyle = kg; x.beginPath(); x.arc(kx, ky, 24, 0, Math.PI * 2); x.fill();
         }
       } else if (kind === 'metal') {
         var gm = x.createLinearGradient(0, 0, 0, 256);
-        gm.addColorStop(0, '#e6d6b4'); gm.addColorStop(0.45, '#c2a671'); gm.addColorStop(1, '#8e7a52');
+        gm.addColorStop(0, '#efe2c2'); gm.addColorStop(0.4, '#c8ac76'); gm.addColorStop(0.75, '#a58c5c'); gm.addColorStop(1, '#7f6b45');
         x.fillStyle = gm; x.fillRect(0, 0, 256, 256);
-        for (var i3 = 0; i3 < 220; i3++) {
-          x.strokeStyle = 'rgba(255,255,255,' + (Math.random() * 0.12) + ')';
-          x.lineWidth = 0.6;
+        for (var i3 = 0; i3 < 340; i3++) {
+          x.strokeStyle = 'rgba(255,255,255,' + (Math.random() * 0.14) + ')';
+          x.lineWidth = 0.5;
           var y3 = Math.random() * 256;
-          x.beginPath(); x.moveTo(0, y3); x.lineTo(256, y3 + (Math.random() - 0.5) * 4); x.stroke();
+          x.beginPath(); x.moveTo(0, y3); x.lineTo(256, y3 + (Math.random() - 0.5) * 5); x.stroke();
         }
+        for (var s3 = 0; s3 < 40; s3++) {
+          x.strokeStyle = 'rgba(60,48,28,' + (0.05 + Math.random() * 0.12) + ')';
+          x.lineWidth = 0.7;
+          var x3 = Math.random() * 256, y4 = Math.random() * 256;
+          x.beginPath(); x.moveTo(x3, y4); x.lineTo(x3 + (Math.random() - 0.5) * 40, y4 + (Math.random() - 0.5) * 8); x.stroke();
+        }
+        var mg = x.createRadialGradient(96, 70, 6, 128, 128, 180);
+        mg.addColorStop(0, 'rgba(255,250,230,.20)'); mg.addColorStop(1, 'rgba(255,250,230,0)');
+        x.fillStyle = mg; x.fillRect(0, 0, 256, 256);
       } else if (kind === 'lacquer') {
-        var gl2 = x.createRadialGradient(90, 70, 10, 128, 128, 170);
-        gl2.addColorStop(0, '#4a2a18'); gl2.addColorStop(0.6, '#26130c'); gl2.addColorStop(1, '#140a06');
+        var gl2 = x.createRadialGradient(84, 64, 8, 128, 128, 180);
+        gl2.addColorStop(0, '#5a3420'); gl2.addColorStop(0.55, '#2b150c'); gl2.addColorStop(1, '#150a05');
         x.fillStyle = gl2; x.fillRect(0, 0, 256, 256);
-        for (var i4 = 0; i4 < 60; i4++) {
-          x.strokeStyle = 'rgba(255,180,90,' + (Math.random() * 0.06) + ')';
-          x.lineWidth = 0.8; x.beginPath(); x.moveTo(Math.random() * 256, Math.random() * 256);
+        for (var i4 = 0; i4 < 80; i4++) {
+          x.strokeStyle = 'rgba(255,176,90,' + (Math.random() * 0.07) + ')';
+          x.lineWidth = 0.8; x.beginPath();
+          x.moveTo(Math.random() * 256, Math.random() * 256);
           x.lineTo(Math.random() * 256, Math.random() * 256); x.stroke();
         }
+        var lg = x.createLinearGradient(0, 0, 256, 256);
+        lg.addColorStop(0, 'rgba(255,235,200,.10)'); lg.addColorStop(0.45, 'rgba(255,235,200,0)');
+        x.fillStyle = lg; x.fillRect(0, 0, 256, 256);
       } else {
         x.fillStyle = '#2c3138'; x.fillRect(0, 0, 256, 256);
+        for (var d4 = 0; d4 < 200; d4++) {
+          x.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.04) + ')';
+          x.fillRect(Math.random() * 256, Math.random() * 256, 1, 1);
+        }
       }
       return cv;
     }
@@ -7783,66 +7811,122 @@
     }
     function buildObjects(type) {
       objs = [];
-      function add(mesh, tex, tint, mat) { objs.push({ mesh: mesh, tex: tex, tint: tint, model: mat }); }
+      var root = M();
+      if (type === 'zither') root = Rx(-0.5);
+      else if (type === 'handpan') root = mul(T(0, -0.15, 0), Rx(-1.0));
+      else if (type === 'marimba') root = Rx(-0.55);
+      else if (type === 'musicbox') root = mul(T(0, -0.1, 0), Rx(-0.22));
       var WOOD = 'wood', METAL = 'metal', LAC = 'lacquer';
-      var wt = [1.0, 0.92, 0.8], mt = [1.0, 1.0, 1.0], lt = [1.0, 0.9, 0.85];
+      var wt = [1.0, 0.93, 0.82], mt = [1.0, 1.0, 1.0], lt = [1.0, 0.9, 0.85];
+      var dark = [0.45, 0.4, 0.35];
+      function add(mesh, tex, tint, x, y, z, sx, sy, sz, ry, rz) {
+        var m = model(x || 0, y || 0, z || 0, sx == null ? 1 : sx, sy == null ? 1 : sy, sz == null ? 1 : sz, ry || 0, rz || 0, 0);
+        objs.push({ mesh: mesh, tex: tex, tint: tint, model: mul(root, m) });
+      }
+      function disc(r, flat) {
+        return mkLathe([[0.001, r], [r * 0.7, r * 0.75], [r, 0]], 20);
+      }
       if (type === 'zither') {
-        add(mkBox(3.4, 0.32, 0.9), WOOD, wt, model(0, 0.2, 0, 1, 1, 1, 0, 0));
-        add(mkBox(3.42, 0.06, 0.92), WOOD, [1.05, 1.0, 0.9], model(0, 0.38, 0, 1, 1, 1, 0, 0));
-        for (var i = 0; i < 21; i++) add(mkBox(0.012, 0.012, 0.84), METAL, mt, model(-1.55 + i * 0.155, 0.43, 0, 1, 1, 1, 0, 0));
-        add(mkBox(0.06, 0.12, 0.84), WOOD, [0.7, 0.6, 0.5], model(-0.9, 0.42, 0, 1, 1, 1, 0, 0));
-        add(mkBox(0.06, 0.12, 0.84), WOOD, [0.7, 0.6, 0.5], model(0.95, 0.42, 0, 1, 1, 1, 0, 0));
+        add(mkBox(3.4, 0.34, 0.92), WOOD, wt, 0, 0.17, 0);
+        add(mkBox(3.42, 0.06, 0.94), WOOD, [1.06, 1.0, 0.9], 0, 0.37, 0);
+        add(mkBox(0.22, 0.1, 0.94), LAC, lt, -1.66, 0.36, 0);
+        add(mkBox(0.22, 0.1, 0.94), LAC, lt, 1.66, 0.36, 0);
+        for (var i = 0; i < 21; i++) {
+          var bx = -1.45 + i * 0.145;
+          var bz = (i % 2 === 0) ? 0.1 : -0.1;
+          add(mkBox(0.045, 0.13, 0.62), WOOD, [0.85, 0.72, 0.55], bx, 0.45, bz);
+          add(mkBox(0.01, 0.01, 0.86), METAL, mt, bx, 0.52, 0);
+        }
+        add(mkLathe([[0.001, 0.11], [0.08, 0.1], [0.11, 0.0]], 20), LAC, dark, 1.25, 0.41, 0);
+        for (var zl = 0; zl < 3; zl++) add(mkBox(0.05, 0.02, 0.9), LAC, lt, -1.2 + zl * 0.02, 0.05, 0);
       } else if (type === 'lute') {
-        add(mkSphere(0.78, 24, 14), WOOD, wt, model(0, -0.2, 0, 1, 1.15, 0.34, 0, 0));
-        add(mkBox(0.16, 1.05, 0.13), LAC, lt, model(0, 0.85, 0, 1, 1, 1, 0, 0));
-        add(mkBox(0.24, 0.1, 0.1), LAC, lt, model(0, 1.4, 0, 1, 1, 1, 0, 0));
-        for (var i5 = 0; i5 < 4; i5++) add(mkBox(0.012, 1.9, 0.012), METAL, mt, model(-0.09 + i5 * 0.06, 0.15, 0.17, 1, 1, 1, 0, 0));
+        add(mkSphere(0.8, 28, 16), WOOD, wt, 0, -0.28, 0, 1, 1.12, 0.36);
+        add(mkSphere(0.78, 28, 16), LAC, [1.25, 1.1, 1.0], 0, -0.28, 0.03, 1, 1.12, 0.3);
+        add(mkBox(0.17, 1.1, 0.13), LAC, lt, 0, 0.85, 0);
+        add(mkBox(0.26, 0.12, 0.1), LAC, lt, 0, 1.45, 0);
+        add(mkSphere(0.09, 12, 8), LAC, lt, 0, 1.53, 0);
+        add(mkSphere(0.15, 16, 10), LAC, dark, 0, -0.2, 0.24, 1, 1, 0.08);
+        for (var pf = 0; pf < 9; pf++) add(mkBox(0.19, 0.02, 0.05), METAL, mt, 0, 0.32 + pf * 0.12, 0.06);
+        for (var pp = 0; pp < 4; pp++) {
+          add(mkBox(0.012, 1.9, 0.012), METAL, mt, -0.09 + pp * 0.06, 0.2, 0.19);
+          add(mkCyl(0.02, 0.02, 0.12, 8), METAL, mt, -0.18 - (pp % 2) * 0.06, 1.5, 0, 1, 1, 1, 0, Math.PI / 2);
+        }
       } else if (type === 'harp') {
-        add(mkBox(1.7, 0.14, 0.6), WOOD, wt, model(0, -0.8, 0, 1, 1, 1, 0, 0));
-        add(mkBox(0.16, 1.7, 0.3), WOOD, wt, model(-0.78, 0.05, 0, 1, 1, 1, 0, 0.18));
+        add(mkBox(1.8, 0.16, 0.62), WOOD, wt, 0, -0.82, 0);
+        add(mkBox(0.18, 1.75, 0.32), WOOD, wt, -0.8, 0.02, 0, 1, 1, 1, 0, 0.16);
         for (var hi = 0; hi < 7; hi++) {
           var t2 = hi / 6;
-          add(mkBox(0.16, 1.5, 0.26), WOOD, wt, model(-0.7 + t2 * 1.5, 0.75 + Math.sin(t2 * 1.2) * 0.35, 0, 0.7, 1, 1, 0, 0.5 - t2 * 0.9));
+          add(mkBox(0.17, 1.5, 0.28), WOOD, wt, -0.72 + t2 * 1.55, 0.78 + Math.sin(t2 * 1.25) * 0.34, 0, 0.7, 1, 1, 0, 0.5 - t2 * 0.9);
         }
-        for (var hs = 0; hs < 16; hs++) add(mkCyl(0.008, 0.008, 1.55, 6), METAL, mt, model(-0.55 + hs * 0.07, 0.0, 0.16, 1, 1, 1, 0, 0.06));
+        add(mkBox(1.5, 0.5, 0.1), LAC, lt, 0.05, -0.45, 0.16, 1, 1, 1, 0, 0.04);
+        for (var hs = 0; hs < 16; hs++) add(mkCyl(0.007, 0.007, 1.6, 6), METAL, mt, -0.52 + hs * 0.072, 0.02, 0.18, 1, 1, 1, 0, 0.05);
+        for (var hp = 0; hp < 8; hp++) add(mkCyl(0.03, 0.03, 0.1, 10), METAL, mt, -0.6 + hp * 0.16, 0.98, 0.05, 1, 1, 1, 0, Math.PI / 2);
       } else if (type === 'violin') {
-        add(mkSphere(0.42, 20, 12), WOOD, wt, model(0, 0.35, 0, 1, 1.18, 0.4, 0, 0));
-        add(mkSphere(0.5, 20, 12), WOOD, wt, model(0, -0.35, 0, 1, 1.05, 0.42, 0, 0));
-        add(mkBox(0.12, 1.15, 0.1), LAC, lt, model(0, 0.95, -0.02, 1, 1, 1, 0, 0));
-        add(mkBox(0.2, 0.08, 0.09), LAC, lt, model(0, 1.5, -0.02, 1, 1, 1, 0, 0));
-        for (var vi = 0; vi < 4; vi++) add(mkBox(0.01, 1.75, 0.01), METAL, mt, model(-0.06 + vi * 0.04, 0.5, 0.14, 1, 1, 1, 0, 0));
+        add(mkSphere(0.42, 24, 14), WOOD, wt, 0, 0.42, 0, 1, 1.2, 0.42);
+        add(mkSphere(0.52, 24, 14), WOOD, wt, 0, -0.38, 0, 1, 1.02, 0.44);
+        add(mkBox(0.13, 1.2, 0.1), LAC, lt, 0, 1.0, -0.02);
+        add(mkBox(0.21, 0.09, 0.1), LAC, lt, 0, 1.55, -0.02);
+        add(mkSphere(0.1, 12, 8), LAC, lt, 0, 1.64, -0.02);
+        add(mkBox(0.16, 0.05, 0.16), WOOD, [0.75, 0.62, 0.45], 0, 0.06, 0.24);
+        add(mkBox(0.1, 0.4, 0.06), WOOD, [0.75, 0.62, 0.45], 0, -0.35, 0.24);
+        add(mkBox(0.03, 0.16, 0.02), LAC, dark, -0.15, 0.16, 0.26, 1, 1, 1, 0, 0.4);
+        add(mkBox(0.03, 0.16, 0.02), LAC, dark, 0.15, 0.16, 0.26, 1, 1, 1, 0, -0.4);
+        for (var vi = 0; vi < 4; vi++) {
+          add(mkBox(0.01, 1.9, 0.01), METAL, mt, -0.06 + vi * 0.04, 0.55, 0.18);
+          add(mkCyl(0.018, 0.018, 0.12, 8), METAL, mt, -0.12 - (vi % 2) * 0.07, 1.5, 0, 1, 1, 1, 0, Math.PI / 2);
+        }
       } else if (type === 'handpan') {
-        var pts = [[0.02, 0.16], [0.35, 0.14], [0.62, 0.07], [0.78, -0.02], [0.74, -0.16], [0.3, -0.22], [0.02, -0.22]];
-        add(mkLathe(pts, 40), METAL, [0.94, 0.92, 0.86], model(0, 0, 0, 1, 1, 1, 0, 0));
+        var pts = [[0.02, 0.16], [0.35, 0.14], [0.62, 0.07], [0.8, -0.02], [0.76, -0.16], [0.3, -0.24], [0.02, -0.24]];
+        add(mkLathe(pts, 44), METAL, [0.95, 0.93, 0.87], 0, 0, 0);
+        add(mkCyl(0.8, 0.8, 0.05, 44), METAL, [0.72, 0.7, 0.64], 0, -0.17, 0);
         var angs = [-90, -45, 0, 45, 90, 135, 180, 225];
         for (var ha = 0; ha < 8; ha++) {
           var ra2 = angs[ha] * Math.PI / 180;
-          add(mkSphere(0.13, 14, 8), 'metal', [0.8, 0.78, 0.72], model(Math.cos(ra2) * 0.44, 0.05, Math.sin(ra2) * 0.44, 1, 0.28, 1, 0, 0));
+          add(mkSphere(0.14, 16, 10), 'metal', [0.8, 0.78, 0.72], Math.cos(ra2) * 0.45, 0.05, Math.sin(ra2) * 0.45, 1, 0.26, 1);
         }
-        add(mkSphere(0.08, 12, 8), 'metal', [0.7, 0.68, 0.62], model(0, 0.06, 0, 1, 0.3, 1, 0, 0));
+        add(mkSphere(0.09, 14, 8), 'metal', [0.68, 0.66, 0.6], 0, 0.07, 0, 1, 0.3, 1);
+        add(mkCyl(0.82, 0.82, 0.03, 44), METAL, [0.6, 0.58, 0.52], 0, 0.02, 0);
       } else if (type === 'marimba') {
+        add(mkBox(3.1, 0.12, 1.9), LAC, lt, 0, -0.08, 0);
         for (var mi = 0; mi < 10; mi++) {
-          var len = 1.5 + (mi % 5) * 0.16;
-          add(mkBox(0.24, 0.1, len), WOOD, wt, model(-1.3 + mi * 0.29, 0.2, 0, 1, 1, 1, 0, 0));
+          var len = 1.45 + (mi % 5) * 0.16;
+          add(mkBox(0.24, 0.1, len), WOOD, wt, -1.3 + mi * 0.29, 0.2, 0);
         }
-        add(mkBox(3.0, 0.1, 1.9), LAC, lt, model(0, -0.05, 0, 1, 1, 1, 0, 0));
+        for (var mt2 = 0; mt2 < 10; mt2++) add(mkCyl(0.09, 0.09, 0.62, 12), METAL, [0.8, 0.78, 0.72], -1.3 + mt2 * 0.29, -0.4, 0);
+        add(mkBox(3.2, 0.08, 1.95), WOOD, [0.7, 0.58, 0.44], 0, -0.72, 0);
       } else if (type === 'musicbox') {
-        add(mkBox(1.8, 0.5, 1.2), WOOD, wt, model(0, -0.2, 0, 1, 1, 1, 0, 0));
-        add(mkCyl(0.26, 0.26, 1.7, 20), METAL, mt, model(0, 0.22, 0, 1, 1, 1, 0, Math.PI / 2));
-        for (var ti = 0; ti < 12; ti++) add(mkBox(0.05, 0.34, 0.04), METAL, mt, model(-0.7 + ti * 0.12, 0.45, 0.38, 1, 1, 1, 0, 0));
+        add(mkBox(1.9, 0.55, 1.25), WOOD, wt, 0, -0.25, 0);
+        add(mkBox(1.94, 0.08, 1.29), WOOD, [1.05, 1.0, 0.9], 0, 0.05, 0, 1, 1, 1, 0, 0);
+        add(mkCyl(0.24, 0.24, 1.7, 22), METAL, mt, 0, 0.18, 0, 1, 1, 1, 0, Math.PI / 2);
+        for (var pn = 0; pn < 14; pn++) add(mkBox(0.02, 0.05, 0.02), METAL, [0.85, 0.82, 0.72], -0.7 + pn * 0.105, 0.42, 0.16 + (pn % 3) * 0.05);
+        for (var ti = 0; ti < 14; ti++) add(mkBox(0.045, 0.32, 0.035), METAL, mt, -0.68 + ti * 0.1, 0.35, 0.42);
+        add(mkCyl(0.06, 0.06, 0.2, 12), METAL, mt, 0.9, 0.15, -0.35, 1, 1, 1, 0, Math.PI / 2);
+        add(mkBox(0.16, 0.03, 0.05), METAL, mt, 1.02, 0.15, -0.35);
       } else if (type === 'bells') {
-        add(mkBox(3.0, 0.12, 0.3), WOOD, wt, model(0, 1.1, 0, 1, 1, 1, 0, 0));
+        add(mkBox(3.0, 0.14, 0.34), WOOD, wt, 0, 1.15, 0);
+        add(mkBox(0.1, 0.14, 0.34), LAC, lt, -1.5, 1.28, 0);
+        add(mkBox(0.1, 0.14, 0.34), LAC, lt, 1.5, 1.28, 0);
         for (var bi = 0; bi < 8; bi++) {
-          add(mkCyl(0.02, 0.02, 0.3, 8), METAL, mt, model(-1.15 + bi * 0.33, 0.9, 0, 1, 1, 1, 0, 0));
-          add(mkLathe([[0.02, 0.22], [0.1, 0.2], [0.16, 0.1], [0.19, -0.05], [0.14, -0.14], [0.02, -0.14]], 20), METAL, mt, model(-1.15 + bi * 0.33, 0.55, 0, 1, 1, 1, 0, 0));
+          var bxx = -1.2 + bi * 0.34;
+          add(mkCyl(0.018, 0.018, 0.28, 8), METAL, mt, bxx, 0.95, 0);
+          add(mkLathe([[0.02, 0.24], [0.11, 0.22], [0.18, 0.1], [0.21, -0.06], [0.16, -0.16], [0.02, -0.16]], 24), METAL, mt, bxx, 0.6, 0);
+          add(mkSphere(0.05, 12, 8), METAL, [0.7, 0.68, 0.62], bxx, 0.42, 0);
+          add(mkLathe([[0.02, 0.03], [0.16, 0.02], [0.21, -0.02]], 20), METAL, [0.92, 0.88, 0.78], bxx, 0.82, 0);
         }
       } else if (type === 'winds') {
-        add(mkCyl(0.16, 0.16, 3.1, 24), METAL, mt, model(0, 0.05, 0, 1, 1, 1, 0, Math.PI / 2));
-        for (var wi = 0; wi < 7; wi++) add(mkCyl(0.07, 0.07, 0.06, 14), LAC, [0.4, 0.4, 0.4], model(-0.95 + wi * 0.32, 0.23, 0, 1, 1, 1, 0, Math.PI / 2));
+        add(mkCyl(0.16, 0.16, 3.1, 26), METAL, mt, 0, 0.05, 0, 1, 1, 1, 0, Math.PI / 2);
+        add(mkCyl(0.18, 0.18, 0.18, 20), METAL, [0.9, 0.88, 0.8], -1.6, 0.05, 0, 1, 1, 1, 0, Math.PI / 2);
+        add(mkCyl(0.2, 0.2, 0.22, 20), METAL, [0.8, 0.78, 0.7], 1.6, 0.05, 0, 1, 1, 1, 0, Math.PI / 2);
+        for (var wi = 0; wi < 7; wi++) {
+          var wx = -0.95 + wi * 0.32;
+          add(mkSphere(0.075, 14, 8), LAC, [0.32, 0.34, 0.35], wx, 0.21, 0, 1, 0.12, 1);
+          add(mkBox(0.09, 0.05, 0.12), METAL, mt, wx, 0.27, 0.06);
+        }
       }
     }
+
     var VS = 'attribute vec3 aPos;attribute vec3 aNrm;attribute vec2 aUV;uniform mat4 uMVP;uniform mat4 uModel;varying vec3 vN;varying vec2 vUV;varying vec3 vP;void main(){vN=mat3(uModel[0].xyz,uModel[1].xyz,uModel[2].xyz)*aNrm;vP=(uModel*vec4(aPos,1.0)).xyz;vUV=aUV;gl_Position=uMVP*vec4(aPos,1.0);}';
-    var FS = 'precision mediump float;varying vec3 vN;varying vec2 vUV;varying vec3 vP;uniform sampler2D uTex;uniform vec3 uTint;uniform float uShine;uniform vec3 uLight;void main(){vec3 N=normalize(vN);vec3 L=normalize(uLight);float d=max(dot(N,L),0.0);vec3 V=normalize(vec3(0.0,0.0,6.0)-vP);vec3 H=normalize(L+V);float sp=pow(max(dot(N,H),0.0),uShine);vec3 base=texture2D(uTex,vUV).rgb*uTint;vec3 col=base*(0.26+0.86*d)+vec3(0.9,0.86,0.8)*sp*0.45;gl_FragColor=vec4(col,1.0);}';
+    var FS = 'precision mediump float;varying vec3 vN;varying vec2 vUV;varying vec3 vP;uniform sampler2D uTex;uniform vec3 uTint;uniform float uShine;uniform vec3 uLight;void main(){vec3 N=normalize(vN);vec3 L=normalize(uLight);float d=max(dot(N,L),0.0);vec3 V=normalize(vec3(0.0,0.0,6.0)-vP);vec3 H=normalize(L+V);float sp=pow(max(dot(N,H),0.0),uShine);vec3 base=texture2D(uTex,vUV).rgb*uTint;vec3 col=base*(0.26+0.86*d)+vec3(0.9,0.86,0.8)*sp*0.45;float rim=pow(1.0-max(dot(N,V),0.0),3.0);col+=vec3(0.55,0.6,0.7)*rim*0.35;gl_FragColor=vec4(col,1.0);}';
     function resize() {
       if (!canvas) return;
       var w = hostEl.clientWidth || 320, h = hostEl.clientHeight || 200;
@@ -7861,8 +7945,8 @@
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.enable(gl.DEPTH_TEST);
       gl.disable(gl.CULL_FACE);
-      var view = lookAt([0, 1.1, 5.4], [0, 0.25, 0], [0, 1, 0]);
-      var proj = persp(0.72, asp, 0.1, 60);
+      var view = lookAt([0, 0.55, 6.1], [0, 0.28, 0], [0, 1, 0]);
+      var proj = persp(0.66, asp, 0.1, 60);
       var spin = Math.sin(ts * 0.00025) * 0.16;
       var bob = Math.sin(ts * 0.0006) * 0.03;
       gl.useProgram(prog);
@@ -7908,9 +7992,7 @@
       loc.shine = gl.getUniformLocation(prog, 'uShine');
       loc.light = gl.getUniformLocation(prog, 'uLight');
       loc.tex = gl.getUniformLocation(prog, 'uTex');
-      buildObjects(type);
-      texCache = {};
-      try { render(0); } catch (e) { stop(); return false; }
+      try { buildObjects(type); texCache = {}; render(0); } catch (e) { stop(); return false; }
       return true;
     }
     function stop() {
