@@ -347,8 +347,9 @@
   body.game-active #medUI,
   body.game-active #piano-drawer,
   body.game-active #nowTitle,
-  body.game-active #titleMenu{display:none!important}
-  #gameStage{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 38%, #0b1520 0%, #02060a 68%, #000 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:14px;box-sizing:border-box}
+  body.game-active #titleMenu,
+  body.game-active #medPanel{display:none!important}
+  #gameStage{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 38%, var(--bg1,#0c1622) 0%, var(--bg0,#03070c) 62%, #000 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:14px;box-sizing:border-box}
   #gameStage[hidden]{display:none}
   .gs-close{position:absolute;top:14px;right:14px;z-index:2;appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#dfe9f2;font-size:13px;font-family:inherit;padding:8px 12px;border-radius:10px;cursor:pointer}
   .gs-hud{position:absolute;top:18px;left:50%;transform:translateX(-50%);display:flex;gap:16px;align-items:baseline}
@@ -362,7 +363,27 @@
   .gs-lane .gs-line{position:absolute;bottom:0;left:-1px;right:-1px;height:4px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 12px var(--accent)}
   .gs-note{position:absolute;left:4px;right:4px;height:15px;border-radius:8px;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:gsfall linear forwards}
   @keyframes gsfall{from{top:-18px}to{top:calc(100% - 42px)}}
-  .gs-piano{position:relative;height:140px;margin-top:12px;display:flex;border-radius:0 0 10px 10px;overflow:hidden}
+  .gs-kb{width:min(94vw,480px);margin-top:12px;height:150px;display:flex;position:relative}
+  .kb-col{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .kb-col.on{z-index:3}
+  .kb-strings .kb-col:after{content:'';position:absolute;top:10px;bottom:0;left:50%;width:2px;transform:translateX(-50%);background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.22));box-shadow:0 0 8px rgba(255,255,255,.45)}
+  .kb-strings .kb-col:before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f0dcaa,#a97f3e)}
+  .kb-strings .kb-col.on:after{background:var(--accent);box-shadow:0 0 16px var(--accent);animation:stringvib .16s linear}
+  @keyframes stringvib{0%{transform:translateX(-2px)}50%{transform:translateX(2px)}100%{transform:translateX(-50%)}}
+  .kb-bells .kb-col{align-items:flex-start;padding-top:12px}
+  .kb-bells .kb-col .bell{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#3a2600;background:radial-gradient(circle at 35% 30%,#ffe9b0,#c99a3f 60%,#7a5320);box-shadow:0 6px 14px rgba(0,0,0,.5),inset 0 -4px 8px rgba(0,0,0,.35)}
+  .kb-bells .kb-col.on .bell{box-shadow:0 0 22px var(--accent),inset 0 -4px 8px rgba(0,0,0,.35)}
+  .kb-marimba .kb-col .bar{width:76%;height:72%;border-radius:12px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:10px;color:#f7e6cf;background:linear-gradient(180deg,#c98b4b,#8a5324 70%,#5f3a17);box-shadow:inset 0 4px 6px rgba(255,255,255,.18),0 6px 14px rgba(0,0,0,.5)}
+  .kb-marimba .kb-col.on .bar{background:linear-gradient(180deg,#e0a866,#a86a33);box-shadow:0 0 18px var(--accent)}
+  .kb-musicbox .kb-col .tine{width:9px;height:80%;border-radius:4px;background:linear-gradient(180deg,#f3f6f8,#9aa6ad 70%,#5c666d);box-shadow:0 4px 10px rgba(0,0,0,.5)}
+  .kb-musicbox .kb-col.on .tine{background:linear-gradient(180deg,#fff,#cfeffd);box-shadow:0 0 14px var(--accent)}
+  .kb-winds:before{content:'';position:absolute;left:0;right:0;bottom:34px;height:28px;border-radius:14px;background:linear-gradient(180deg,#2c3a40,#11181c);border:1px solid rgba(255,255,255,.12)}
+  .kb-winds .kb-col{align-items:flex-end;padding-bottom:30px}
+  .kb-winds .kb-col .hole{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#cfe2ee;background:radial-gradient(circle at 40% 35%,#2a3338,#0a0e10 70%);border:2px solid rgba(255,255,255,.25);box-shadow:inset 0 2px 6px rgba(0,0,0,.8)}
+  .kb-winds .kb-col.on .hole{border-color:var(--accent);box-shadow:0 0 16px var(--accent),inset 0 2px 6px rgba(0,0,0,.8)}
+  .kb-handpan .kb-col .dimple{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#3b3326;background:radial-gradient(circle at 42% 36%,#e8e2d3,#a9a08c 60%,#6f6656);box-shadow:inset 0 0 0 6px rgba(0,0,0,.12),0 5px 12px rgba(0,0,0,.5)}
+  .kb-handpan .kb-col.on .dimple{box-shadow:0 0 18px var(--accent),inset 0 0 0 6px rgba(0,0,0,.12)}
+  .gs-piano{position:relative;width:min(94vw,480px);height:140px;margin-top:12px;display:flex;border-radius:0 0 10px 10px;overflow:hidden}
   .gp-white{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;color:#3a3a34;cursor:pointer;background:linear-gradient(180deg,#fbfbf6,#d9d9d0 86%,#c9c9c0);border-right:1px solid #aeaea4;box-shadow:inset 0 -6px 10px rgba(0,0,0,.18);user-select:none;transition:background .08s}
   .gp-white:last-child{border-right:none}
   .gp-white:active,.gp-white.on{background:linear-gradient(180deg,#cdeefc,#8fd4ea 80%,#6fbcd6)}
@@ -7094,34 +7115,57 @@
       });
       el.piano.innerHTML = '';
       keyEls2 = [];
-      var WHITE = [60, 62, 64, 65, 67, 69, 71];
-      var BLACK = [{ n: 61, after: 0 }, { n: 63, after: 1 }, { n: 66, after: 3 }, { n: 68, after: 4 }, { n: 70, after: 5 }];
-      WHITE.forEach(function (n, i) {
-        var b = document.createElement('div');
-        b.className = 'gp-white';
-        b.textContent = NAMES[i];
-        b.addEventListener('pointerdown', function (e) {
+      var KFAM = {
+        piano: 'piano', ep: 'piano', synth: 'piano', musicbox: 'musicbox', marimba: 'marimba',
+        guzheng: 'strings', pipa: 'strings', harp: 'strings', violin: 'strings',
+        bell: 'bells', bianzhong: 'bells', flute: 'winds', clarinet: 'winds', piccolo: 'winds', handpan: 'handpan'
+      };
+      var fam = KFAM[state.instrument] || 'piano';
+      function bind(el, n) {
+        el.addEventListener('pointerdown', function (e) {
           e.preventDefault(); e.stopPropagation();
-          b.classList.add('on');
-          setTimeout(function () { b.classList.remove('on'); }, 150);
+          el.classList.add('on');
+          setTimeout(function () { el.classList.remove('on'); }, 160);
           pressKey(n);
         });
-        el.piano.appendChild(b); keyEls2.push(b);
-      });
-      BLACK.forEach(function (bk) {
-        var b = document.createElement('div');
-        b.className = 'gp-black';
-        b.style.left = 'calc(' + ((bk.after + 1) / 7 * 100) + '% - 4.4%)';
-        b.style.width = '8.8%';
-        b.addEventListener('pointerdown', function (e) {
-          e.preventDefault(); e.stopPropagation();
-          b.classList.add('on');
-          setTimeout(function () { b.classList.remove('on'); }, 150);
-          pressKey(bk.n);
+      }
+      if (fam === 'piano') {
+        el.piano.className = 'gs-piano';
+        var WHITE = [60, 62, 64, 65, 67, 69, 71];
+        var BLACK = [{ n: 61, after: 0 }, { n: 63, after: 1 }, { n: 66, after: 3 }, { n: 68, after: 4 }, { n: 70, after: 5 }];
+        WHITE.forEach(function (n, i) {
+          var b = document.createElement('div'); b.className = 'gp-white'; b.textContent = NAMES[i];
+          bind(b, n); el.piano.appendChild(b); keyEls2.push(b);
         });
-        el.piano.appendChild(b); keyEls2.push(b);
-      });
+        BLACK.forEach(function (bk) {
+          var b = document.createElement('div'); b.className = 'gp-black';
+          b.style.left = 'calc(' + ((bk.after + 1) / 7 * 100) + '% - 4.4%)';
+          b.style.width = '8.8%';
+          bind(b, bk.n); el.piano.appendChild(b); keyEls2.push(b);
+        });
+      } else {
+        el.piano.className = 'gs-kb kb-' + fam;
+        LANES.forEach(function (n, i) {
+          var col = document.createElement('div'); col.className = 'kb-col';
+          var inner = null;
+          if (fam === 'bells') { inner = document.createElement('div'); inner.className = 'bell'; inner.textContent = NAMES[i]; }
+          else if (fam === 'marimba') { inner = document.createElement('div'); inner.className = 'bar'; inner.textContent = NAMES[i]; }
+          else if (fam === 'musicbox') { inner = document.createElement('div'); inner.className = 'tine'; }
+          else if (fam === 'winds') { inner = document.createElement('div'); inner.className = 'hole'; inner.textContent = NAMES[i]; }
+          else if (fam === 'handpan') { inner = document.createElement('div'); inner.className = 'dimple'; inner.textContent = NAMES[i]; }
+          if (inner) col.appendChild(inner);
+          if (fam === 'strings') {
+            var lb = document.createElement('span');
+            lb.textContent = NAMES[i];
+            lb.style.cssText = 'position:absolute;bottom:4px;font-size:10px;color:#9fb3c0';
+            col.appendChild(lb);
+          }
+          bind(col, n);
+          el.piano.appendChild(col); keyEls2.push(col);
+        });
+      }
     }
+
     function spawn(midi) {
       var active = 0;
       for (var i = 0; i < falling.length; i++) if (!falling[i].done) active++;
