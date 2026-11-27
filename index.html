@@ -5742,9 +5742,9 @@
     return ((a + d * t) % 1 + 1) % 1;
   }
   function applySeason(id) {
-    state.season = SEASONS[id] ? id : 'auto';
+    state.season = SEASONS[id] ? id : 'cycle';
     try { localStorage.setItem('cz_season', state.season); } catch (e) {}
-    toast('🎨 配色：' + (id === 'cycle' ? '四季轮换' : (SEASONS[id] ? SEASONS[id].name + '季' : '自动')), 1600);
+    toast('🎨 配色：' + (id === 'cycle' ? '四季轮换' : (SEASONS[id] ? SEASONS[id].name + '季' : '四季轮换')), 1600);
   }
   var theme = THEMES[0];
 
@@ -5905,8 +5905,7 @@
       body.appendChild(note);
       var row3 = document.createElement('div');
       row3.className = 'sheet-sub';
-      [{ id: 'cycle', name: '四季轮换', css: 'linear-gradient(90deg,#7ee8a2,#35e0c0,#ffd166,#bfe6ff)' },
-       { id: 'auto', name: '自动', css: 'linear-gradient(90deg,#00e5ff,#ffb74d)' }].concat(
+      [{ id: 'cycle', name: '四季轮换', css: 'linear-gradient(90deg,#7ee8a2,#35e0c0,#ffd166,#bfe6ff)' }].concat(
         Object.keys(SEASONS).map(function (k) { return { id: k, name: SEASONS[k].name, css: SEASONS[k].css }; })
       ).forEach(function (o) {
         var b = document.createElement('button');
@@ -6713,7 +6712,8 @@
     renderLibrary();
     var savedTheme = localStorage.getItem('cz_theme') || 'cyan';
     var savedSeason = localStorage.getItem('cz_season') || 'cycle';
-    if (SEASONS[savedSeason] || savedSeason === 'auto' || savedSeason === 'cycle') state.season = savedSeason;
+    if (savedSeason === 'auto') savedSeason = 'cycle';
+    if (SEASONS[savedSeason] || savedSeason === 'cycle') state.season = savedSeason;
     var savedKeys = localStorage.getItem('cz_keys') || '13';
     var savedInst = localStorage.getItem('cz_inst');
     if (savedInst) { state.instrument = savedInst; markInstBtns(savedInst); }
