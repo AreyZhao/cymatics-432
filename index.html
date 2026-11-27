@@ -396,6 +396,7 @@
   </div>
 </header>
 <input id="musicFile" type="file" accept="audio/*" hidden>
+<input id="bgImageInput" type="file" accept="image/*" hidden>
 
 <footer id="bottom-bar" class="ui-layer">
   <div class="bar">
@@ -436,7 +437,6 @@
     <div id="medText" class="med-text">吸气…</div>
   </div>
   <div class="med-ctrl">
-    <button id="medMusic" class="med-big">🎵 冥想音乐</button>
     <button id="medPlay" class="med-big">▶ 开始</button>
     <button id="medSet" class="med-big sm">⚙ 设置</button>
   </div>
@@ -785,13 +785,21 @@
       'uniform vec3 uBgB;',
       'uniform float uBgT;',
       'uniform float uBgAspect;',
+      'uniform float uMode;',
+      'uniform sampler2D uBgTex;',
       'void main(){',
-      '  vec2 p = vUv - vec2(0.5, 0.5);',
-      '  p.x *= uBgAspect;',
-      '  float d = length(p);',
-      '  float fall = exp(-d * d * 2.0);',
-      '  vec3 col = mix(uBgB, uBgA, fall);',
-      '  col *= 0.92 + 0.08 * fall;',
+      '  vec3 col;',
+      '  if (uMode > 0.5) {',
+      '    col = texture2D(uBgTex, vUv).rgb;',
+      '    col *= 0.72;',
+      '  } else {',
+      '    vec2 p = vUv - vec2(0.5, 0.5);',
+      '    p.x *= uBgAspect;',
+      '    float d = length(p);',
+      '    float fall = exp(-d * d * 2.0);',
+      '    col = mix(uBgB, uBgA, fall);',
+      '    col *= 0.92 + 0.08 * fall;',
+      '  }',
       '  float n = fract(sin(dot(vUv * 1024.0, vec2(12.9898, 78.233)) + uBgT) * 43758.5453);',
       '  col += (n - 0.5) * 0.014;',
       '  gl_FragColor = vec4(col, 1.0);',
@@ -804,7 +812,7 @@
       gl.linkProgram(bgProg);
       if (!gl.getProgramParameter(bgProg, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(bgProg));
       bgA = gl.getAttribLocation(bgProg, 'aClip');
-      ['uBgA', 'uBgB', 'uBgT', 'uBgAspect'].forEach(function (n) { bgU[n] = gl.getUniformLocation(bgProg, n); });
+      ['uBgA', 'uBgB', 'uBgT', 'uBgAspect', 'uMode', 'uBgTex'].forEach(function (n) { bgU[n] = gl.getUniformLocation(bgProg, n); });
       bgBuf = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
@@ -812,12 +820,33 @@
       bgProg = null;
     }
   })();
+  var bgTex = null;
+  function setBgImage(img) {
+    if (!gl) return;
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    if (bgTex) { try { gl.deleteTexture(bgTex); } catch (e) {} }
+    bgTex = tex;
+  }
   function drawBackground(col, tt, aspect) {
-    if (!bgProg) return;
+    if (!bgProg || state.bgMode === 'black') return;
     gl.useProgram(bgProg);
     gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
     gl.enableVertexAttribArray(bgA);
     gl.vertexAttribPointer(bgA, 2, gl.FLOAT, false, 0, 0);
+    var imageMode = state.bgMode === 'image' && bgTex;
+    gl.uniform1f(bgU.uMode, imageMode ? 1 : 0);
+    if (imageMode) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, bgTex);
+      gl.uniform1i(bgU.uBgTex, 0);
+    }
     gl.uniform3f(bgU.uBgA, col[0] * 0.42, col[1] * 0.42, col[2] * 0.42);
     gl.uniform3f(bgU.uBgB, col[0] * 0.06 + 0.004, col[1] * 0.06 + 0.004, col[2] * 0.06 + 0.007);
     gl.uniform1f(bgU.uBgT, tt % 500);
@@ -896,6 +925,7 @@
     lastFreqPush: 0,
     themeId: 'cyan',
     season: 'cycle',
+    bgMode: 'season',
     themeHue: 0.55,
     keyRange: '13',
     sysOn: false,
@@ -2407,6 +2437,14 @@
     stopSeq();
     stopAllAudio('seq');
     Audio.ensure();
+    if (piece.medFreq) {
+      setFreq(piece.medFreq);
+      if (typeof Med !== 'undefined') Med.playDrone(piece.medFreq);
+      state.currentPiece = piece;
+      showNowTitle(piece);
+      return;
+    }
+    if (typeof Med !== 'undefined') Med.stopDrone();
     player.piece = piece;
     state.currentPiece = piece;
     if (piece.medFreq) setFreq(piece.medFreq);
@@ -6061,6 +6099,39 @@
         row3.appendChild(b);
       });
       body.appendChild(row3);
+
+      var bgnote = document.createElement('div');
+      bgnote.className = 'sheet-note';
+      bgnote.textContent = '大背景';
+      body.appendChild(bgnote);
+      var rowbg = document.createElement('div');
+      rowbg.className = 'sheet-sub';
+      [{ id: 'season', name: '四季渐变' }, { id: 'image', name: '自设图片' }, { id: 'black', name: '纯黑' }].forEach(function (o) {
+        var b = document.createElement('button');
+        b.className = 'size-btn' + (state.bgMode === o.id ? ' on' : '');
+        b.textContent = o.name;
+        b.addEventListener('click', function () {
+          if (o.id === 'image') {
+            var fi = document.getElementById('bgImageInput');
+            if (fi) fi.click();
+            return;
+          }
+          state.bgMode = o.id;
+          try { localStorage.setItem('cz_bgmode', o.id); } catch (e) {}
+          renderSheet();
+        });
+        rowbg.appendChild(b);
+      });
+      var delbg = document.createElement('button');
+      delbg.className = 'size-btn';
+      delbg.textContent = '清除图片';
+      delbg.addEventListener('click', function () {
+        state.bgMode = 'season'; bgTex = null;
+        try { localStorage.removeItem('cz_bgmode'); localStorage.removeItem('cz_bgimage'); } catch (e) {}
+        renderSheet();
+      });
+      rowbg.appendChild(delbg);
+      body.appendChild(rowbg);
     } else if (id === 'instruments') {
       var rowi = document.createElement('div');
       rowi.className = 'sheet-sub';
@@ -6881,6 +6952,16 @@
     var savedSeason = localStorage.getItem('cz_season') || 'cycle';
     if (savedSeason === 'auto') savedSeason = 'cycle';
     if (SEASONS[savedSeason] || savedSeason === 'cycle') state.season = savedSeason;
+    var savedBg = localStorage.getItem('cz_bgmode') || 'season';
+    state.bgMode = (savedBg === 'image' || savedBg === 'black') ? savedBg : 'season';
+    if (state.bgMode === 'image') {
+      var savedImg = localStorage.getItem('cz_bgimage');
+      if (savedImg) {
+        var bim = new Image();
+        bim.onload = function () { setBgImage(bim); };
+        bim.src = savedImg;
+      }
+    }
     var savedKeys = localStorage.getItem('cz_keys') || '13';
     var savedInst = localStorage.getItem('cz_inst');
     if (savedInst) { state.instrument = savedInst; markInstBtns(savedInst); }
@@ -6906,6 +6987,37 @@
     if (/[?&]panel=1/.test(q)) sheet.classList.add('on');
   })();
 
+  /* ---- 自设背景图片 ---- */
+  (function () {
+    var fi = document.getElementById('bgImageInput');
+    if (!fi) return;
+    fi.addEventListener('change', function () {
+      var f = fi.files && fi.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var maxw = 1440;
+          var w = img.width, h = img.height;
+          if (w > maxw) { h = Math.round(h * maxw / w); w = maxw; }
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+          var data = cv.toDataURL('image/jpeg', 0.82);
+          try { localStorage.setItem('cz_bgimage', data); } catch (e) { try { localStorage.setItem('cz_bgimage', cv.toDataURL('image/jpeg', 0.6)); } catch (e2) {} }
+          var timg = new Image();
+          timg.onload = function () { setBgImage(timg); };
+          timg.src = data;
+          state.bgMode = 'image';
+          try { localStorage.setItem('cz_bgmode', 'image'); } catch (e) {}
+          toast('已设为背景图片', 1800);
+        };
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(f);
+    });
+  })();
+
   /* ================= 冥想模式 ================= */
   var Med = (function () {
     var PATS = {
@@ -6915,7 +7027,7 @@
       'box':  { name: '箱式 4-4-4-4', in: 4, hold: 4, out: 4, hold2: 4 }
     };
     var cfg = { pattern: '46', freq: 432, mins: 5, drone: false, sounds: { rain: false, sea: false, wind: false, fire: false }, guided: true, voice: false, endFade: false };
-    var on = false, started = false, paused = false, remaining = 300, phase = 'in', phT = 0, lastNow = 0, lastTickTime = 0, medMusicOn = false;
+    var on = false, started = false, paused = false, remaining = 300, phase = 'in', phT = 0, lastNow = 0, lastTickTime = 0;
     var nodes = null, rafId = null;
     var el = {}, orb, txt, timeEl;
 
@@ -6936,11 +7048,10 @@
       if (nodes) {
         try { nodes.gain.gain.cancelScheduledValues(Audio.ctx().currentTime); } catch (e) {}
         var kill = function (o) { if (o && o.stop) { try { o.stop(); } catch (e) {} } };
-        ['drone', 'rain', 'sea', 'wind', 'fire'].forEach(function (k) {
+        ['rain', 'sea', 'wind', 'fire'].forEach(function (k) {
           var n = nodes[k];
           if (!n) return;
-          if (k === 'drone') { kill(n[0]); kill(n[1]); }
-          else { kill(n.src); kill(n.src2); kill(n.lfo); kill(n.lfo2); }
+          kill(n.src); kill(n.src2); kill(n.lfo); kill(n.lfo2);
         });
         if (nodes.chimeTimer) clearInterval(nodes.chimeTimer);
         if (nodes.fireCrackle) clearInterval(nodes.fireCrackle);
@@ -6960,16 +7071,7 @@
       nodes.gain.gain.linearRampToValueAtTime(0.3, now + 2);
       nodes.gain.connect(Audio.master());
 
-      if (cfg.drone) {
-        var f = cfg.freq;
-        var dr = c.createOscillator(); dr.type = 'sine'; dr.frequency.value = f;
-        var dr2 = c.createOscillator(); dr2.type = 'sine'; dr2.frequency.value = f * 1.5;
-        var dg = c.createGain(); dg.gain.value = 0.1;
-        var dg2 = c.createGain(); dg2.gain.value = 0.04;
-        var dlp = c.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 1000;
-        dr.connect(dg); dr2.connect(dg2); dg.connect(dlp); dg2.connect(dlp); dlp.connect(nodes.gain);
-        dr.start(); dr2.start(); nodes.drone = [dr, dr2];
-      }
+
 
       if (cfg.sounds.rain) {
         var rb = c.createBufferSource(); rb.buffer = noiseBuf(c, true); rb.loop = true;
@@ -7119,6 +7221,7 @@
     var timerId = null;
     function stop() {
       on = false; started = false; paused = false;
+      stopDrone();
       clearInterval(timerId);
       if (rafId) cancelAnimationFrame(rafId); rafId = null;
       stopAudio();
@@ -7154,8 +7257,8 @@
       el.panel.appendChild(pick);
       optRow('呼吸节奏', 'pattern', Object.keys(PATS).map(function (k) { return { id: k, label: PATS[k].name }; }), function (id) { cfg.pattern = id; });
       optRow('疗愈频率', 'freq', [174, 285, 396, 417, 432, 528, 639, 741, 852].map(function (f) { return { id: f, label: f }; }), function (id) {
-        if (cfg.drone && cfg.freq === id && nodes) { cfg.drone = false; stopAudio(); }
-        else { cfg.freq = id; cfg.drone = true; stopAudio(); startAudio(); }
+        if (cfg.drone && cfg.freq === id) { stopDrone(); }
+        else { playDrone(id); }
         buildPanel();
       });
 
@@ -7176,20 +7279,26 @@
       optRow('语音引导', 'voice', [{ id: true, label: '开' }, { id: false, label: '关' }], function (id) { cfg.voice = id; });
       optRow('结束方式', 'endFade', [{ id: false, label: '钟声即止' }, { id: true, label: '钟声 + 渐弱' }], function (id) { cfg.endFade = id; });
     }
-    function medTrackItem() {
-      for (var i = 0; i < library.length; i++) if (library[i].medFreq) return library[i];
-      return null;
+    var droneTimer = null;
+    function playDrone(freq) {
+      stopDrone();
+      Audio.ensure();
+      cfg.freq = freq; cfg.drone = true;
+      var midi = Math.round(69 + 12 * Math.log2(freq / 432));
+      function hit() {
+        if (!cfg.drone) return;
+        Audio.note(midi, { vel: 0.16, wet: 0.5, inst: state.instrument || 'musicbox' });
+      }
+      hit();
+      droneTimer = setInterval(hit, 850);
+      setFreq(freq);
     }
-    function toggleMedMusic() {
-      if (state.seqOn && medMusicOn) { stopSeq(); medMusicOn = false; el.music.textContent = '🎵 冥想音乐'; return; }
-      var it = medTrackItem();
-      if (!it) { toast('曲库暂无冥想音乐', 2000); return; }
-      playPiece(pieceFromSaved(it));
-      medMusicOn = true;
-      el.music.textContent = '🎵 冥想音乐 ⏸';
+    function stopDrone() {
+      cfg.drone = false;
+      if (droneTimer) { clearInterval(droneTimer); droneTimer = null; }
     }
     function init() {
-      el.ui = $('medUI'); el.play = $('medPlay'); el.set = $('medSet'); el.panel = $('medPanel'); el.music = $('medMusic');
+      el.ui = $('medUI'); el.play = $('medPlay'); el.set = $('medSet'); el.panel = $('medPanel');
       orb = $('medOrb'); txt = $('medText'); timeEl = $('medTime');
       $('medBtn').addEventListener('click', function () {
         on = true; state.medOn = true;
@@ -7201,7 +7310,6 @@
         if (!rafId) rafId = requestAnimationFrame(frame);
       });
       $('medClose').addEventListener('click', stop);
-      el.music.addEventListener('click', toggleMedMusic);
       el.play.addEventListener('click', function () {
         if (!started) { start(); return; }
         paused = !paused;
