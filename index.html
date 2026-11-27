@@ -5873,11 +5873,40 @@
   freqSlider.addEventListener('change', function () {
     previewFreqSound(sliderToFreq(+freqSlider.value));
   });
+  function createMedMusicForFreq(freq) {
+    var shift = Math.round(12 * Math.log2(freq / 432));
+    var insts = ['flute', 'harp', 'piano', 'bell', 'handpan', 'musicbox', 'violin', 'guzheng', 'ep', 'clarinet'];
+    var styles = ['aurora', 'night', 'grow'];
+    var name = (typeof pickName === 'function' ? pickName() : '疗愈') + ' · ' + freq;
+    var pc = composeOriginalPiece({
+      seed: ((Date.now() ^ (freq * 131)) >>> 0),
+      styleId: styles[freq % 3],
+      bpm: 58,
+      name: name,
+      instrument: insts[freq % insts.length],
+      rootShift: shift
+    });
+    pc.medFreq = freq;
+    pc.tag = '冥想';
+    try {
+      library.push({
+        id: pc.id, name: pc.name, styleId: pc.styleId, bpm: pc.bpm,
+        root: pc.root, scaleName: pc.scaleName, instrument: pc.instrument,
+        seed: pc.seed, created: pc.created, bars: pc.bars, preset: false, engine: pc.engine || '',
+        medFreq: freq, tag: '冥想'
+      });
+      saveLibrary();
+    } catch (e) {}
+    playPiece(pc);
+    toast('🧘 已生成 ' + freq + 'Hz 疗愈音乐：<b>' + esc(pc.name) + '</b>', 2600);
+  }
+
   chips.forEach(function (ch) {
     ch.addEventListener('click', function () {
       var f = +ch.dataset.freq;
       setFreq(f);
-      previewFreqSound(f);
+      if (f >= 40 && f <= 2000) createMedMusicForFreq(f);
+      else previewFreqSound(f);
     });
   });
 
