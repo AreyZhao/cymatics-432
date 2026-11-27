@@ -363,7 +363,10 @@
   .gs-lane .gs-line{position:absolute;bottom:0;left:-1px;right:-1px;height:4px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 12px var(--accent)}
   .gs-note{position:absolute;left:4px;right:4px;height:15px;border-radius:8px;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:gsfall linear forwards}
   @keyframes gsfall{from{top:-18px}to{top:calc(100% - 42px)}}
-  .gs-kb{width:min(94vw,480px);margin-top:12px;height:150px;display:flex;position:relative}
+  .gs-kb{width:min(96vw,560px);margin-top:10px;height:210px;display:flex;position:relative;padding:10px;box-sizing:border-box;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.35));border:1px solid rgba(255,255,255,.10)}
+  .kb-col.cue .bell,.kb-col.cue .bar,.kb-col.cue .tine,.kb-col.cue .hole,.kb-col.cue .dimple,.kb-col.cue:after{box-shadow:0 0 26px var(--accent)!important;filter:brightness(1.35)}
+  .gp-white.cue{background:linear-gradient(180deg,#fff7e0,#f0c987 80%,#d9a94e)!important;box-shadow:0 0 22px var(--accent)}
+  .gp-black.cue{background:linear-gradient(180deg,#6b4a25,#2a1a08)!important;box-shadow:0 0 16px var(--accent)}
   .kb-col{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none}
   .kb-col.on{z-index:3}
   .kb-strings .kb-col:after{content:'';position:absolute;top:10px;bottom:0;left:50%;width:2px;transform:translateX(-50%);background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.22));box-shadow:0 0 8px rgba(255,255,255,.45)}
@@ -383,11 +386,11 @@
   .kb-winds .kb-col.on .hole{border-color:var(--accent);box-shadow:0 0 16px var(--accent),inset 0 2px 6px rgba(0,0,0,.8)}
   .kb-handpan .kb-col .dimple{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#3b3326;background:radial-gradient(circle at 42% 36%,#e8e2d3,#a9a08c 60%,#6f6656);box-shadow:inset 0 0 0 6px rgba(0,0,0,.12),0 5px 12px rgba(0,0,0,.5)}
   .kb-handpan .kb-col.on .dimple{box-shadow:0 0 18px var(--accent),inset 0 0 0 6px rgba(0,0,0,.12)}
-  .gs-piano{position:relative;width:min(94vw,480px);height:140px;margin-top:12px;display:flex;border-radius:0 0 10px 10px;overflow:hidden}
-  .gp-white{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;color:#3a3a34;cursor:pointer;background:linear-gradient(180deg,#fbfbf6,#d9d9d0 86%,#c9c9c0);border-right:1px solid #aeaea4;box-shadow:inset 0 -6px 10px rgba(0,0,0,.18);user-select:none;transition:background .08s}
+  .gs-piano{position:relative;width:min(96vw,560px);height:200px;margin-top:10px;display:flex;border-radius:0 0 14px 14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .gp-white{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-size:12px;color:#3a2a12;cursor:pointer;background:linear-gradient(180deg,#f6e7c3,#e2c088 70%,#c99a55);border-right:1px solid #8a6238;box-shadow:inset 0 -8px 14px rgba(0,0,0,.22);user-select:none;transition:background .08s}
   .gp-white:last-child{border-right:none}
   .gp-white:active,.gp-white.on{background:linear-gradient(180deg,#cdeefc,#8fd4ea 80%,#6fbcd6)}
-  .gp-black{position:absolute;top:0;height:62%;background:linear-gradient(180deg,#3a3a3a,#0c0c0c 70%,#000);border-radius:0 0 6px 6px;z-index:2;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,.55);user-select:none}
+  .gp-black{position:absolute;top:0;height:62%;background:linear-gradient(180deg,#4a3720,#1a1006 70%,#050302);border-radius:0 0 6px 6px;z-index:2;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,.55);user-select:none}
   .gp-black:active,.gp-black.on{background:linear-gradient(180deg,#3f8ba3,#1d5f74)}
     /* ---- 冥想模式 ---- */
   body.med-active #nowTitle{opacity:0;pointer-events:none}
@@ -482,7 +485,7 @@
     <span id="gsCombo"></span>
   </div>
   <div class="gs-judge" id="gsJudge"></div>
-  <div class="gs-lanes" id="gsLanes"></div>
+  <div class="gs-instrument" id="gsInstrument"></div>
   <div class="gs-piano" id="gsPiano"></div>
 </div>
 
@@ -1598,22 +1601,23 @@
     { name: '夜潮', styleId: 'aurora', engine: 'original', seed: 20260501, bpm: 120, root: 0, instrument: 'musicbox' },
     { name: '流沙', styleId: 'night', engine: 'original', seed: 88112233, bpm: 104, root: 0, instrument: 'ep' }
   ];
+  function medShift(f) { return Math.round(12 * Math.log2(f / 432)); }
   var MEDITATION_PRESETS = [
-    { name: '净化 · 174', styleId: 'aurora', engine: 'original', seed: 700001, bpm: 60, instrument: 'flute', medFreq: 174 },
-    { name: '低吟 · 174', styleId: 'grow',    engine: 'original', seed: 700002, bpm: 62, instrument: 'handpan', medFreq: 174 },
-    { name: '复元 · 285', styleId: 'aurora', engine: 'original', seed: 700003, bpm: 60, instrument: 'harp', medFreq: 285 },
-    { name: '愈合 · 285', styleId: 'night',  engine: 'original', seed: 700004, bpm: 63, instrument: 'ep', medFreq: 285 },
-    { name: '释怀 · 396', styleId: 'night',  engine: 'original', seed: 700005, bpm: 64, instrument: 'piano', medFreq: 396 },
-    { name: '放下 · 396', styleId: 'grow',   engine: 'original', seed: 700006, bpm: 62, instrument: 'clarinet', medFreq: 396 },
-    { name: '变革 · 417', styleId: 'grow',   engine: 'original', seed: 700007, bpm: 63, instrument: 'guzheng', medFreq: 417 },
-    { name: '转身 · 417', styleId: 'aurora', engine: 'original', seed: 700008, bpm: 60, instrument: 'piccolo', medFreq: 417 },
-    { name: '本源 · 432', styleId: 'aurora', engine: 'original', seed: 700009, bpm: 60, instrument: 'violin', medFreq: 432 },
-    { name: '同心 · 432', styleId: 'night',  engine: 'original', seed: 700010, bpm: 62, instrument: 'musicbox', medFreq: 432 },
-    { name: '爱意 · 528', styleId: 'night',  engine: 'original', seed: 700011, bpm: 61, instrument: 'harp', medFreq: 528 },
-    { name: '奇迹 · 528', styleId: 'aurora', engine: 'original', seed: 700012, bpm: 60, instrument: 'bell', medFreq: 528 },
-    { name: '连接 · 639', styleId: 'grow',   engine: 'original', seed: 700013, bpm: 63, instrument: 'pipa', medFreq: 639 },
-    { name: '直觉 · 741', styleId: 'night',  engine: 'original', seed: 700014, bpm: 64, instrument: 'clarinet', medFreq: 741 },
-    { name: '灵性 · 852', styleId: 'aurora', engine: 'original', seed: 700015, bpm: 60, instrument: 'handpan', medFreq: 852 }
+    { name: '净化 · 174', styleId: 'aurora', engine: 'original', seed: 710001, bpm: 58, instrument: 'flute', medFreq: 174, rootShift: medShift(174) },
+    { name: '低吟 · 174', styleId: 'grow',    engine: 'original', seed: 710002, bpm: 60, instrument: 'handpan', medFreq: 174, rootShift: medShift(174) },
+    { name: '复元 · 285', styleId: 'aurora', engine: 'original', seed: 710003, bpm: 58, instrument: 'harp', medFreq: 285, rootShift: medShift(285) },
+    { name: '愈合 · 285', styleId: 'night',  engine: 'original', seed: 710004, bpm: 60, instrument: 'ep', medFreq: 285, rootShift: medShift(285) },
+    { name: '释怀 · 396', styleId: 'night',  engine: 'original', seed: 710005, bpm: 60, instrument: 'piano', medFreq: 396, rootShift: medShift(396) },
+    { name: '放下 · 396', styleId: 'grow',   engine: 'original', seed: 710006, bpm: 60, instrument: 'clarinet', medFreq: 396, rootShift: medShift(396) },
+    { name: '变革 · 417', styleId: 'grow',   engine: 'original', seed: 710007, bpm: 60, instrument: 'guzheng', medFreq: 417, rootShift: medShift(417) },
+    { name: '转身 · 417', styleId: 'aurora', engine: 'original', seed: 710008, bpm: 58, instrument: 'piccolo', medFreq: 417, rootShift: medShift(417) },
+    { name: '本源 · 432', styleId: 'aurora', engine: 'original', seed: 710009, bpm: 58, instrument: 'violin', medFreq: 432, rootShift: medShift(432) },
+    { name: '同心 · 432', styleId: 'night',  engine: 'original', seed: 710010, bpm: 60, instrument: 'musicbox', medFreq: 432, rootShift: medShift(432) },
+    { name: '爱意 · 528', styleId: 'night',  engine: 'original', seed: 710011, bpm: 60, instrument: 'harp', medFreq: 528, rootShift: medShift(528) },
+    { name: '奇迹 · 528', styleId: 'aurora', engine: 'original', seed: 710012, bpm: 58, instrument: 'bell', medFreq: 528, rootShift: medShift(528) },
+    { name: '连接 · 639', styleId: 'grow',   engine: 'original', seed: 710013, bpm: 60, instrument: 'pipa', medFreq: 639, rootShift: medShift(639) },
+    { name: '直觉 · 741', styleId: 'night',  engine: 'original', seed: 710014, bpm: 60, instrument: 'clarinet', medFreq: 741, rootShift: medShift(741) },
+    { name: '灵性 · 852', styleId: 'aurora', engine: 'original', seed: 710015, bpm: 58, instrument: 'handpan', medFreq: 852, rootShift: medShift(852) }
   ];
 
   var STYLES = [
@@ -2076,7 +2080,7 @@
     var seed = (opts.seed == null ? 1234567 : opts.seed) >>> 0;
     var rnd = mulberry32(seed);
     var shifts = [-5, -3, 0, 2, 3, 5];
-    var rootShift = shifts[Math.floor(rnd() * shifts.length)];
+    var rootShift = (opts.rootShift != null) ? opts.rootShift : shifts[Math.floor(rnd() * shifts.length)];
     var scaleArr = sp.scale;
     var cycles = 16;
     /* 先选主奏乐器（考虑乐器特点），再决定编配 */
@@ -4911,26 +4915,24 @@
       saveLibrary();
       localStorage.setItem(flag, '1');
     } catch (e) {}
-    var mflag = 'cz_medpresets_v1';
+    var mflag = 'cz_medpresets_v2';
     try {
-      var have = {};
-      for (var hi = 0; hi < library.length; hi++) have[library[hi].name] = true;
-      var added = false;
-      for (var mi = 0; mi < MEDITATION_PRESETS.length; mi++) {
-        var mcfg = MEDITATION_PRESETS[mi];
-        if (have[mcfg.name]) continue;
-        var mpc = mcfg.engine === 'original' ? composeOriginalPiece(mcfg) : composePiece(mcfg);
-        mpc.preset = true;
-        library.push({
-          id: mpc.id, name: mpc.name, styleId: mpc.styleId, bpm: mpc.bpm,
-          root: mpc.root, scaleName: mpc.scaleName, instrument: mpc.instrument,
-          seed: mpc.seed, created: mpc.created, bars: mpc.bars, preset: true, engine: mpc.engine || '',
-          medFreq: mcfg.medFreq, tag: '冥想'
-        });
-        added = true;
+      if (!localStorage.getItem(mflag)) {
+        library = library.filter(function (x) { return !x.medFreq && x.tag !== '冥想'; });
+        for (var mi = 0; mi < MEDITATION_PRESETS.length; mi++) {
+          var mcfg = MEDITATION_PRESETS[mi];
+          var mpc = mcfg.engine === 'original' ? composeOriginalPiece(mcfg) : composePiece(mcfg);
+          mpc.preset = true;
+          library.push({
+            id: mpc.id, name: mpc.name, styleId: mpc.styleId, bpm: mpc.bpm,
+            root: mpc.root, scaleName: mpc.scaleName, instrument: mpc.instrument,
+            seed: mpc.seed, created: mpc.created, bars: mpc.bars, preset: true, engine: mpc.engine || '',
+            medFreq: mcfg.medFreq, tag: '冥想', rootShift: mcfg.rootShift
+          });
+        }
+        saveLibrary();
+        localStorage.setItem(mflag, '1');
       }
-      if (added) saveLibrary();
-      try { localStorage.setItem(mflag, '1'); } catch (e) {}
     } catch (e) {}
   }
   function pieceFromSaved(item) {
@@ -7080,16 +7082,9 @@
     var on = false, score = 0, combo = 0, best = 0;
     var LANES = [60, 62, 64, 65, 67, 69, 71];
     var NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    var FALL_MS = 1500;
-    var FAMILY = {
-      guzheng: 'strings', pipa: 'strings', harp: 'strings', violin: 'strings',
-      bell: 'bells', bianzhong: 'bells', handpan: 'handpan',
-      flute: 'winds', clarinet: 'winds', piccolo: 'winds',
-      piano: 'keys', ep: 'keys', musicbox: 'keys', marimba: 'keys', synth: 'keys'
-    };
-    var el = {}, laneEls = [], keyEls2 = [], falling = [];
+    var el = {}, keyEls2 = [], target = null, missT = null;
     try { best = parseInt(localStorage.getItem('cz_game_best') || '0', 10) || 0; } catch (e) {}
-    function nearestLane(midi) {
+    function nearestIdx(midi) {
       var b = 0, bd = 999;
       for (var i = 0; i < LANES.length; i++) { var d = Math.abs(midi - LANES[i]); if (d < bd) { bd = d; b = i; } }
       return b;
@@ -7105,15 +7100,14 @@
       clearTimeout(el.jt);
       el.jt = setTimeout(function () { el.judge.classList.remove('show'); }, 420);
     }
+    function clearCue() {
+      if (target && target.el) target.el.classList.remove('cue');
+      target = null;
+      clearTimeout(missT);
+    }
     function build() {
-      el.lanes.innerHTML = '';
-      laneEls = [];
-      LANES.forEach(function () {
-        var d = document.createElement('div'); d.className = 'gs-lane';
-        var line = document.createElement('div'); line.className = 'gs-line'; d.appendChild(line);
-        el.lanes.appendChild(d); laneEls.push(d);
-      });
       el.piano.innerHTML = '';
+      if (el.inst) el.inst.textContent = '';
       keyEls2 = [];
       var KFAM = {
         piano: 'piano', ep: 'piano', synth: 'piano', musicbox: 'musicbox', marimba: 'marimba',
@@ -7121,11 +7115,11 @@
         bell: 'bells', bianzhong: 'bells', flute: 'winds', clarinet: 'winds', piccolo: 'winds', handpan: 'handpan'
       };
       var fam = KFAM[state.instrument] || 'piano';
-      function bind(el, n) {
-        el.addEventListener('pointerdown', function (e) {
+      function bind(node, n) {
+        node.addEventListener('pointerdown', function (e) {
           e.preventDefault(); e.stopPropagation();
-          el.classList.add('on');
-          setTimeout(function () { el.classList.remove('on'); }, 160);
+          node.classList.add('on');
+          setTimeout(function () { node.classList.remove('on'); }, 160);
           pressKey(n);
         });
       }
@@ -7133,14 +7127,10 @@
         el.piano.className = 'gs-piano';
         var WHITE = [60, 62, 64, 65, 67, 69, 71];
         var BLACK = [{ n: 61, after: 0 }, { n: 63, after: 1 }, { n: 66, after: 3 }, { n: 68, after: 4 }, { n: 70, after: 5 }];
-        WHITE.forEach(function (n, i) {
-          var b = document.createElement('div'); b.className = 'gp-white'; b.textContent = NAMES[i];
-          bind(b, n); el.piano.appendChild(b); keyEls2.push(b);
-        });
+        WHITE.forEach(function (n, i) { var b = document.createElement('div'); b.className = 'gp-white'; b.textContent = NAMES[i]; bind(b, n); el.piano.appendChild(b); keyEls2.push(b); });
         BLACK.forEach(function (bk) {
           var b = document.createElement('div'); b.className = 'gp-black';
-          b.style.left = 'calc(' + ((bk.after + 1) / 7 * 100) + '% - 4.4%)';
-          b.style.width = '8.8%';
+          b.style.left = 'calc(' + ((bk.after + 1) / 7 * 100) + '% - 4.4%)'; b.style.width = '8.8%';
           bind(b, bk.n); el.piano.appendChild(b); keyEls2.push(b);
         });
       } else {
@@ -7157,7 +7147,7 @@
           if (fam === 'strings') {
             var lb = document.createElement('span');
             lb.textContent = NAMES[i];
-            lb.style.cssText = 'position:absolute;bottom:4px;font-size:10px;color:#9fb3c0';
+            lb.style.cssText = 'position:absolute;bottom:4px;font-size:11px;color:#d8c39a';
             col.appendChild(lb);
           }
           bind(col, n);
@@ -7165,59 +7155,43 @@
         });
       }
     }
-
-    function spawn(midi) {
-      var active = 0;
-      for (var i = 0; i < falling.length; i++) if (!falling[i].done) active++;
-      if (active > 14) return;
-      var lane = nearestLane(midi);
-      var note = document.createElement('div'); note.className = 'gs-note';
-      note.style.animationDuration = (FALL_MS / 1000) + 's';
-      laneEls[lane].appendChild(note);
-      var item = { lane: lane, el: note, hitAt: performance.now() + FALL_MS, done: false };
-      falling.push(item);
-      note.addEventListener('animationend', function () {
-        if (item.done) return;
-        item.done = true;
-        if (note.parentNode) note.remove();
-        combo = 0; update();
-        judge('MISS', '#ff7b7b');
-      });
-    }
-    function hitCheck(midi) {
-      var lane = nearestLane(midi);
-      var now = performance.now(), best = null, bd = 1e9;
-      for (var i = 0; i < falling.length; i++) {
-        var f = falling[i];
-        if (f.done || f.lane !== lane) continue;
-        var d = Math.abs(now - f.hitAt);
-        if (d < bd) { bd = d; best = f; }
-      }
-      if (best && bd <= 280) {
-        best.done = true;
-        if (best.el.parentNode) best.el.remove();
-        combo++;
-        if (bd <= 110) { score += 2; judge('PERFECT', '#7ef0c8'); }
-        else { score += 1; judge('GOOD', '#ffd166'); }
-        if (score > best) { best = score; try { localStorage.setItem('cz_game_best', score); } catch (e) {} }
-        update();
-        return true;
-      }
-      combo = 0;
-      update();
-      judge('MISS', '#ff7b7b');
-      return false;
-    }
-    function note(midi) { if (on) spawn(midi); }
     function schedule(midi, whenSec) {
       if (!on) return;
       var c = null;
       try { c = Audio.ctx(); } catch (e) {}
-      if (!c) { spawn(midi); return; }
-      var lead = (whenSec - c.currentTime) * 1000 - FALL_MS;
-      setTimeout(function () { if (on) spawn(midi); }, Math.max(0, lead));
+      var delay = c ? Math.max(0, (whenSec - c.currentTime) * 1000) : 0;
+      var idx = nearestIdx(midi);
+      setTimeout(function () {
+        if (!on) return;
+        clearCue();
+        var node = keyEls2[idx];
+        target = { idx: idx, at: performance.now() + 300, el: node };
+        if (node) node.classList.add('cue');
+        missT = setTimeout(function () {
+          if (!on || !target) return;
+          if (performance.now() >= target.at + 320) {
+            combo = 0; update(); judge('MISS', '#ff7b7b');
+            clearCue();
+          }
+        }, 300 + 330);
+      }, Math.max(0, delay - 300));
     }
-    function keyPress(midi) { if (on) hitCheck(midi); }
+    function keyPress(midi) {
+      if (!on) return;
+      var idx = nearestIdx(midi);
+      var now = performance.now();
+      if (target && target.idx === idx && Math.abs(now - target.at) <= 320) {
+        var d = Math.abs(now - target.at);
+        clearCue();
+        combo++;
+        if (d <= 120) { score += 2; judge('PERFECT', '#7ef0c8'); }
+        else { score += 1; judge('GOOD', '#ffd166'); }
+        if (score > best) { best = score; try { localStorage.setItem('cz_game_best', score); } catch (e) {} }
+        update();
+        return;
+      }
+      combo = 0; update(); judge('MISS', '#ff7b7b');
+    }
     function beat() {}
     function toggle() {
       on = !on;
@@ -7225,22 +7199,22 @@
       document.body.classList.toggle('game-active', on);
       document.getElementById('gameBtn').classList.toggle('on', on);
       if (on) {
-        score = 0; combo = 0; falling = [];
+        score = 0; combo = 0; clearCue();
         build();
         update();
-      }
+      } else { clearCue(); }
     }
     function init() {
       el.stage = document.getElementById('gameStage');
       el.score = document.getElementById('gsScore');
       el.combo = document.getElementById('gsCombo');
       el.judge = document.getElementById('gsJudge');
-      el.lanes = document.getElementById('gsLanes');
       el.piano = document.getElementById('gsPiano');
+      el.inst = document.getElementById('gsInstrument');
       document.getElementById('gameBtn').addEventListener('click', toggle);
       document.getElementById('gsClose').addEventListener('click', function () { if (on) toggle(); });
     }
-    return { init: init, beat: beat, note: note, schedule: schedule, keyPress: keyPress, on: function () { return on; } };
+    return { init: init, beat: beat, schedule: schedule, note: schedule, keyPress: keyPress, on: function () { return on; } };
   })();
   Game.init();
 
