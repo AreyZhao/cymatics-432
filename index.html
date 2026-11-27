@@ -342,6 +342,14 @@
   body.ui-hidden #top-bar,body.ui-hidden #bottom-bar,body.ui-hidden #hint{opacity:.05}
   body.ui-hidden #hint{opacity:0}
   @media (prefers-reduced-motion:reduce){.ui-layer,#piano-drawer{transition:none!important}}
+  /* ---- 音游 ---- */
+  #gameUI{position:fixed;inset:0;z-index:45;pointer-events:none;display:flex;align-items:center;justify-content:center;flex-direction:column}
+  #gameUI[hidden]{display:none}
+  .game-score{position:absolute;top:56px;left:50%;transform:translateX(-50%);font-size:30px;font-weight:700;color:#fff;text-shadow:0 0 12px rgba(0,229,255,.8)}
+  .game-combo{position:absolute;top:96px;left:50%;transform:translateX(-50%);font-size:15px;color:#ffd166}
+  .game-ring{width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.55);opacity:0;transition:transform .16s ease, opacity .2s ease}
+  .game-ring.on{opacity:1;transform:scale(1.35)}
+  .game-hint{position:absolute;bottom:150px;left:50%;transform:translateX(-50%);font-size:14px;color:rgba(255,255,255,.7)}
   /* ---- 冥想模式 ---- */
   body.med-active #nowTitle{opacity:0;pointer-events:none}
   #medUI{position:fixed;z-index:46;width:auto;max-width:90vw;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 12px;box-sizing:border-box;background:rgba(8,12,16,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.07);border-radius:14px;touch-action:none}
@@ -389,6 +397,7 @@
     <button id="musicBtn" class="btn music">🎵 放歌</button>
     <button id="autoBtn" class="btn primary">✨ 天籁</button>
     <button id="medBtn" class="btn med">🧘 冥想</button>
+    <button id="gameBtn" class="btn game">🎮 音游</button>
     <button id="fullBtn" class="btn icon sm" aria-label="全屏">⛶</button>
     <button id="helpBtn" class="btn icon sm" aria-label="说明">?</button>
     <div class="meter" id="meter" aria-hidden="true"><i id="meterFill"></i></div>
@@ -426,6 +435,13 @@
 </footer>
 
 <div id="piano-drawer" aria-hidden="true"><div id="pianoInner" class="piano-inner"></div></div>
+
+<div id="gameUI" hidden>
+  <div class="game-score"><span id="gameScore">0</span></div>
+  <div class="game-combo" id="gameCombo"></div>
+  <div class="game-ring" id="gameRing"></div>
+  <div class="game-hint" id="gameHint">跟着节拍点屏幕</div>
+</div>
 
 <div id="medUI" hidden>
   <div class="med-top">
@@ -5829,6 +5845,7 @@
   }
 
   function pressKey(midi) {
+    if (typeof Game !== 'undefined') Game.keyPress(midi);
     setFreq(midiToFreq(midi));
     Audio.note(midi, { vel: 0.95, when: 0 });
     state.beatEnv = Math.min(1.6, state.beatEnv + 0.5);
@@ -6657,6 +6674,7 @@
     while (visQueue.length && visQueue[0].t <= nowT + 0.02) {
       var ev = visQueue.shift();
       if (ev.kind === 'beat') {
+        if (typeof Game !== 'undefined') Game.beat(performance.now());
         state.beatEnv = Math.min(1.9, state.beatEnv + ev.amt * 1.6);
         state.wave = 0;
         state.waveAmp = Math.min(1.5, state.waveAmp + 1.15 * ev.amt + 0.35);
@@ -6682,6 +6700,7 @@
         state.wave = 0;
         state.waveAmp = Math.min(1.5, state.waveAmp + 0.22);
         flashKey(keyEls[ev.midi], 420);
+        if (typeof Game !== 'undefined') Game.note(ev.midi, performance.now());
       }
     }
 
@@ -7010,6 +7029,71 @@
       fr.readAsDataURL(f);
     });
   })();
+
+  /* ================= 音游（律动冥想） ================= */
+  var Game = (function () {
+    var on = false, score = 0, combo = 0, best = 0, lastBeat = 0, targetMidi = null, targetTime = 0;
+    var el = {};
+    try { best = parseInt(localStorage.getItem('cz_game_best') || '0', 10) || 0; } catch (e) {}
+    function update() {
+      el.score.textContent = score;
+      el.combo.textContent = combo >= 2 ? combo + ' 连击' : '';
+    }
+    function pulse() {
+      el.ring.classList.remove('on');
+      void el.ring.offsetWidth;
+      el.ring.classList.add('on');
+      setTimeout(function () { el.ring.classList.remove('on'); }, 220);
+    }
+    function beat(ms) { lastBeat = ms; if (on) pulse(); }
+    function note(midi, ms) {
+      if (!on) return;
+      targetMidi = midi; targetTime = ms;
+      if (keyEls && keyEls[midi]) flashKey(keyEls[midi], 560);
+    }
+    function keyPress(midi) {
+      if (!on) return;
+      if (targetMidi == null) { el.hint.textContent = '等高亮的琴键出现再弹'; return; }
+      var d = Math.abs(performance.now() - targetTime);
+      if (midi === targetMidi && d <= 480) {
+        score++; combo++;
+        if (score > best) { best = score; try { localStorage.setItem('cz_game_best', best); } catch (e) {} }
+        el.hint.textContent = '✦ 接住了';
+      } else {
+        combo = 0;
+        el.hint.textContent = '错键或时机不对，再试';
+      }
+      update();
+    }
+    function toggle() {
+      on = !on;
+      el.ui.hidden = !on;
+      if (on) {
+        if (!state.seqOn && !state.medOn) { toast('先播放 🎵 放歌 或 ✨ 天籁，再开音游', 2600); on = false; el.ui.hidden = true; return; }
+        score = 0; combo = 0; targetMidi = null;
+        el.hint.textContent = '高亮的琴键出现时，弹出对应音';
+        if (!pianoDrawer.classList.contains('open')) {
+          pianoDrawer.classList.add('open');
+          document.body.classList.add('piano-open');
+          pianoBtn.textContent = '⬇ 收起';
+          pianoBtn.classList.add('primary', 'on');
+          buildPiano(state.keyRange || '13');
+        }
+        update();
+      }
+      document.getElementById('gameBtn').classList.toggle('on', on);
+    }
+    function init() {
+      el.ui = document.getElementById('gameUI');
+      el.score = document.getElementById('gameScore');
+      el.combo = document.getElementById('gameCombo');
+      el.ring = document.getElementById('gameRing');
+      el.hint = document.getElementById('gameHint');
+      document.getElementById('gameBtn').addEventListener('click', toggle);
+    }
+    return { init: init, beat: beat, note: note, keyPress: keyPress, on: function () { return on; } };
+  })();
+  Game.init();
 
   /* ================= 冥想模式 ================= */
   var Med = (function () {
