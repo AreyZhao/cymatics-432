@@ -6500,13 +6500,15 @@
     var colSat = 0.95, colLight = 0.58;
     if (state.season === 'cycle') {
       var ORDER = ['spring', 'summer', 'autumn', 'winter'];
-      var per = 9.0;
+      /* 平静呼吸节律：一次呼吸约 6.5 秒，吸气 40% 稍快、呼气 60% 更缓 */
+      var per = 6.5;
       var tt = (performance.now() / 1000) % (per * 4);
       var i0 = Math.floor(tt / per) % 4;
       var ph = (tt % per) / per;
       var A = SEASONS[ORDER[i0]], B = SEASONS[ORDER[(i0 + 1) % 4]];
-      var mx = Math.min(1, Math.max(0, (ph - 0.78) / 0.22));
-      mx = mx * mx * (3 - 2 * mx);
+      var bp = ph < 0.4 ? (ph / 0.4) : ((ph - 0.4) / 0.6);
+      var eased = bp * bp * (3 - 2 * bp);
+      var mx = ph < 0.4 ? eased * 0.55 : 0.55 + eased * 0.45;
       var se = Math.min(1, Math.max(0, vEnergy));
       var hA = A.h0 + (A.h1 - A.h0) * (0.28 + 0.72 * se);
       var hB = B.h0 + (B.h1 - B.h0) * (0.28 + 0.72 * se);
