@@ -125,6 +125,7 @@
   }
   .presets{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding:1px}
   .presets::-webkit-scrollbar{display:none}
+  .chip.alpha-chip{border-style:dashed;color:var(--accent);letter-spacing:.04em}
   .chip{
     appearance:none;-webkit-appearance:none;flex:0 0 auto;
     border:1px solid var(--stroke);background:rgba(255,255,255,.04);color:var(--muted);
@@ -242,6 +243,8 @@
   #medLib.on{display:flex}
   #medLib .lib-panel{width:min(500px,100%);max-height:86vh;display:flex;flex-direction:column;padding:14px;border-radius:18px;border:1px solid var(--stroke);background:rgba(9,12,17,.98);box-shadow:0 24px 70px rgba(0,0,0,.85)}
   .medlib-freq{font-size:11px;color:var(--accent);letter-spacing:.06em}
+  .medlib-head{font-size:11px;color:var(--accent);letter-spacing:.10em;margin:10px 0 4px;opacity:.85}
+  .medlib-head:first-child{margin-top:0}
   #lib .lib-panel{
     width:min(540px,100%);max-height:88vh;display:flex;flex-direction:column;
     padding:14px;border-radius:18px;border:1px solid var(--stroke);
@@ -464,6 +467,7 @@
     </div>
     <div class="row">
       <div class="presets">
+        <button class="chip alpha-chip" id="alphaBtn">α 波</button>
         <button class="chip" data-freq="174">174</button>
         <button class="chip" data-freq="285">285</button>
         <button class="chip" data-freq="396">396</button>
@@ -4950,6 +4954,7 @@
     var pc;
     if (item.engine === 'original') pc = composeOriginalPiece(item); else pc = composePiece({ seed: item.seed, styleId: item.styleId, bpm: item.bpm, root: item.root, instrument: item.instrument, name: item.name, created: item.created });
     if (item.medFreq) pc.medFreq = item.medFreq;
+    if (item.medClass) pc.medClass = item.medClass;
     if (item.tag) pc.tag = item.tag;
     return pc;
     return composePiece({
@@ -5043,7 +5048,7 @@
       return;
     }
     var items = library.filter(function (it) {
-      if (it.medFreq) return false;
+      if (it.medFreq || it.medClass) return false;
       if (libFilter === 'preset') return !!it.preset;
       if (libFilter !== 'all' && it.styleId !== libFilter) return false;
       if (!q) return true;
@@ -5137,14 +5142,20 @@
   function renderMedLib() {
     var list = $('medLibList');
     if (!list) return;
-    var items = library.filter(function (it) { return !!it.medFreq; });
-    items.sort(function (a, b) { return (a.medFreq || 0) - (b.medFreq || 0); });
     list.innerHTML = '';
-    if (!items.length) {
-      list.innerHTML = '<div class="lib-empty">还没有冥想音乐：点底部频率数字即可生成</div>';
+    var alpha = library.filter(function (it) { return it.medClass === 'alpha'; });
+    var freqItems = library.filter(function (it) { return !!it.medFreq; });
+    if (!alpha.length && !freqItems.length) {
+      list.innerHTML = '<div class="lib-empty">还没有冥想音乐：点底部 α 波或频率数字即可生成</div>';
       return;
     }
-    items.forEach(function (it) {
+    function addHead(txt) {
+      var h = document.createElement('div');
+      h.className = 'medlib-head';
+      h.textContent = txt;
+      list.appendChild(h);
+    }
+    function addRow(it) {
       var row = document.createElement('div');
       row.className = 'lib-item';
       var t = document.createElement('div');
@@ -5172,6 +5183,19 @@
       row.appendChild(play);
       row.appendChild(del);
       list.appendChild(row);
+    }
+    if (alpha.length) {
+      addHead('α 波 · 8–12Hz 放松');
+      alpha.forEach(addRow);
+    }
+    var groups = {};
+    freqItems.forEach(function (it) {
+      var k = it.medFreq;
+      (groups[k] = groups[k] || []).push(it);
+    });
+    Object.keys(groups).map(Number).sort(function (a, b) { return a - b; }).forEach(function (f) {
+      addHead(f + ' Hz');
+      groups[f].forEach(addRow);
     });
   }
   function openMedLib() {
@@ -5969,6 +5993,35 @@
       else previewFreqSound(f);
     });
   });
+
+  function createAlphaMusic() {
+    var name = (typeof pickName === 'function' ? pickName() : '潜意识') + ' · α波';
+    var pc = composeOriginalPiece({
+      seed: ((Date.now() ^ 0x5f3a) >>> 0),
+      styleId: 'aurora',
+      bpm: 56,
+      name: name,
+      instrument: 'handpan',
+      rootShift: -5
+    });
+    pc.medClass = 'alpha';
+    pc.tag = 'α波';
+    try {
+      library.push({
+        id: pc.id, name: pc.name, styleId: pc.styleId, bpm: pc.bpm,
+        root: pc.root, scaleName: pc.scaleName, instrument: pc.instrument,
+        seed: pc.seed, created: pc.created, bars: pc.bars, preset: false, engine: pc.engine || '',
+        medClass: 'alpha', tag: 'α波'
+      });
+      saveLibrary();
+    } catch (e) {}
+    playPiece(pc);
+    toast('🌊 已生成 α 波音乐：<b>' + esc(pc.name) + '</b>', 2600);
+  }
+  (function () {
+    var ab = document.getElementById('alphaBtn');
+    if (ab) ab.addEventListener('click', createAlphaMusic);
+  })();
 
   /* ============================================================
    * 钢琴键盘
