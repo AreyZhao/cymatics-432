@@ -342,6 +342,25 @@
   body.ui-hidden #top-bar,body.ui-hidden #bottom-bar,body.ui-hidden #hint{opacity:.05}
   body.ui-hidden #hint{opacity:0}
   @media (prefers-reduced-motion:reduce){.ui-layer,#piano-drawer{transition:none!important}}
+  /* ---- 冥想模式 ---- */
+  body.med-active .ui-layer, body.med-active #nowTitle{opacity:0;pointer-events:none}
+  #medUI{position:fixed;inset:0;z-index:50;background:#000;color:#cfd8e3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:18px 20px;box-sizing:border-box}
+  #medUI[hidden]{display:none}
+  .med-top{width:100%;display:flex;align-items:center;gap:12px}
+  .med-time{font-size:15px;letter-spacing:2px;opacity:.75;font-variant-numeric:tabular-nums}
+  .med-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+  .med-orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 50% 42%, var(--accent), transparent 70%);opacity:.9;filter:blur(1px);transition:transform .5s cubic-bezier(.4,0,.2,1)}
+  .med-text{font-size:22px;letter-spacing:4px;opacity:.85}
+  .med-ctrl{display:flex;gap:14px;width:100%;justify-content:center}
+  .med-big{appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);background:rgba(255,255,255,.06);color:var(--text);font-size:16px;font-family:inherit;padding:12px 22px;border-radius:14px;cursor:pointer}
+  .med-big.sm{padding:12px 16px}
+  #medPanel{position:fixed;left:0;right:0;bottom:0;max-height:72vh;overflow:auto;background:rgba(10,14,20,.97);border-top:1px solid var(--stroke);padding:16px 18px 26px;border-radius:18px 18px 0 0}
+  #medPanel[hidden]{display:none}
+  .med-h{font-size:13px;opacity:.6;margin:12px 0 8px}
+  .med-h:first-child{margin-top:0}
+  .med-opt{display:flex;flex-wrap:wrap;gap:8px}
+  .med-opt button{appearance:none;-webkit-appearance:none;border:1px solid var(--stroke);background:rgba(255,255,255,.05);color:var(--text);font-size:13px;font-family:inherit;padding:8px 12px;border-radius:9px;cursor:pointer}
+  .med-opt button.on{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600}
 </style>
 </head>
 <body>
@@ -366,6 +385,7 @@
     <button id="sysBtn" class="btn sys">🎧 系统声</button>
     <button id="musicBtn" class="btn music">🎵 放歌</button>
     <button id="autoBtn" class="btn primary">✨ 天籁</button>
+    <button id="medBtn" class="btn med">🧘 冥想</button>
     <button id="fullBtn" class="btn icon sm" aria-label="全屏">⛶</button>
     <button id="helpBtn" class="btn icon sm" aria-label="说明">?</button>
     <div class="meter" id="meter" aria-hidden="true"><i id="meterFill"></i></div>
@@ -402,6 +422,22 @@
 </footer>
 
 <div id="piano-drawer" aria-hidden="true"><div id="pianoInner" class="piano-inner"></div></div>
+
+<div id="medUI" hidden>
+  <div class="med-top">
+    <button id="medClose" class="btn icon sm">✕</button>
+    <span id="medTime" class="med-time">05:00</span>
+  </div>
+  <div class="med-stage">
+    <div id="medOrb" class="med-orb"></div>
+    <div id="medText" class="med-text">吸气…</div>
+  </div>
+  <div class="med-ctrl">
+    <button id="medPlay" class="med-big">▶ 开始</button>
+    <button id="medSet" class="med-big sm">⚙ 设置</button>
+  </div>
+  <div id="medPanel" hidden></div>
+</div>
 
 <div id="lib">
   <div class="lib-panel">
@@ -870,6 +906,7 @@
     humCandidate: 0,
     humCandidateSince: 0,
     recSecs: 15,
+    medOn: false,
     pitchHz: 0,
     pitchConf: 0,
     rms: 0,
@@ -6542,6 +6579,7 @@
     var visMood = state.seqOn ? (state.mood || '优美') : '优美';
     var moodGain = visMood === '空灵' ? 0.92 : (visMood === '震撼' ? 1.22 : (visMood === '律动' ? 1.04 : 1.0));
     var vEnergyRaw = Math.min(1.5, state.energy * moodGain) * (1 + 0.07 * Math.sin(t * 0.85)) * (1 + 0.2 * state.harmonicEnv);
+    if (state.medOn) vEnergyRaw *= 0.4;
     vEnergyRaw = Math.max(0, vEnergyRaw);
     state.smoothEnergy += (vEnergyRaw - state.smoothEnergy) * Math.min(1, dt * 3.0);
     var vEnergy = state.smoothEnergy;
@@ -6815,6 +6853,237 @@
     if (mk) selectKeys(mk[1]);
     if (/[?&]panel=1/.test(q)) sheet.classList.add('on');
   })();
+
+  /* ================= 冥想模式 ================= */
+  var Med = (function () {
+    var PATS = {
+      '46':   { name: '4 吸 · 6 呼', in: 4, hold: 0, out: 6, hold2: 0 },
+      '478':  { name: '4-7-8',       in: 4, hold: 7, out: 8, hold2: 0 },
+      '55':   { name: '5 吸 · 5 呼', in: 5, hold: 0, out: 5, hold2: 0 },
+      'box':  { name: '箱式 4-4-4-4', in: 4, hold: 4, out: 4, hold2: 4 }
+    };
+    var cfg = { pattern: '46', freq: 432, mins: 5, sounds: { rain: true, sea: false, wind: false, fire: false }, guided: true, voice: false, endFade: false };
+    var on = false, started = false, paused = false, remaining = 300, phase = 'in', phT = 0, lastNow = 0, lastTickTime = 0;
+    var nodes = null, rafId = null;
+    var el = {}, orb, txt, timeEl;
+
+    function $(id) { return document.getElementById(id); }
+    function mmss(x) { x = Math.max(0, Math.round(x)); return ('0' + Math.floor(x / 60)).slice(-2) + ':' + ('0' + (x % 60)).slice(-2); }
+    function noiseBuf(c) {
+      var b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+      var d = b.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      return b;
+    }
+    function stopAudio() {
+      if (nodes) {
+        try { nodes.gain.gain.cancelScheduledValues(Audio.ctx().currentTime); } catch (e) {}
+        var kill = function (o) { if (o && o.stop) { try { o.stop(); } catch (e) {} } };
+        ['drone', 'rain', 'sea', 'wind', 'fire'].forEach(function (k) {
+          var n = nodes[k];
+          if (!n) return;
+          if (k === 'drone') { kill(n[0]); kill(n[1]); }
+          else { kill(n.src); kill(n.lfo); }
+        });
+        if (nodes.chimeTimer) clearInterval(nodes.chimeTimer);
+        if (nodes.fireCrackle) clearInterval(nodes.fireCrackle);
+        try { nodes.gain.disconnect(); } catch (e) {}
+        nodes = null;
+      }
+    }
+    function startAudio() {
+      stopAudio();
+      Audio.ensure();
+      var c = Audio.ctx(), now = c.currentTime;
+      var nb = noiseBuf(c);
+      nodes = { gain: c.createGain() };
+      nodes.gain.gain.setValueAtTime(0.0001, now);
+      nodes.gain.gain.linearRampToValueAtTime(0.5, now + 2);
+      nodes.gain.connect(Audio.master());
+
+      var f = cfg.freq;
+      var dr = c.createOscillator(); dr.type = 'sine'; dr.frequency.value = f;
+      var dr2 = c.createOscillator(); dr2.type = 'sine'; dr2.frequency.value = f * 1.5;
+      var dg = c.createGain(); dg.gain.value = 0.11;
+      var dg2 = c.createGain(); dg2.gain.value = 0.045;
+      var dlp = c.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 1200;
+      dr.connect(dg); dr2.connect(dg2); dg.connect(dlp); dg2.connect(dlp); dlp.connect(nodes.gain);
+      dr.start(); dr2.start(); nodes.drone = [dr, dr2];
+
+      if (cfg.sounds.rain) {
+        var r = c.createBufferSource(); r.buffer = nb; r.loop = true;
+        var rl = c.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 3000;
+        var rg = c.createGain(); rg.gain.value = 0.5;
+        r.connect(rl); rl.connect(rg); rg.connect(nodes.gain); r.start(); nodes.rain = { src: r, g: rg };
+      }
+      if (cfg.sounds.sea) {
+        var se = c.createBufferSource(); se.buffer = nb; se.loop = true;
+        var sl = c.createBiquadFilter(); sl.type = 'lowpass'; sl.frequency.value = 650;
+        var sg = c.createGain(); sg.gain.value = 0.6;
+        var slf = c.createOscillator(); slf.frequency.value = 0.08;
+        var slg = c.createGain(); slg.gain.value = 0.22;
+        slf.connect(slg); slg.connect(sg.gain);
+        se.connect(sl); sl.connect(sg); sg.connect(nodes.gain); se.start(); slf.start(); nodes.sea = { src: se, g: sg, lfo: slf };
+      }
+      if (cfg.sounds.wind) {
+        var w = c.createBufferSource(); w.buffer = nb; w.loop = true;
+        var wb = c.createBiquadFilter(); wb.type = 'bandpass'; wb.frequency.value = 650; wb.Q.value = 0.7;
+        var wg = c.createGain(); wg.gain.value = 0.4;
+        var wlf = c.createOscillator(); wlf.frequency.value = 0.12;
+        var wlg = c.createGain(); wlg.gain.value = 380;
+        wlf.connect(wlg); wlg.connect(wb.frequency);
+        w.connect(wb); wb.connect(wg); wg.connect(nodes.gain); w.start(); wlf.start(); nodes.wind = { src: w, g: wg, lfo: wlf };
+        nodes.chimeTimer = setInterval(function () {
+          if (!on || !cfg.sounds.wind) return;
+          var ns = [432, 540, 648, 720, 864];
+          var f2 = ns[Math.floor(Math.random() * ns.length)] * (Math.random() < 0.5 ? 1 : 1.5);
+          Audio.note(Math.round(69 + 12 * Math.log2(f2 / 432)), { vel: 0.1, wet: 0.8, inst: 'bell' });
+        }, 2800);
+      }
+      if (cfg.sounds.fire) {
+        var fi = c.createBufferSource(); fi.buffer = nb; fi.loop = true;
+        var fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 560;
+        var fg = c.createGain(); fg.gain.value = 0.5;
+        fi.connect(fl); fl.connect(fg); fg.connect(nodes.gain); fi.start(); nodes.fire = { src: fi, g: fg };
+        nodes.fireCrackle = setInterval(function () {
+          if (!on || !cfg.sounds.fire) return;
+          var sn = c.createBufferSource(); sn.buffer = nb;
+          var fb = c.createBiquadFilter(); fb.type = 'bandpass'; fb.frequency.value = 1800 + Math.random() * 2600; fb.Q.value = 1;
+          var gg = c.createGain();
+          gg.gain.setValueAtTime(0.0001, c.currentTime);
+          gg.gain.linearRampToValueAtTime(0.08 * Math.random(), c.currentTime + 0.006);
+          gg.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.09);
+          sn.connect(fb); fb.connect(gg); gg.connect(nodes.gain); sn.start(); sn.stop(c.currentTime + 0.1);
+        }, 300);
+      }
+    }
+    function setPhase(p) {
+      phase = p;
+      var t = { 'in': '吸气…', 'hold': '屏息…', 'out': '呼气…', 'hold2': '屏息…' }[p] || '';
+      if (txt) txt.textContent = cfg.guided ? t : '';
+      if (cfg.voice && window.speechSynthesis) {
+        try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(t.replace('…', ''))); } catch (e) {}
+      }
+    }
+    function frame(now) {
+      if (!on) return;
+      rafId = requestAnimationFrame(frame);
+      var pat = PATS[cfg.pattern] || PATS['46'];
+      var cyc = pat.in + pat.hold + pat.out + pat.hold2;
+      if (lastNow) phT += (now - lastNow) / 1000;
+      lastNow = now;
+      var seg = phase === 'in' ? pat.in : phase === 'hold' ? pat.hold : phase === 'out' ? pat.out : pat.hold2;
+      if (phT >= seg) { phT = 0; setPhase(phase === 'in' ? (pat.hold ? 'hold' : 'out') : phase === 'hold' ? 'out' : phase === 'out' ? (pat.hold2 ? 'hold2' : 'in') : 'in'); seg = phase === 'in' ? pat.in : phase === 'hold' ? pat.hold : phase === 'out' ? pat.out : pat.hold2; }
+      var prog = seg > 0 ? phT / seg : 1;
+      var scale = 1;
+      if (phase === 'in') scale = 0.62 + 0.38 * prog;
+      else if (phase === 'out') scale = 1 - 0.38 * prog;
+      else scale = (phase === 'hold' ? 1 : 0.62);
+      if (orb) orb.style.transform = 'scale(' + scale + ')';
+    }
+
+    function tick() {
+      if (!started || paused) return;
+      var now = performance.now();
+      var d = (now - lastTickTime) / 1000;
+      lastTickTime = now;
+      remaining -= d;
+      if (timeEl) timeEl.textContent = mmss(remaining);
+      if (remaining <= 0) finish();
+    }
+    function finish() {
+      started = false;
+      Audio.note(Math.round(69 + 12 * Math.log2(528 / 432)), { vel: 0.6, wet: 0.7, inst: 'bell' });
+      if (cfg.endFade && nodes) {
+        nodes.gain.gain.cancelScheduledValues(Audio.ctx().currentTime);
+        nodes.gain.gain.setTargetAtTime(0.0001, Audio.ctx().currentTime, 1.2);
+        setTimeout(stop, 4000);
+      } else {
+        setTimeout(stop, 1500);
+      }
+      if (txt) txt.textContent = '本次冥想完成';
+      if (orb) orb.style.transform = 'scale(0.62)';
+      timeEl && (timeEl.textContent = '00:00');
+    }
+    function start() {
+      stopAllAudio('med');
+      stopSeq(); stopMusic(); stopMic(); stopHum();
+      started = true; paused = false;
+      remaining = cfg.mins * 60;
+      lastTickTime = performance.now();
+      lastNow = 0; phT = 0; setPhase('in');
+      startAudio();
+      clearInterval(timerId);
+      timerId = setInterval(tick, 500);
+      if (timeEl) timeEl.textContent = mmss(remaining);
+      el.play.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+    }
+    var timerId = null;
+    function stop() {
+      on = false; started = false; paused = false;
+      clearInterval(timerId);
+      if (rafId) cancelAnimationFrame(rafId); rafId = null;
+      stopAudio();
+      state.medOn = false;
+      document.body.classList.remove('med-active');
+      el.ui.hidden = true;
+    }
+    function togglePanel() { el.panel.hidden = !el.panel.hidden; if (!el.panel.hidden) buildPanel(); }
+    function optRow(title, key, opts, cb) {
+      var h = document.createElement('div'); h.className = 'med-h'; h.textContent = title; el.panel.appendChild(h);
+      var row = document.createElement('div'); row.className = 'med-opt';
+      opts.forEach(function (o) {
+        var b = document.createElement('button');
+        b.textContent = o.label;
+        b.className = (key === 'pattern' ? cfg.pattern === o.id : key === 'freq' ? cfg.freq === o.id : key === 'mins' ? cfg.mins === o.id : cfg[key] === o.id) ? 'on' : '';
+        b.addEventListener('click', function () { cb(o.id, b); buildPanel(); });
+        row.appendChild(b);
+      });
+      el.panel.appendChild(row);
+    }
+    function buildPanel() {
+      el.panel.innerHTML = '';
+      optRow('呼吸节奏', 'pattern', Object.keys(PATS).map(function (k) { return { id: k, label: PATS[k].name }; }), function (id) { cfg.pattern = id; });
+      optRow('疗愈频率', 'freq', [174, 285, 396, 417, 432, 528, 639, 741, 852].map(function (f) { return { id: f, label: f }; }), function (id) { cfg.freq = id; });
+      optRow('时长（分钟）', 'mins', [5, 10, 20, 30].map(function (m) { return { id: m, label: m }; }), function (id) { cfg.mins = id; });
+      (function () {
+        var h = document.createElement('div'); h.className = 'med-h'; h.textContent = '自然音'; el.panel.appendChild(h);
+        var row = document.createElement('div'); row.className = 'med-opt';
+        [{ id: 'rain', label: '雨' }, { id: 'sea', label: '海浪' }, { id: 'wind', label: '风铃' }, { id: 'fire', label: '篝火' }].forEach(function (o) {
+          var b = document.createElement('button');
+          b.textContent = o.label;
+          b.className = cfg.sounds[o.id] ? 'on' : '';
+          b.addEventListener('click', function () { cfg.sounds[o.id] = !cfg.sounds[o.id]; buildPanel(); });
+          row.appendChild(b);
+        });
+        el.panel.appendChild(row);
+      })();
+      optRow('文字引导', 'guided', [{ id: true, label: '开' }, { id: false, label: '关' }], function (id) { cfg.guided = id; });
+      optRow('语音引导', 'voice', [{ id: true, label: '开' }, { id: false, label: '关' }], function (id) { cfg.voice = id; });
+      optRow('结束方式', 'endFade', [{ id: false, label: '钟声即止' }, { id: true, label: '钟声 + 渐弱' }], function (id) { cfg.endFade = id; });
+    }
+    function init() {
+      el.ui = $('medUI'); el.play = $('medPlay'); el.set = $('medSet'); el.panel = $('medPanel');
+      orb = $('medOrb'); txt = $('medText'); timeEl = $('medTime');
+      $('medBtn').addEventListener('click', function () {
+        on = true; state.medOn = true;
+        document.body.classList.add('med-active');
+        el.ui.hidden = false;
+        el.panel.hidden = true;
+        timeEl.textContent = mmss(cfg.mins * 60);
+        if (!rafId) rafId = requestAnimationFrame(frame);
+      });
+      $('medClose').addEventListener('click', stop);
+      el.play.addEventListener('click', function () {
+        if (!started) { start(); return; }
+        paused = !paused;
+        el.play.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+      });
+      el.set.addEventListener('click', togglePanel);
+    }
+    return { init: init, get on() { return on; } };
+  })();
+  Med.init();
 
   setFreq(432);
   /* 支持 ?f=345 / ?f=∞ / ?f=0 指定初始频率 */
