@@ -1508,6 +1508,23 @@
     { name: '夜潮', styleId: 'aurora', engine: 'original', seed: 20260501, bpm: 120, root: 0, instrument: 'musicbox' },
     { name: '流沙', styleId: 'night', engine: 'original', seed: 88112233, bpm: 104, root: 0, instrument: 'ep' }
   ];
+  var MEDITATION_PRESETS = [
+    { name: '净化 · 174', styleId: 'aurora', engine: 'original', seed: 700001, bpm: 60, instrument: 'flute', medFreq: 174 },
+    { name: '低吟 · 174', styleId: 'grow',    engine: 'original', seed: 700002, bpm: 62, instrument: 'handpan', medFreq: 174 },
+    { name: '复元 · 285', styleId: 'aurora', engine: 'original', seed: 700003, bpm: 60, instrument: 'harp', medFreq: 285 },
+    { name: '愈合 · 285', styleId: 'night',  engine: 'original', seed: 700004, bpm: 63, instrument: 'ep', medFreq: 285 },
+    { name: '释怀 · 396', styleId: 'night',  engine: 'original', seed: 700005, bpm: 64, instrument: 'piano', medFreq: 396 },
+    { name: '放下 · 396', styleId: 'grow',   engine: 'original', seed: 700006, bpm: 62, instrument: 'clarinet', medFreq: 396 },
+    { name: '变革 · 417', styleId: 'grow',   engine: 'original', seed: 700007, bpm: 63, instrument: 'guzheng', medFreq: 417 },
+    { name: '转身 · 417', styleId: 'aurora', engine: 'original', seed: 700008, bpm: 60, instrument: 'piccolo', medFreq: 417 },
+    { name: '本源 · 432', styleId: 'aurora', engine: 'original', seed: 700009, bpm: 60, instrument: 'violin', medFreq: 432 },
+    { name: '同心 · 432', styleId: 'night',  engine: 'original', seed: 700010, bpm: 62, instrument: 'musicbox', medFreq: 432 },
+    { name: '爱意 · 528', styleId: 'night',  engine: 'original', seed: 700011, bpm: 61, instrument: 'harp', medFreq: 528 },
+    { name: '奇迹 · 528', styleId: 'aurora', engine: 'original', seed: 700012, bpm: 60, instrument: 'bell', medFreq: 528 },
+    { name: '连接 · 639', styleId: 'grow',   engine: 'original', seed: 700013, bpm: 63, instrument: 'pipa', medFreq: 639 },
+    { name: '直觉 · 741', styleId: 'night',  engine: 'original', seed: 700014, bpm: 64, instrument: 'clarinet', medFreq: 741 },
+    { name: '灵性 · 852', styleId: 'aurora', engine: 'original', seed: 700015, bpm: 60, instrument: 'handpan', medFreq: 852 }
+  ];
 
   var STYLES = [
     { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [70, 76], scale: 'penta', drums: 'pulse', wet: 0.62, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'clarinet'], comp: ['marimba', 'bell', 'ep', 'bianzhong', 'guzheng'] } },
@@ -2391,6 +2408,7 @@
     Audio.ensure();
     player.piece = piece;
     state.currentPiece = piece;
+    if (piece.medFreq) setFreq(piece.medFreq);
     state.mood = piece.mood || '优美';
     state.seqOn = true;
     autoBtn.textContent = '⏹ 停演';
@@ -4799,9 +4817,31 @@
       saveLibrary();
       localStorage.setItem(flag, '1');
     } catch (e) {}
+    var mflag = 'cz_medpresets_v1';
+    try {
+      if (!localStorage.getItem(mflag)) {
+        for (var mi = 0; mi < MEDITATION_PRESETS.length; mi++) {
+          var mcfg = MEDITATION_PRESETS[mi];
+          var mpc = mcfg.engine === 'original' ? composeOriginalPiece(mcfg) : composePiece(mcfg);
+          mpc.preset = true;
+          library.push({
+            id: mpc.id, name: mpc.name, styleId: mpc.styleId, bpm: mpc.bpm,
+            root: mpc.root, scaleName: mpc.scaleName, instrument: mpc.instrument,
+            seed: mpc.seed, created: mpc.created, bars: mpc.bars, preset: true, engine: mpc.engine || '',
+            medFreq: mcfg.medFreq, tag: '冥想'
+          });
+        }
+        saveLibrary();
+        localStorage.setItem(mflag, '1');
+      }
+    } catch (e) {}
   }
   function pieceFromSaved(item) {
-    if (item.engine === 'original') return composeOriginalPiece(item);
+    var pc;
+    if (item.engine === 'original') pc = composeOriginalPiece(item); else pc = composePiece({ seed: item.seed, styleId: item.styleId, bpm: item.bpm, root: item.root, instrument: item.instrument, name: item.name, created: item.created });
+    if (item.medFreq) pc.medFreq = item.medFreq;
+    if (item.tag) pc.tag = item.tag;
+    return pc;
     return composePiece({
       seed: item.seed, styleId: item.styleId, bpm: item.bpm,
       root: item.root, instrument: item.instrument, name: item.name, created: item.created
@@ -4818,7 +4858,7 @@
     var box = $('libFilters');
     if (!box) return;
     box.innerHTML = '';
-    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }, { id: 'trash', name: '回收站', icon: '🗑️' }].concat(STYLES);
+    var all = [{ id: 'all', name: '全部', icon: '♪' }, { id: 'preset', name: '精选', icon: '⭐' }, { id: 'med', name: '冥想', icon: '🧘' }, { id: 'trash', name: '回收站', icon: '🗑️' }].concat(STYLES);
     all.forEach(function (st) {
       var b = document.createElement('button');
       b.className = 'lib-btn' + (libFilter === st.id ? ' primary' : '');
@@ -4894,6 +4934,7 @@
     }
     var items = library.filter(function (it) {
       if (libFilter === 'preset') return !!it.preset;
+      if (libFilter === 'med') return !!it.medFreq;
       if (libFilter !== 'all' && it.styleId !== libFilter) return false;
       if (!q) return true;
       return (it.name + ' ' + styleById(it.styleId).name + ' ' + styleById(it.styleId).id).toLowerCase().indexOf(q) >= 0;
@@ -6582,7 +6623,11 @@
     var visMood = state.seqOn ? (state.mood || '优美') : '优美';
     var moodGain = visMood === '空灵' ? 0.92 : (visMood === '震撼' ? 1.22 : (visMood === '律动' ? 1.04 : 1.0));
     var vEnergyRaw = Math.min(1.5, state.energy * moodGain) * (1 + 0.07 * Math.sin(t * 0.85)) * (1 + 0.2 * state.harmonicEnv);
-    if (state.medOn) vEnergyRaw *= 0.4;
+    if (state.medOn) {
+      var medBr = state.medBreath == null ? 0.5 : state.medBreath;
+      state.medBreathS = (state.medBreathS == null) ? medBr : state.medBreathS + (medBr - state.medBreathS) * Math.min(1, dt * 2.2);
+      vEnergyRaw *= (0.35 + 0.75 * state.medBreathS);
+    }
     vEnergyRaw = Math.max(0, vEnergyRaw);
     state.smoothEnergy += (vEnergyRaw - state.smoothEnergy) * Math.min(1, dt * 3.0);
     var vEnergy = state.smoothEnergy;
@@ -6653,7 +6698,7 @@
 
     /* ---- 相机（按气质放慢/加快） ---- */
     var mood = state.seqOn ? (state.mood || '优美') : '优美';
-    var autoSpeed = vs.rot;
+    var autoSpeed = vs.rot * (state.medOn ? (0.55 + 0.45 * (1 - (state.medBreathS || 0.5))) : 1);
     if (performance.now() - lastInteract > 2800) cam.tTheta += dt * autoSpeed;
     var ks = 1 - Math.exp(-dt * 7);
     cam.theta += (cam.tTheta - cam.theta) * ks;
@@ -6705,7 +6750,7 @@
       gl.uniform1f(U.uGain, 0.045 * vs.point);
       gl.drawArrays(gl.POINTS, 0, COUNT);
     }
-    gl.uniform1f(U.uPx, POINT_SIZE * (0.85 + 0.5 * vEnergy) * vs.point);
+    gl.uniform1f(U.uPx, POINT_SIZE * (0.85 + 0.5 * vEnergy) * vs.point * (state.medOn ? (0.9 + 0.25 * (state.medBreathS || 0.5)) : 1));
     gl.uniform1f(U.uGain, 0.92);
     gl.drawArrays(gl.POINTS, 0, COUNT);
 
@@ -6865,17 +6910,22 @@
       '55':   { name: '5 吸 · 5 呼', in: 5, hold: 0, out: 5, hold2: 0 },
       'box':  { name: '箱式 4-4-4-4', in: 4, hold: 4, out: 4, hold2: 4 }
     };
-    var cfg = { pattern: '46', freq: 432, mins: 5, sounds: { rain: false, sea: false, wind: false, fire: false }, guided: true, voice: false, endFade: false };
+    var cfg = { pattern: '46', freq: 432, mins: 5, drone: false, sounds: { rain: false, sea: false, wind: false, fire: false }, guided: true, voice: false, endFade: false };
     var on = false, started = false, paused = false, remaining = 300, phase = 'in', phT = 0, lastNow = 0, lastTickTime = 0;
     var nodes = null, rafId = null;
     var el = {}, orb, txt, timeEl;
 
     function $(id) { return document.getElementById(id); }
     function mmss(x) { x = Math.max(0, Math.round(x)); return ('0' + Math.floor(x / 60)).slice(-2) + ':' + ('0' + (x % 60)).slice(-2); }
-    function noiseBuf(c) {
+    function noiseBuf(c, brown) {
       var b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
       var d = b.getChannelData(0);
-      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      var last = 0;
+      for (var i = 0; i < d.length; i++) {
+        var w = Math.random() * 2 - 1;
+        if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+        else d[i] = w;
+      }
       return b;
     }
     function stopAudio() {
@@ -6886,10 +6936,12 @@
           var n = nodes[k];
           if (!n) return;
           if (k === 'drone') { kill(n[0]); kill(n[1]); }
-          else { kill(n.src); kill(n.lfo); }
+          else { kill(n.src); kill(n.src2); kill(n.lfo); kill(n.lfo2); }
         });
         if (nodes.chimeTimer) clearInterval(nodes.chimeTimer);
         if (nodes.fireCrackle) clearInterval(nodes.fireCrackle);
+        if (nodes.rainTicks) clearInterval(nodes.rainTicks);
+        if (nodes.seaCrash) clearInterval(nodes.seaCrash);
         try { nodes.gain.disconnect(); } catch (e) {}
         nodes = null;
       }
@@ -6904,38 +6956,71 @@
       nodes.gain.gain.linearRampToValueAtTime(0.3, now + 2);
       nodes.gain.connect(Audio.master());
 
-      var f = cfg.freq;
-      var dr = c.createOscillator(); dr.type = 'sine'; dr.frequency.value = f;
-      var dr2 = c.createOscillator(); dr2.type = 'sine'; dr2.frequency.value = f * 1.5;
-      var dg = c.createGain(); dg.gain.value = 0.11;
-      var dg2 = c.createGain(); dg2.gain.value = 0.045;
-      var dlp = c.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 1200;
-      dr.connect(dg); dr2.connect(dg2); dg.connect(dlp); dg2.connect(dlp); dlp.connect(nodes.gain);
-      dr.start(); dr2.start(); nodes.drone = [dr, dr2];
+      if (cfg.drone) {
+        var f = cfg.freq;
+        var dr = c.createOscillator(); dr.type = 'sine'; dr.frequency.value = f;
+        var dr2 = c.createOscillator(); dr2.type = 'sine'; dr2.frequency.value = f * 1.5;
+        var dg = c.createGain(); dg.gain.value = 0.1;
+        var dg2 = c.createGain(); dg2.gain.value = 0.04;
+        var dlp = c.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 1000;
+        dr.connect(dg); dr2.connect(dg2); dg.connect(dlp); dg2.connect(dlp); dlp.connect(nodes.gain);
+        dr.start(); dr2.start(); nodes.drone = [dr, dr2];
+      }
 
       if (cfg.sounds.rain) {
-        var r = c.createBufferSource(); r.buffer = nb; r.loop = true;
-        var rl = c.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 2400;
-        var rg = c.createGain(); rg.gain.value = 0.2;
-        r.connect(rl); rl.connect(rg); rg.connect(nodes.gain); r.start(); nodes.rain = { src: r, g: rg };
+        var rb = c.createBufferSource(); rb.buffer = noiseBuf(c, true); rb.loop = true;
+        var rl = c.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 1500;
+        var rg = c.createGain(); rg.gain.value = 0.3;
+        rb.connect(rl); rl.connect(rg); rg.connect(nodes.gain); rb.start();
+        var rh = c.createBufferSource(); rh.buffer = nb; rh.loop = true;
+        var rhp = c.createBiquadFilter(); rhp.type = 'highpass'; rhp.frequency.value = 4000;
+        var rhg = c.createGain(); rhg.gain.value = 0.06;
+        rh.connect(rhp); rhp.connect(rhg); rhg.connect(nodes.gain); rh.start();
+        nodes.rain = { src: rb, g: rg, src2: rh };
+        nodes.rainTicks = setInterval(function () {
+          if (!on || !cfg.sounds.rain) return;
+          if (Math.random() < 0.55) return;
+          var sn = c.createBufferSource(); sn.buffer = nb;
+          var sb = c.createBiquadFilter(); sb.type = 'bandpass'; sb.frequency.value = 3000 + Math.random() * 4000; sb.Q.value = 1.2;
+          var gg = c.createGain();
+          gg.gain.setValueAtTime(0.0001, c.currentTime);
+          gg.gain.linearRampToValueAtTime(0.05 * Math.random() + 0.015, c.currentTime + 0.004);
+          gg.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.05);
+          sn.connect(sb); sb.connect(gg); gg.connect(nodes.gain); sn.start(); sn.stop(c.currentTime + 0.06);
+        }, 90);
       }
       if (cfg.sounds.sea) {
-        var se = c.createBufferSource(); se.buffer = nb; se.loop = true;
-        var sl = c.createBiquadFilter(); sl.type = 'lowpass'; sl.frequency.value = 650;
-        var sg = c.createGain(); sg.gain.value = 0.28;
-        var slf = c.createOscillator(); slf.frequency.value = 0.08;
-        var slg = c.createGain(); slg.gain.value = 0.22;
+        var se = c.createBufferSource(); se.buffer = noiseBuf(c, true); se.loop = true;
+        var sl = c.createBiquadFilter(); sl.type = 'lowpass'; sl.frequency.value = 900;
+        var sg = c.createGain(); sg.gain.value = 0.32;
+        var slf = c.createOscillator(); slf.frequency.value = 0.07;
+        var slg = c.createGain(); slg.gain.value = 0.13;
         slf.connect(slg); slg.connect(sg.gain);
-        se.connect(sl); sl.connect(sg); sg.connect(nodes.gain); se.start(); slf.start(); nodes.sea = { src: se, g: sg, lfo: slf };
+        se.connect(sl); sl.connect(sg); sg.connect(nodes.gain); se.start(); slf.start();
+        nodes.sea = { src: se, g: sg, lfo: slf };
+        nodes.seaCrash = setInterval(function () {
+          if (!on || !cfg.sounds.sea) return;
+          var sn = c.createBufferSource(); sn.buffer = noiseBuf(c, true);
+          var sb = c.createBiquadFilter(); sb.type = 'lowpass'; sb.frequency.value = 2000;
+          var gg = c.createGain();
+          gg.gain.setValueAtTime(0.0001, c.currentTime);
+          gg.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.6);
+          gg.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 2.4);
+          sn.connect(sb); sb.connect(gg); gg.connect(nodes.gain); sn.start(); sn.stop(c.currentTime + 2.5);
+        }, 7000);
       }
       if (cfg.sounds.wind) {
-        var w = c.createBufferSource(); w.buffer = nb; w.loop = true;
-        var wb = c.createBiquadFilter(); wb.type = 'bandpass'; wb.frequency.value = 650; wb.Q.value = 0.7;
-        var wg = c.createGain(); wg.gain.value = 0.2;
-        var wlf = c.createOscillator(); wlf.frequency.value = 0.12;
-        var wlg = c.createGain(); wlg.gain.value = 380;
+        var w = c.createBufferSource(); w.buffer = noiseBuf(c, true); w.loop = true;
+        var wb = c.createBiquadFilter(); wb.type = 'bandpass'; wb.frequency.value = 620; wb.Q.value = 0.9;
+        var wg = c.createGain(); wg.gain.value = 0.3;
+        var wlf = c.createOscillator(); wlf.frequency.value = 0.1;
+        var wlg = c.createGain(); wlg.gain.value = 260;
         wlf.connect(wlg); wlg.connect(wb.frequency);
-        w.connect(wb); wb.connect(wg); wg.connect(nodes.gain); w.start(); wlf.start(); nodes.wind = { src: w, g: wg, lfo: wlf };
+        var wgf = c.createOscillator(); wgf.frequency.value = 0.05;
+        var wgg = c.createGain(); wgg.gain.value = 0.12;
+        wgf.connect(wgg); wgg.connect(wg.gain);
+        w.connect(wb); wb.connect(wg); wg.connect(nodes.gain); w.start(); wlf.start(); wgf.start();
+        nodes.wind = { src: w, g: wg, lfo: wlf, lfo2: wgf };
         nodes.chimeTimer = setInterval(function () {
           if (!on || !cfg.sounds.wind) return;
           var ns = [432, 540, 648, 720, 864];
@@ -6944,10 +7029,14 @@
         }, 2800);
       }
       if (cfg.sounds.fire) {
-        var fi = c.createBufferSource(); fi.buffer = nb; fi.loop = true;
-        var fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 560;
-        var fg = c.createGain(); fg.gain.value = 0.24;
-        fi.connect(fl); fl.connect(fg); fg.connect(nodes.gain); fi.start(); nodes.fire = { src: fi, g: fg };
+        var fi = c.createBufferSource(); fi.buffer = noiseBuf(c, true); fi.loop = true;
+        var fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 480;
+        var fg = c.createGain(); fg.gain.value = 0.3;
+        var flf = c.createOscillator(); flf.frequency.value = 0.15;
+        var flg = c.createGain(); flg.gain.value = 0.08;
+        flf.connect(flg); flg.connect(fg.gain);
+        fi.connect(fl); fl.connect(fg); fg.connect(nodes.gain); fi.start(); flf.start();
+        nodes.fire = { src: fi, g: fg, lfo: flf };
         nodes.fireCrackle = setInterval(function () {
           if (!on || !cfg.sounds.fire) return;
           var sn = c.createBufferSource(); sn.buffer = nb;
@@ -6983,6 +7072,7 @@
       else if (phase === 'out') scale = 1 - 0.38 * prog;
       else scale = (phase === 'hold' ? 1 : 0.62);
       if (orb) orb.style.transform = 'scale(' + scale + ')';
+      state.medBreath = phase === 'in' ? prog : phase === 'out' ? (1 - prog) : (phase === 'hold' ? 1 : 0);
     }
 
     function tick() {
@@ -7055,6 +7145,23 @@
       el.panel.appendChild(head);
       optRow('呼吸节奏', 'pattern', Object.keys(PATS).map(function (k) { return { id: k, label: PATS[k].name }; }), function (id) { cfg.pattern = id; });
       optRow('疗愈频率', 'freq', [174, 285, 396, 417, 432, 528, 639, 741, 852].map(function (f) { return { id: f, label: f }; }), function (id) { cfg.freq = id; if (started) { stopAudio(); startAudio(); } });
+      (function () {
+        var h = document.createElement('div'); h.className = 'med-h'; h.textContent = '疗愈频率音（持续低音）'; el.panel.appendChild(h);
+        var row = document.createElement('div'); row.className = 'med-opt';
+        [{ id: true, label: '开' }, { id: false, label: '关' }].forEach(function (o) {
+          var b = document.createElement('button');
+          b.textContent = o.label;
+          b.className = cfg.drone === o.id ? 'on' : '';
+          b.addEventListener('click', function () {
+            cfg.drone = o.id;
+            if (cfg.drone && started) { stopSeq(); stopMusic(); }
+            if (started) { stopAudio(); startAudio(); }
+            buildPanel();
+          });
+          row.appendChild(b);
+        });
+        el.panel.appendChild(row);
+      })();
       optRow('时长（分钟）', 'mins', [5, 10, 20, 30].map(function (m) { return { id: m, label: m }; }), function (id) { cfg.mins = id; });
       (function () {
         var h = document.createElement('div'); h.className = 'med-h'; h.textContent = '自然音'; el.panel.appendChild(h);
