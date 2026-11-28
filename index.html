@@ -8700,19 +8700,9 @@
           var tx = i2 / 20, sx2 = 118 + tx * 84;
           svg += '<path class="strline" d="M' + sx2.toFixed(1) + ' 44 L' + (sx2 * 0.32 + 160 * 0.68).toFixed(1) + ' 176" fill="none" stroke="#f7faff" stroke-width=".8" opacity=".8"/>';
         }
-        svg += '<path d="M160 44 C150 30 138 22 124 22 C136 26 144 32 150 40" fill="url(#lgold)" stroke="#8a6a2c" stroke-width="1"/>';
-        svg += '<path d="M160 44 C170 30 182 22 196 22 C184 26 176 32 170 40" fill="url(#lgold)" stroke="#8a6a2c" stroke-width="1"/>';
-
-
-
-
-        for (var wg = 0; wg < 5; wg++) {
-          svg += '<path d="M' + (128 + wg * 10) + ' ' + (46 + wg * 0.6) + ' C' + (118 + wg * 8) + ' ' + (70 + wg * 12) + ' ' + (126 + wg * 4) + ' ' + (100 + wg * 14) + ' ' + (136 + wg * 2) + ' ' + (128 + wg * 10) + '" fill="none" stroke="#fff6d8" stroke-width="1.2" opacity=".55"/>';
-          svg += '<path d="M' + (192 - wg * 10) + ' ' + (46 + wg * 0.6) + ' C' + (202 - wg * 8) + ' ' + (70 + wg * 12) + ' ' + (194 - wg * 4) + ' ' + (100 + wg * 14) + ' ' + (184 - wg * 2) + ' ' + (128 + wg * 10) + '" fill="none" stroke="#fff6d8" stroke-width="1.2" opacity=".55"/>';
-        }
-        svg += '<path d="M124 172 C108 176 96 168 90 154 M196 172 C212 176 224 168 230 154" fill="none" stroke="url(#lgold)" stroke-width="2" stroke-linecap="round"/>';
-        svg += '<path d="M90 154 C82 146 84 136 94 132" fill="none" stroke="url(#lgold)" stroke-width="1.8" stroke-linecap="round"/>';
-        svg += '<path d="M230 154 C238 146 236 136 226 132" fill="none" stroke="url(#lgold)" stroke-width="1.8" stroke-linecap="round"/>';
+        
+        
+        
         svg += cloudMotif(96, 160, 0.7) + cloudMotif(224, 160, 0.7);
         svg += rosette(160, 138, 7);
       } else {
@@ -8727,19 +8717,8 @@
           var bx5 = 106 + br4 * 15;
           svg += '<path d="M' + (bx5 - 3.2) + ' 114 Q' + bx5 + ' 106 ' + (bx5 + 3.2) + ' 114" fill="none" stroke="#f7e6bb" stroke-width="1.7" stroke-linecap="round" opacity=".9"/>';
         }
-
-
-        svg += '<path d="M40 104 C30 98 24 88 28 78 C34 86 42 92 50 96" fill="none" stroke="url(#lgold)" stroke-width="2" stroke-linecap="round"/>';
-        svg += '<path d="M106 104 C118 96 128 86 126 74 C118 84 108 94 98 100" fill="none" stroke="url(#lgold)" stroke-width="2" stroke-linecap="round"/>';
-        svg += '<path d="M34 76 C28 68 30 58 40 56" fill="none" stroke="url(#lgold)" stroke-width="1.8" stroke-linecap="round"/>';
-        svg += '<path d="M128 72 C134 64 132 54 122 52" fill="none" stroke="url(#lgold)" stroke-width="1.8" stroke-linecap="round"/>';
-        svg += '<path d="M60 112 C90 116 120 112 140 118 C160 124 190 118 220 116 C250 114 270 118 284 110" fill="none" stroke="url(#lgold)" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>';
-        for (var sc3 = 0; sc3 < 7; sc3++) {
-          var sx3 = 150 + sc3 * 18;
-          svg += '<path d="M' + sx3 + ' 114 q6 -6 12 0" fill="none" stroke="#f7e6bb" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>';
-        }
-        svg += '<path d="M284 110 C292 102 298 92 296 82" fill="none" stroke="url(#lgold)" stroke-width="2" stroke-linecap="round"/>';
-        svg += cloudMotif(70, 70, 0.8) + cloudMotif(250, 72, 0.8) + cloudMotif(160, 148, 0.7);
+        
+        svg += cloudMotif(64, 74, 0.6) + cloudMotif(256, 74, 0.6);
       }
       return svg + '</svg>';
     }
