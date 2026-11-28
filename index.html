@@ -1186,9 +1186,9 @@
       if (!ctx) {
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) throw new Error('Web Audio 不可用');
-        ctx = new AC();
+        try { ctx = new AC({ latencyHint: 'playback' }); } catch (e2) { ctx = new AC(); }
         master = ctx.createGain();
-        master.gain.value = 0.62;
+        master.gain.value = 0.55;
         comp = ctx.createDynamicsCompressor();
         comp.threshold.value = -26;
         comp.knee.value = 30;
@@ -1201,7 +1201,19 @@
         shelf.gain.value = -4.5;
         master.connect(shelf);
         shelf.connect(comp);
-        comp.connect(ctx.destination);
+        var shaper = ctx.createWaveShaper();
+        var curve = new Float32Array(2048);
+        for (var ci = 0; ci < 2048; ci++) {
+          var xv = (ci / 2047) * 2 - 1;
+          curve[ci] = Math.tanh(xv * 1.25) / Math.tanh(1.25);
+        }
+        shaper.curve = curve;
+        try { shaper.oversample = '4x'; } catch (e3) {}
+        var outLp = ctx.createBiquadFilter();
+        outLp.type = 'lowpass'; outLp.frequency.value = 16000; outLp.Q.value = 0.5;
+        comp.connect(shaper);
+        shaper.connect(outLp);
+        outLp.connect(ctx.destination);
 
         var conv = ctx.createConvolver();
         conv.buffer = makeIR(2.6, 2.6);
@@ -1220,9 +1232,12 @@
       return ctx;
     }
 
+    var voiceCount = 0;
     function outBus(wet, dest) {
       var g = ctx.createGain();
-      g.gain.value = 1;
+      g.gain.value = voiceCount > 28 ? 0.55 : 1;
+      voiceCount++;
+      setTimeout(function () { voiceCount = Math.max(0, voiceCount - 1); }, 2600);
       var pan = null;
       if (ctx.createStereoPanner) {
         pan = ctx.createStereoPanner();
@@ -1230,12 +1245,18 @@
         g.connect(pan);
       }
       (pan || g).connect(dest || master);
+      var s = null;
       if (wet > 0 && !dest) {
-        var s = ctx.createGain();
+        s = ctx.createGain();
         s.gain.value = wet;
         g.connect(s);
         s.connect(verbSend);
       }
+      setTimeout(function () {
+        try { g.disconnect(); } catch (e) {}
+        if (pan) { try { pan.disconnect(); } catch (e) {} }
+        if (s) { try { s.disconnect(); } catch (e) {} }
+      }, 6000);
       return g;
     }
     function seqBus() {
