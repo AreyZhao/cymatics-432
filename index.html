@@ -9186,20 +9186,20 @@
         return;
       }
       if (fam === 'keys') {
-        document.getElementById('gsStageWrap').classList.add('piano-mode');
-        buildKeys();
+        document.getElementById('gsStageWrap').classList.remove('piano-mode');
+        el.piano.hidden = true;
+        el.piano.innerHTML = '';
         var kArt = SURFACE_ART[state.instrument];
+        var kN = SCALE, kL = [];
+        for (var ki = 0; ki < kN.length; ki++) kL.push(nameOf(kN[ki]));
+        el.surface.hidden = false;
         if (kArt) {
-          var kN = SCALE, kL = [];
-          for (var ki = 0; ki < kN.length; ki++) kL.push(nameOf(kN[ki]));
-          el.surface.hidden = false;
           el.surface.innerHTML = '<img class="gs-photo-bg" src="' + kArt + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + kArt + '" alt="">' + zonesHTML(kN, kL, 'gs-keys') + '</div>';
-          el.surface.dataset.type = 'keys';
-          el.surface.dataset.count = SCALE.length;
         } else {
-          el.surface.hidden = true;
           el.surface.innerHTML = '';
         }
+        el.surface.dataset.type = state.instrument;
+        el.surface.dataset.count = SCALE.length;
         showSlider(false);
         markActive();
         return;
