@@ -436,6 +436,8 @@
   .gs-panel.collapsed .gs-panel-body{display:none}
   .gs-inst-btn{flex:1 1 76px;appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#dfe9f2;font-size:11px;font-family:inherit;padding:7px 6px;border-radius:8px;cursor:pointer;text-align:center}
   .gs-inst-btn.on{background:var(--accent);border-color:transparent;color:#00161c;font-weight:600}
+  .gs-group-head{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin:8px 2px 0;font-size:11px;color:rgba(232,242,255,.9);letter-spacing:.06em}
+  .gs-group-head em{font-style:normal;font-size:9.5px;color:rgba(198,214,236,.6);letter-spacing:.02em}
   .gs-piano{position:relative;width:min(96vw,900px);height:190px;display:flex;border-radius:0 0 14px 14px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.5)}
   .gs-piano88{display:block;overflow-x:auto;overflow-y:hidden;white-space:nowrap;position:relative;height:200px;background:#2a1c0e}
   .gs-piano88 .gp-white{display:inline-flex;width:22px;min-width:22px;height:100%;flex:none}
@@ -1976,13 +1978,34 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '清寂流韵', icon: '🌊', mood: '空灵', bpm: 60, bpmRange: [56, 64], scale: 'penta', drums: 'soft', wet: 0.82, octave: 24, bright: true, school: 'debussy', soloChance: 0.4, introBeats: 24, introTex: 0, altScales: ['dorian', 'minorPenta'], velScale: 0.9, instPool: ['flute', 'harp', 'clarinet', 'ep', 'piano', 'marimba', 'bell', 'musicbox', 'guzheng', 'handpan'] },
-    { id: 'grow',   name: '云野遥音', icon: '☁️', mood: '优美', bpm: 72, bpmRange: [66, 80], scale: 'major', drums: 'soft', wet: 0.6, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, introBeats: 32, introTex: 1, altScales: ['penta', 'dorian'], velScale: 0.88, instPool: ['flute', 'harp', 'marimba', 'bell', 'ep', 'piano', 'guzheng', 'pipa', 'handpan', 'piccolo'] },
-    { id: 'abyss',  name: '幽墟沉响', icon: '🌑', mood: '震撼', bpm: 48, bpmRange: [44, 54], scale: 'minorPenta', drums: 'soft', wet: 0.9, octave: 12, bright: false, school: 'bruckner', soloChance: 0.3, introBeats: 16, introTex: 0, altScales: ['dorian', 'minorPenta'], velScale: 0.92, instPool: ['clarinet', 'handpan', 'piano', 'ep', 'bianzhong', 'marimba', 'bell', 'guzheng', 'bass'] },
-    { id: 'night',  name: '萤光碎舞', icon: '✨', mood: '律动', bpm: 108, bpmRange: [100, 116], scale: 'penta', drums: 'groove', wet: 0.3, octave: 24, bright: true, school: 'reich', soloChance: 0.35, introBeats: 4, introTex: 2, altScales: ['major'], velScale: 0.85, instPool: ['musicbox', 'marimba', 'piccolo', 'bell', 'ep', 'piano', 'flute', 'clarinet', 'harp', 'guzheng'] },
-    { id: 'pulse',  name: '陵岳长歌', icon: '🏔️', mood: '震撼', bpm: 84, bpmRange: [78, 92], scale: 'dorian', drums: 'soft', wet: 0.66, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, introBeats: 32, introTex: 1, altScales: ['minorPenta', 'penta'], velScale: 0.9, instPool: ['clarinet', 'flute', 'handpan', 'marimba', 'ep', 'piano', 'bianzhong', 'bell', 'guzheng', 'pipa', 'harp'] },
-    { id: 'zen',    name: '虚冥静息', icon: '🌫️', mood: '空灵', bpm: 40, bpmRange: [36, 46], scale: 'penta', drums: 'soft', wet: 0.95, octave: 24, bright: false, school: 'debussy', soloChance: 0.6, introBeats: 48, introTex: 1, altScales: ['dorian'], velScale: 0.8, instPool: ['handpan', 'harp', 'flute', 'bell', 'ep', 'piano', 'bianzhong', 'musicbox'] },
-    { id: 'neon',   name: '晶界流光', icon: '💎', mood: '律动', bpm: 100, bpmRange: [92, 108], scale: 'dorian', drums: 'groove', wet: 0.28, octave: 24, bright: true, school: 'reich', soloChance: 0.35, introBeats: 8, introTex: 2, altScales: ['minorPenta'], velScale: 0.85, instPool: ['synth', 'marimba', 'piccolo', 'bell', 'ep', 'piano', 'clarinet', 'handpan'] }
+    { id: 'aurora', name: '清寂流韵', icon: '🌊', mood: '空灵', bpm: 60, bpmRange: [56, 64], scale: 'penta', drums: 'soft', wet: 0.82, octave: 24, bright: true, school: 'debussy', soloChance: 0.4, introBeats: 24, introTex: 0, altScales: ['dorian', 'minorPenta'], velScale: 0.9, instPool: ['flute', 'harp', 'clarinet', 'ep', 'piano', 'marimba', 'bell', 'musicbox', 'guzheng', 'handpan'],
+      desc: '音色：水润清透、柔亮泛音，弦乐绵长、键盘如玉、吹奏温润。结构：长前奏慢铺，旋律顺滑少跳跃，留白多，轻铺不堆叠。混音：大洞穴漫射混响、柔和延迟，低频轻、高频柔光。',
+      visual: { hex: '#63d8ff', hue: 0.55 },
+      game: { insts: ['guzheng', 'harp', 'flute', 'lyre'], scale: 'penta', tip: '五声慢板 · 轻点长音如水波扩散' } },
+    { id: 'grow',   name: '云野遥音', icon: '☁️', mood: '优美', bpm: 72, bpmRange: [66, 80], scale: 'major', drums: 'soft', wet: 0.6, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, introBeats: 32, introTex: 1, altScales: ['penta', 'dorian'], velScale: 0.88, instPool: ['flute', 'harp', 'marimba', 'bell', 'ep', 'piano', 'guzheng', 'pipa', 'handpan', 'piccolo'],
+      desc: '音色：明亮疏朗、空气感强，延音自然舒展。结构：超长前奏，旋律横向延展，节奏自由，乐器稀疏。混音：超大室外旷野混响，长距离反射，声场极宽。',
+      visual: { hex: '#8be3a8', hue: 0.42 },
+      game: { insts: ['recorder', 'panflute', 'piano'], scale: 'major', tip: '大调散板 · 留白多、横向舒展' } },
+    { id: 'abyss',  name: '幽墟沉响', icon: '🌑', mood: '震撼', bpm: 48, bpmRange: [44, 54], scale: 'minorPenta', drums: 'soft', wet: 0.9, octave: 12, bright: false, school: 'bruckner', soloChance: 0.3, introBeats: 16, introTex: 0, altScales: ['dorian', 'minorPenta'], velScale: 0.92, instPool: ['clarinet', 'handpan', 'piano', 'ep', 'bianzhong', 'marimba', 'bell', 'guzheng', 'bass'],
+      desc: '音色：低沉浑厚、暗哑高级，低频扎实，金属暗沉不亮不炸。结构：静默蓄力前奏，旋律低沉内敛，起伏小，乐器少而精。混音：密闭洞窟混响、短延迟，低频加厚，高频压低。',
+      visual: { hex: '#8a7bd8', hue: 0.75 },
+      game: { insts: ['clarinet', 'handpan', 'bass', 'flowzither'], scale: 'minor', tip: '低音区慢触 · 暗色长音' } },
+    { id: 'night',  name: '萤光碎舞', icon: '✨', mood: '律动', bpm: 108, bpmRange: [100, 116], scale: 'penta', drums: 'groove', wet: 0.3, octave: 24, bright: true, school: 'reich', soloChance: 0.35, introBeats: 4, introTex: 2, altScales: ['major'], velScale: 0.85, instPool: ['musicbox', 'marimba', 'piccolo', 'bell', 'ep', 'piano', 'flute', 'clarinet', 'harp', 'guzheng'],
+      desc: '音色：晶莹剔透、光点质感，高频清亮，短音色颗粒细腻。结构：轻快舒缓，音符细碎密集但不乱，前奏轻盈切入。混音：小房间干净混响、短延迟，低频弱化，轻盈浮空。',
+      visual: { hex: '#ffd76f', hue: 0.09 },
+      game: { insts: ['musicbox', 'marimba'], scale: 'penta', tip: '高音短点 · 细碎跳跃' } },
+    { id: 'pulse',  name: '陵岳长歌', icon: '🏔️', mood: '震撼', bpm: 84, bpmRange: [78, 92], scale: 'dorian', drums: 'soft', wet: 0.66, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, introBeats: 32, introTex: 1, altScales: ['minorPenta', 'penta'], velScale: 0.9, instPool: ['clarinet', 'flute', 'handpan', 'marimba', 'ep', 'piano', 'bianzhong', 'bell', 'guzheng', 'pipa', 'harp'],
+      desc: '音色：厚重庄严、金石质感，饱满扎实，金属共鸣温润。结构：前奏层层蓄力，段落有序堆叠，张力足，节奏稳健。混音：巨型殿堂混响，声场全开，低频厚重、高频通透。',
+      visual: { hex: '#d8a35a', hue: 0.08 },
+      game: { insts: ['bianzhong', 'pipa'], scale: 'major', tip: '低音重击 · 层层推进不炸耳' } },
+    { id: 'zen',    name: '虚冥静息', icon: '🌫️', mood: '空灵', bpm: 40, bpmRange: [36, 46], scale: 'penta', drums: 'soft', wet: 0.95, octave: 24, bright: false, school: 'debussy', soloChance: 0.6, introBeats: 48, introTex: 1, altScales: ['dorian'], velScale: 0.8, instPool: ['handpan', 'harp', 'flute', 'bell', 'ep', 'piano', 'bianzhong', 'musicbox'],
+      desc: '音色：极柔极虚、雾化，几乎无音头，泛音朦胧弥散。结构：极简极少音符，超大留白，近乎无节奏，超长前奏。混音：无限弥散混响、极长尾音，全频柔化。',
+      visual: { hex: '#b9c6d8', hue: 0.6 },
+      game: { insts: ['bell', 'ep', 'guitar'], scale: 'penta', tip: '稀疏单音 · 长留白放空' } },
+    { id: 'neon',   name: '晶界流光', icon: '💎', mood: '律动', bpm: 100, bpmRange: [92, 108], scale: 'dorian', drums: 'groove', wet: 0.28, octave: 24, bright: true, school: 'reich', soloChance: 0.35, introBeats: 8, introTex: 2, altScales: ['minorPenta'], velScale: 0.85, instPool: ['synth', 'marimba', 'piccolo', 'bell', 'ep', 'piano', 'clarinet', 'handpan'],
+      desc: '音色：冷净通透、晶体微光，线条干净锐利，高解析无杂音。结构：平稳律动、机械规整，音符均匀，前奏缓慢浮现。混音：洁净科技空间混响、短精准延迟，高低频分离清晰。',
+      visual: { hex: '#6ff0ff', hue: 0.5 },
+      game: { insts: ['synth', 'piccolo'], scale: 'whole', tip: '全音阶 · 精准短音、均匀律动' } }
   ];
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
   var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, elegant layered arrangement, 3-5 instruments in clear harmonic layers: lead melody, harmonic pad, rhythmic or colour accents, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, wide stereo, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture, 60-90 seconds duration`;
@@ -2303,6 +2326,27 @@
     if (id === 'deep') return 'night';
     if (id === 'dawn') return 'neon';
     return id;
+  }
+  function applyStyleVibe(st) {
+    if (!st) return;
+    var v = st.visual || {};
+    if (v.hex) {
+      var root = document.documentElement;
+      root.style.setProperty('--accent', v.hex);
+      root.style.setProperty('--accent-2', v.hex);
+      root.style.setProperty('--accent-soft', hexToRgba(v.hex, 0.10));
+      root.style.setProperty('--accent-line', hexToRgba(v.hex, 0.34));
+      root.style.setProperty('--accent-glow', hexToRgba(v.hex, 0.55));
+      if (v.hue != null) state.themeHue = v.hue;
+    }
+    var g = st.game || {};
+    if (g.insts && g.insts.length) {
+      state.instrument = g.insts[0];
+      state.instOverride = g.insts[0];
+      try { localStorage.setItem('cz_inst', g.insts[0]); } catch (e) {}
+    }
+    if (g.scale) { state.gsScale = g.scale; try { localStorage.setItem('cz_gsscale', g.scale); } catch (e) {} }
+    toast('🎼 风格：' + st.icon + ' ' + st.name, 2000);
   }
   function styleById(id) {
     id = aliasStyleId(id);
@@ -7019,13 +7063,17 @@
       STYLES.forEach(function (st) {
         mkSub(rowg, st.icon + ' ' + st.name, state.genStyle === st.id ? 'on' : '', function () {
           state.genStyle = st.id;
+          applyStyleVibe(st);
           renderSheet();
         });
       });
       body.appendChild(rowg);
       var ng = document.createElement('div');
       ng.className = 'sheet-note';
-      ng.textContent = '清寂流韵=温润流水；云野遥音=旷野松弛；幽墟沉响=厚重暗系；萤光碎舞=细碎轻盈；陵岳长歌=史诗雄浑；虚冥静息=极简空境；晶界流光=冷冽科技。乐器自由组合、不堆音量不炸耳，选好后点「换一首」。';
+      var curStyle = (state.genStyle && state.genStyle !== 'auto') ? styleById(state.genStyle) : null;
+      ng.textContent = curStyle
+        ? (curStyle.desc + ' 音游：' + ((curStyle.game && curStyle.game.tip) || ''))
+        : '自动随机：每首随机一种风格。选一个风格后，网页配色和音游默认乐器/音阶会一起切换。';
       body.appendChild(ng);
     } else if (id === 'recdur') {
       var rowd = document.createElement('div');
@@ -9266,17 +9314,32 @@
     function buildPanel() {
       if (!el.body) return;
       el.body.innerHTML = '';
-      INSTRUMENTS.forEach(function (ins) {
-        var b = document.createElement('button');
-        b.className = 'gs-inst-btn';
-        b.dataset.inst = ins.id;
-        b.textContent = ins.name;
-        b.addEventListener('click', function () {
-          selectInstrument(ins.id);
-          build();
-          markActive();
+      STYLES.forEach(function (st) {
+        var g = st.game || {};
+        var list = (g.insts || []).map(function (id) {
+          return INSTRUMENTS.filter(function (x) { return x.id === id; })[0];
+        }).filter(Boolean);
+        if (!list.length) return;
+        var h = document.createElement('div');
+        h.className = 'gs-group-head';
+        h.innerHTML = '<span>' + st.icon + ' ' + st.name + '</span><em>' + (g.tip || '') + '</em>';
+        el.body.appendChild(h);
+        list.forEach(function (ins) {
+          var b = document.createElement('button');
+          b.className = 'gs-inst-btn';
+          b.dataset.inst = ins.id;
+          b.textContent = ins.name;
+          b.addEventListener('click', function () {
+            selectInstrument(ins.id);
+            if (g.scale) {
+              state.gsScale = g.scale;
+              try { localStorage.setItem('cz_gsscale', g.scale); } catch (e) {}
+            }
+            build();
+            markActive();
+          });
+          el.body.appendChild(b);
         });
-        el.body.appendChild(b);
       });
       markActive();
     }
