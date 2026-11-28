@@ -455,6 +455,30 @@
   .shot-key span{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);font-size:6.5px;letter-spacing:.04em;color:rgba(255,246,214,.6);opacity:0;transition:opacity .12s;pointer-events:none}
   .shot-key.on span{opacity:1;color:#fff3c9;text-shadow:0 0 8px rgba(255,220,150,.95)}
   .gs-keys.grid7 .shot-key i{top:18%;bottom:18%}
+  /* 乐器演奏区：按乐器家族给出不同的可弹区域 */
+  .tech-layer{position:absolute;inset:0;z-index:3;touch-action:none;overflow:hidden;border-radius:16px}
+  .tech-str{position:absolute;top:2%;bottom:2%;width:14%;transform:translateX(-50%);background:none;border:0;padding:0}
+  .tech-str i{position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);background:linear-gradient(180deg,rgba(255,248,222,0),rgba(255,248,222,.5),rgba(255,248,222,0));box-shadow:0 0 8px rgba(255,230,170,.35)}
+  .tech-str.on i{width:3px;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,252,230,1),rgba(255,255,255,0));box-shadow:0 0 18px 2px rgba(255,226,150,.95)}
+  .tech-str span,.tech-pipe span,.tech-pad span,.tech-key span{position:absolute;left:50%;transform:translateX(-50%);font-size:7px;letter-spacing:.03em;color:rgba(255,246,214,.62);white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px #000}
+  .tech-str span{bottom:1%}
+  .tech-pipe{position:absolute;top:14%;height:70%;width:11%;background:none;border:0;padding:0;transform:translateX(-50%)}
+  .tech-pipe i{position:absolute;left:50%;top:0;bottom:0;width:7px;transform:translateX(-50%);border-radius:4px;background:linear-gradient(180deg,rgba(255,250,230,.05),rgba(255,250,230,.22),rgba(255,250,230,.05));box-shadow:inset 0 0 5px rgba(0,0,0,.65)}
+  .tech-pipe.on i{background:linear-gradient(180deg,rgba(255,240,190,.2),rgba(255,252,225,.92),rgba(255,240,190,.2));box-shadow:0 0 16px 2px rgba(255,220,140,.85)}
+  .tech-pipe span{bottom:1%}
+  .tech-pad{position:absolute;width:15%;height:15%;border-radius:50%;background:none;border:0;padding:0;transform:translate(-50%,-50%)}
+  .tech-pad i{position:absolute;inset:16%;border-radius:50%;border:1px solid rgba(255,246,214,.45);background:radial-gradient(circle at 38% 32%,rgba(255,255,240,.20),rgba(255,246,214,.05) 60%,transparent 72%)}
+  .tech-pad.on i{background:radial-gradient(circle at 38% 32%,rgba(255,255,240,.95),rgba(255,220,150,.55) 55%,transparent 74%);box-shadow:0 0 18px 3px rgba(255,220,150,.85)}
+  .tech-pad span{bottom:-18%;font-size:6.5px}
+  .tech-key{position:absolute;bottom:4%;height:16%;width:8.4%;background:none;border:0;padding:0;border-right:1px solid rgba(255,246,214,.1)}
+  .tech-key i{position:absolute;left:50%;bottom:0;width:10px;height:62%;transform:translateX(-50%);border-radius:0 0 4px 4px;background:linear-gradient(180deg,rgba(255,250,235,.5),rgba(255,240,210,.16));opacity:.65}
+  .tech-key.on i{background:linear-gradient(180deg,rgba(255,255,245,1),rgba(255,225,160,.6));box-shadow:0 0 14px 2px rgba(255,225,160,.9)}
+  .tech-key span{bottom:64%}
+  .tech-hint{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:8px;line-height:1.5;color:rgba(255,245,220,.66);pointer-events:none;text-shadow:0 1px 3px #000;padding:0 4px 2px}
+  .tech-float{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.9);font-size:13px;font-weight:600;letter-spacing:.08em;color:#fff4cf;opacity:0;pointer-events:none;text-shadow:0 0 12px rgba(255,206,120,.9),0 2px 6px #000;transition:opacity .16s,transform .16s}
+  .tech-float.on{opacity:1;transform:translate(-50%,-50%) scale(1.06)}
+  .gs-tech-hint{padding:7px 9px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;line-height:1.65;color:rgba(255,240,205,.8)}
+  .gs-tech-hint b{color:#ffe9b0;font-weight:600}
   .gs-float-note{position:absolute;z-index:6;pointer-events:none;transform:translate(-50%,-50%);font-size:14px;font-weight:600;color:#ffeec2;text-shadow:0 0 10px rgba(255,220,150,.9),0 0 22px rgba(255,190,90,.6);animation:gsFloat .8s ease-out forwards}
   @keyframes gsFloat{0%{opacity:0;transform:translate(-50%,-40%) scale(.8)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-150%) scale(1.06)}}
 
@@ -1353,11 +1377,99 @@
       } catch (e) {}
     }
 
+    /* 拨弦乐器：噪声起音 + 分音衰减 + 琴体共鸣（比单一振荡器更接近真实琴弦） */
+    var PLUCK_VOICE = {
+      pipa:    { hp: 150, body: 620, bodyGain: 5, gain: 0.30, parts: [[1, 0.55, 1.15, 'triangle'], [2.01, 0.16, 0.34, 'sine'], [3.03, 0.09, 0.20, 'sine'], [4.2, 0.04, 0.12, 'sine']], pick: 3400 },
+      guzheng: { hp: 110, body: 470, bodyGain: 5, gain: 0.28, parts: [[1, 0.52, 1.8, 'triangle'], [2.005, 0.15, 0.5, 'sine'], [3.01, 0.06, 0.3, 'sine'], [4.03, 0.035, 0.2, 'sine']], pick: 2800 },
+      guitar:  { hp: 85,  body: 235, bodyGain: 6, gain: 0.31, parts: [[1, 0.55, 1.6, 'triangle'], [2.004, 0.12, 0.45, 'sine'], [3.02, 0.05, 0.24, 'sine']], pick: 1800 },
+      bass:    { hp: 55,  body: 135, bodyGain: 5, gain: 0.38, parts: [[1, 0.62, 1.7, 'sine'], [2.002, 0.10, 0.5, 'triangle'], [3.01, 0.04, 0.28, 'sine']], pick: 900 },
+      harp:    { hp: 95,  body: 380, bodyGain: 4, gain: 0.26, parts: [[1, 0.5, 2.0, 'sine'], [2.003, 0.10, 0.6, 'triangle'], [3.01, 0.04, 0.32, 'sine']], pick: 2200 }
+    };
+    function pluckVoice(c, inst, f, t, vel, out, R) {
+      var pr = PLUCK_VOICE[inst];
+      var body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = pr.body; body.Q.value = 1.15; body.gain.value = pr.bodyGain;
+      var hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = pr.hp;
+      var g = c.createGain(); g.gain.value = pr.gain * (0.5 + 0.5 * vel);
+      body.connect(hp); hp.connect(g); g.connect(out);
+      for (var i = 0; i < pr.parts.length; i++) {
+        var pt = pr.parts[i];
+        var o = c.createOscillator();
+        o.type = pt[3];
+        var det = (R - 0.5) * 0.0025;
+        o.frequency.setValueAtTime(f * pt[0] * (1 + det), t);
+        var og = c.createGain();
+        var amp = pt[1] * (0.7 + 0.5 * vel) * (i === 0 ? 1 : (0.75 + 0.5 * R));
+        og.gain.setValueAtTime(0.0001, t);
+        og.gain.linearRampToValueAtTime(amp, t + 0.004 + i * 0.002);
+        og.gain.exponentialRampToValueAtTime(0.0002, t + pt[2] * (0.9 + 0.2 * R));
+        o.connect(og); og.connect(body);
+        o.start(t); o.stop(t + pt[2] * (0.9 + 0.2 * R) + 0.1);
+      }
+      var pn = c.createBufferSource(); pn.buffer = noiseBuf;
+      var pbp = c.createBiquadFilter(); pbp.type = 'bandpass'; pbp.frequency.value = pr.pick * (0.85 + 0.3 * R); pbp.Q.value = 1.1;
+      var pg = c.createGain();
+      pg.gain.setValueAtTime(0.055 * vel, t);
+      pg.gain.exponentialRampToValueAtTime(0.0001, t + 0.028);
+      pn.connect(pbp); pbp.connect(pg); pg.connect(body);
+      pn.start(t); pn.stop(t + 0.04);
+    }
+
+    /* 真实乐器单音采样（FluidR3 GM 音色库，MIT；按 A4=432 相对音高重采样） */
+    var SAMPLE_BANK = {
+      bass: { note: 'E2', hz: 82.406889, data: 'samples/bass.mp3' },
+      harp: { note: 'C4', hz: 261.625565, data: 'samples/harp.mp3' },
+      guitar: { note: 'C4', hz: 261.625565, data: 'samples/guitar.mp3' },
+      pipa: { note: 'C4', hz: 261.625565, data: 'samples/pipa.mp3' },
+      violin: { note: 'C4', hz: 261.625565, data: 'samples/violin.mp3' },
+      piano: { note: 'C4', hz: 261.625565, data: 'samples/piano.mp3' },
+      bell: { note: 'C4', hz: 261.625565, data: 'samples/bell.mp3' },
+      ep: { note: 'C4', hz: 261.625565, data: 'samples/ep.mp3' },
+      guzheng: { note: 'C4', hz: 261.625565, data: 'samples/guzheng.mp3' },
+      flute: { note: 'C5', hz: 523.251131, data: 'samples/flute.mp3' },
+      clarinet: { note: 'C4', hz: 261.625565, data: 'samples/clarinet.mp3' },
+      panflute: { note: 'C5', hz: 523.251131, data: 'samples/panflute.mp3' }
+    };
+    var sampleCache = {}, sampleLoading = {};
+    function loadSample(inst, c) {
+      if (sampleCache[inst] || sampleLoading[inst] || !SAMPLE_BANK[inst]) return;
+      sampleLoading[inst] = 1;
+      var meta = SAMPLE_BANK[inst];
+      try {
+        fetch(meta.data).then(function (r) { return r.arrayBuffer(); }).then(function (ab) {
+          return c.decodeAudioData(ab);
+        }).then(function (buf) {
+          sampleCache[inst] = { buf: buf, hz: meta.hz };
+        }).catch(function () { sampleLoading[inst] = 0; });
+      } catch (e) { sampleLoading[inst] = 0; }
+    }
+    function playSample(inst, c, f, t, vel, out) {
+      var sm = sampleCache[inst];
+      if (!sm) return false;
+      var src = c.createBufferSource();
+      src.buffer = sm.buf;
+      var rate = f / sm.hz;
+      if (!(rate > 0.25)) rate = 0.25;
+      if (rate > 4) rate = 4;
+      src.playbackRate.value = rate;
+      var g = c.createGain();
+      var v = Math.max(0.2, Math.min(1, vel));
+      var boost = { bass: 3.4, guzheng: 2.6, pipa: 2.6, harp: 1.9, bell: 2.0, guitar: 1.7, piano: 1.5, ep: 1.6, violin: 1.5, flute: 1.3, clarinet: 1.4, panflute: 1.3 }[inst] || 1.6;
+      var trim = 1.7 * boost;
+      var dur = Math.min(3.2, sm.buf.duration / rate);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(trim * 0.8 * v, t + 0.005);
+      g.gain.setValueAtTime(trim * 0.8 * v, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0002, t + dur);
+      src.connect(g); g.connect(out);
+      src.start(t); src.stop(t + dur + 0.05);
+      return true;
+    }
+
     function note(midi, opts) {
       opts = opts || {};
       var c = ensure();
       var t = Math.max(c.currentTime + 0.006, opts.when || 0);
-      var f = midiToFreq(midi);
+      var f = midiToFreq(midi) * (opts.cents ? Math.pow(2, opts.cents / 1200) : 1);
       var vel = opts.vel == null ? 1 : opts.vel;
       if (opts.humanize !== false) {
         var humT = (Math.random() - 0.5) * 0.014;
@@ -1379,7 +1491,16 @@
       var out = outBus(wet, opts.bus);
       var INST_TRIM = { musicbox: 0.95, piano: 0.9, ep: 1.2, flute: 0.8, bell: 0.8, handpan: 0.8, synth: 1.2, marimba: 0.6, clarinet: 1.2, guzheng: 0.45, pipa: 1.3, bianzhong: 0.9, violin: 0.91, harp: 0.85, piccolo: 0.92, sax: 0.8, trumpet: 0.85, guitar: 0.82, bass: 0.95, recorder: 0.9, panflute: 0.86 };
       out.gain.value = INST_TRIM[inst] || 1;
+      if (SAMPLE_BANK[inst]) {
+        loadSample(inst, c);
+        if (playSample(inst, c, f, t, vel, out)) return;
+      }
       var o, g, o2, g2, lp, lfo, lfoG;
+
+      if (PLUCK_VOICE[inst]) {
+        pluckVoice(c, inst, f, t, vel, out, R);
+        return;
+      }
 
       if (inst === 'musicbox') {
         o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f * 2, t);
@@ -1953,7 +2074,8 @@
       bus: seqBus,
       dampReverb: dampReverb,
       master: function () { ensure(); return master; },
-      note: note, kick: kick, hat: hat, bass: bass, pad: pad
+      note: note, kick: kick, hat: hat, bass: bass, pad: pad,
+      samples: function () { return Object.keys(sampleCache); }
     };
   })();
 
@@ -2831,6 +2953,7 @@
     if (style.sparkle && style.sparkle !== 1) {
       for (var sp2 = 0; sp2 < sparkles.length; sp2++) sparkles[sp2].vel *= style.sparkle;
     }
+    melody = applyIdioms(melody, chords, inst, rnd);
     if (style.wave) {
       var tb2 = Math.max(1, phases * 16);
       var wc2 = style.waveCycles || 2;
@@ -3357,6 +3480,7 @@
     if (style.sparkle && style.sparkle !== 1) {
       for (var spx = 0; spx < sparkles.length; spx++) sparkles[spx].vel *= style.sparkle;
     }
+    melody = applyIdioms(melody, chords, inst, rnd);
     if (style.swing) {
       for (var swx = 0; swx < melody.length; swx++) if (swx % 2 === 1) melody[swx].t += style.swing;
     }
@@ -3417,12 +3541,12 @@
 
   function buildSeqEvents(p) {
     var ev = [];
-    (p.melody || []).forEach(function (n) { ev.push({ t: n.t, kind: 'melody', midi: n.midi, vel: n.vel }); });
+    (p.melody || []).forEach(function (n) { ev.push({ t: n.t, kind: 'melody', midi: n.midi, vel: n.vel, cents: n.cents }); });
     (p.sparkles || []).forEach(function (sp) { ev.push({ t: sp.t, kind: 'sparkle', midi: sp.midi, vel: sp.vel }); });
     (p.chords || []).forEach(function (ch) { ev.push({ t: ch.t, kind: 'pad', midis: ch.midis, vel: ch.vel }); });
     (p.bassline || []).forEach(function (b) { ev.push({ t: b.t, kind: 'bass', midi: b.midi, vel: b.vel }); });
-    (p.arp || []).forEach(function (a2) { ev.push({ t: a2.t, kind: 'arp', midi: a2.midi, vel: a2.vel }); });
-    (p.counter || []).forEach(function (c2) { ev.push({ t: c2.t, kind: 'counter', midi: c2.midi, vel: c2.vel }); });
+    (p.arp || []).forEach(function (a2) { ev.push({ t: a2.t, kind: 'arp', midi: a2.midi, vel: a2.vel, cents: a2.cents }); });
+    (p.counter || []).forEach(function (c2) { ev.push({ t: c2.t, kind: 'counter', midi: c2.midi, vel: c2.vel, cents: c2.cents }); });
     (p.drums || []).forEach(function (d) { ev.push({ t: d.t, kind: d.kind, vel: d.vel, midi: d.midi }); });
     ev.sort(function (a, b) { return a.t - b.t; });
     return ev;
@@ -3431,7 +3555,7 @@
   function scheduleEvent(ev, when, p, bus) {
     var liveInst = state.instOverride || p.instrument;
     if (ev.kind === 'melody') {
-      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: liveInst, bus: bus });
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: p.wet == null ? 0.45 : p.wet, inst: liveInst, bus: bus, cents: ev.cents });
       if (typeof Game !== 'undefined') Game.schedule(ev.midi, when);
       if (p.mode !== 'solo') Audio.note(ev.midi + 12, { when: when + 0.16, vel: ev.vel * 0.13, wet: 0.8, inst: p.sparkInst || 'bell', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
@@ -3447,12 +3571,12 @@
     } else if (ev.kind === 'bass') {
       Audio.bass(when, ev.midi, ev.vel, bus);
     } else if (ev.kind === 'arp') {
-      Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: liveInst, bus: bus });
+      Audio.note(ev.midi + 12, { when: when, vel: ev.vel, wet: 0.5, inst: liveInst, bus: bus, cents: ev.cents });
       if (typeof Game !== 'undefined') Game.schedule(ev.midi, when);
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
       visQueue.push({ t: when, kind: 'harmonic', amt: (INST_OVERTONES[p.arpInst] || 0.4) * 0.6 });
     } else if (ev.kind === 'counter') {
-      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: liveInst, bus: bus });
+      Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.6, inst: liveInst, bus: bus, cents: ev.cents });
     } else if (ev.kind === 'tabla' || ev.kind === 'fdrum') {
       Audio.note(ev.midi, { when: when, vel: ev.vel, wet: 0.35, inst: ev.kind === 'tabla' ? 'marimba' : 'handpan', bus: bus });
       visQueue.push({ t: when, kind: 'note', midi: ev.midi });
@@ -3550,6 +3674,81 @@
     else if (pick === 'ghost') hit(0.01, 0, vel * 0.18);
   }
 
+  /* ===== 乐器演奏法：不同乐器的加花、轮指、扫弦、滑音、揉弦、泛音 ===== */
+  var INST_PERF = {
+    piano:      { fam: 'keys',   trem: 0,    tremStep: 0.07, grace: 0.06, slide: 0.03, strum: 0.30, harm: 0.04, vib: 0,    short: '琶音/和弦/刮奏' },
+    ep:         { fam: 'keys',   trem: 0,    tremStep: 0.07, grace: 0.06, slide: 0.03, strum: 0.26, harm: 0.04, vib: 0,    short: '电钢/延音/琶音' },
+    synth:      { fam: 'keys',   trem: 0,    tremStep: 0.06, grace: 0.04, slide: 0.06, strum: 0.16, harm: 0.06, vib: 0,    short: '合成器/滑音/琶音' },
+    musicbox:   { fam: 'struck', trem: 0.02, tremStep: 0.07, grace: 0.03, slide: 0,    strum: 0.12, harm: 0.08, vib: 0,    short: '八音盒/碎音' },
+    bell:       { fam: 'struck', trem: 0.02, tremStep: 0.09, grace: 0.02, slide: 0,    strum: 0.10, harm: 0.10, vib: 0,    short: '单击/双击/滚奏' },
+    bianzhong:  { fam: 'struck', trem: 0.02, tremStep: 0.10, grace: 0.02, slide: 0,    strum: 0.12, harm: 0.10, vib: 0,    short: '正鼓/侧鼓/滚奏' },
+    handpan:    { fam: 'struck', trem: 0.04, tremStep: 0.08, grace: 0.03, slide: 0,    strum: 0.08, harm: 0.07, vib: 0,    short: '点音/滚奏/泛音' },
+    marimba:    { fam: 'struck', trem: 0.03, tremStep: 0.07, grace: 0.04, slide: 0,    strum: 0.10, harm: 0.05, vib: 0,    short: '单击/滚奏/双音' },
+    guzheng:    { fam: 'pluck',  trem: 0.12, tremStep: 0.07, grace: 0.10, slide: 0.10, strum: 0.30, harm: 0.07, vib: 0.08, short: '摇指/刮奏/按滑/揉弦' },
+    pipa:       { fam: 'pluck',  trem: 0.14, tremStep: 0.07, grace: 0.10, slide: 0.11, strum: 0.28, harm: 0.06, vib: 0.09, short: '弹挑/轮指/扫弦/推拉/揉弦' },
+    guitar:     { fam: 'pluck',  trem: 0.03, tremStep: 0.07, grace: 0.07, slide: 0.06, strum: 0.40, harm: 0.06, vib: 0.04, short: '分解/扫弦/推弦/滑音' },
+    bass:       { fam: 'pluck',  trem: 0.02, tremStep: 0.08, grace: 0.03, slide: 0.04, strum: 0.12, harm: 0.03, vib: 0.02, short: '指弹/勾弦/滑音' },
+    harp:       { fam: 'pluck',  trem: 0.05, tremStep: 0.07, grace: 0.08, slide: 0.03, strum: 0.35, harm: 0.07, vib: 0,    short: '琶音/刮奏/泛音' },
+    violin:     { fam: 'bow',    trem: 0.04, tremStep: 0.07, grace: 0.12, slide: 0.15, strum: 0,    harm: 0.03, vib: 0.12, short: '连弓/揉弦/滑音/泛音' },
+    flute:      { fam: 'wind',   trem: 0.02, tremStep: 0.08, grace: 0.12, slide: 0.12, strum: 0,    harm: 0.03, vib: 0.06, short: '连音/吐音/滑音/颤音' },
+    clarinet:   { fam: 'wind',   trem: 0.02, tremStep: 0.08, grace: 0.10, slide: 0.10, strum: 0,    harm: 0.02, vib: 0.05, short: '连音/吐音/滑音' },
+    piccolo:    { fam: 'wind',   trem: 0.02, tremStep: 0.07, grace: 0.12, slide: 0.10, strum: 0,    harm: 0.03, vib: 0.04, short: '吐音/颤音/滑音' },
+    recorder:   { fam: 'wind',   trem: 0.02, tremStep: 0.08, grace: 0.10, slide: 0.08, strum: 0,    harm: 0.02, vib: 0.04, short: '连音/吐音/滑音' },
+    panflute:   { fam: 'wind',   trem: 0.02, tremStep: 0.08, grace: 0.12, slide: 0.14, strum: 0,    harm: 0.02, vib: 0.05, short: '气息/滑音/颤音' }
+  };
+  /* 把通用旋律改写成该乐器真正会演奏的样子：轮指、扫弦、按滑、揉弦、泛音 */
+  function applyIdioms(melody, chords, inst, rnd) {
+    var pf = INST_PERF[inst];
+    if (!pf) pf = INST_PERF.piano;
+    var add = [];
+    var notes = melody.slice().sort(function (a, b) { return a.t - b.t; });
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i];
+      if (!n || n.t < 0) continue;
+      var nx = notes[i + 1];
+      var gap = nx ? Math.max(0.06, nx.t - n.t) : 0.5;
+      if (pf.trem && gap >= pf.tremStep * 3 && rnd() < pf.trem) {
+        var reps = Math.min(4, Math.max(2, Math.floor(gap / pf.tremStep)));
+        for (var r = 1; r <= reps; r++) {
+          add.push({ t: n.t + r * pf.tremStep + (rnd() - 0.5) * 0.01, midi: n.midi, vel: n.vel * (0.45 + 0.35 * rnd()), tech: 'trem' });
+        }
+      }
+      if (pf.grace && rnd() < pf.grace) add.push({ t: n.t - 0.055, midi: n.midi - 2, vel: n.vel * 0.38, tech: 'grace' });
+      if (pf.slide && rnd() < pf.slide) {
+        var dir = rnd() < 0.5 ? 1 : -1;
+        add.push({ t: n.t - 0.08, midi: n.midi - 2 * dir, vel: n.vel * 0.3, tech: 'slide' });
+        add.push({ t: n.t - 0.04, midi: n.midi - dir, vel: n.vel * 0.34, tech: 'slide' });
+      }
+      if (pf.harm && rnd() < pf.harm) add.push({ t: n.t + 0.004, midi: n.midi + 12, vel: n.vel * 0.22, tech: 'harm' });
+      if (pf.vib && gap > 0.45 && rnd() < pf.vib) {
+        add.push({ t: n.t + 0.14, midi: n.midi, vel: n.vel * 0.28, cents: 16, tech: 'vib' });
+        add.push({ t: n.t + 0.15, midi: n.midi, vel: n.vel * 0.26, cents: -16, tech: 'vib' });
+      }
+    }
+    if (pf.strum && chords && chords.length) {
+      for (var c = 0; c < chords.length; c++) {
+        var ch = chords[c];
+        if (!ch || !ch.midis || !ch.midis.length) continue;
+        if (rnd() > pf.strum * 0.5) continue;
+        var ms = ch.midis.slice(0, 3);
+        var down = rnd() < 0.7;
+        for (var k = 0; k < ms.length; k++) {
+          var idx2 = down ? k : (ms.length - 1 - k);
+          add.push({ t: ch.t + idx2 * 0.028, midi: ms[idx2] + (rnd() < 0.3 ? 12 : 0), vel: (ch.vel || 0.4) * (0.55 - idx2 * 0.06), tech: 'strum' });
+        }
+      }
+    }
+    if (!add.length) return melody;
+    var cap = Math.min(60, Math.max(14, Math.round(melody.length * 0.5)));
+    if (add.length > cap) {
+      add.sort(function () { return rnd() - 0.5; });
+      add.length = cap;
+    }
+    var out = melody.concat(add);
+    out.sort(function (a, b) { return a.t - b.t; });
+    return out;
+  }
+
   function buildLiveLine(orig, tr) {
     var sc = orig.scale || [0, 2, 4, 7, 9, 12];
     var phrase = orig.livePhrase || 0;
@@ -3573,6 +3772,7 @@
   }
   function origSchedule(i, t, bus) {
     var tr = orig.transpose;
+    var lp = INST_PERF[orig.inst] || null;
     /* 天籁即兴不使用鼓/打击，避免"破鼓声"与疗愈节拍混淆 */
     if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
     /* 不安排打击型声部 */
@@ -3588,6 +3788,13 @@
       if (lineNote != null && Math.random() < 0.94) {
         Audio.note(lineNote, { when: t, vel: 0.75, wet: 0.45, inst: leadInst, bus: bus });
         ornamentizeLive(leadInst, t, lineNote, 0.7, bus);
+        if (lp && lp.trem && Math.random() < lp.trem * 0.8) {
+          for (var trn = 1; trn <= 2; trn++) Audio.note(lineNote, { when: t + trn * lp.tremStep, vel: 0.26 + Math.random() * 0.14, wet: 0.4, inst: leadInst, bus: bus, cents: (trn % 2 ? 9 : -9) });
+        }
+        if (lp && lp.strum && i % 16 === 0 && Math.random() < lp.strum) {
+          var scS = orig.scale || [0, 2, 4, 7, 9, 12];
+          for (var skS = 1; skS <= 3; skS++) Audio.note(lineNote + scS[skS] - scS[0], { when: t + skS * 0.03, vel: 0.22, wet: 0.45, inst: leadInst, bus: bus });
+        }
         visQueue.push({ t: t, kind: 'note', midi: lineNote });
         visQueue.push({ t: t, kind: 'harmonic', amt: INST_OVERTONES[orig.inst] || 0.45 });
       } else if (i % 8 === 2 && Math.random() < (orig.density || 0.34) * 0.7) {
@@ -7229,10 +7436,11 @@
     node._t = setTimeout(function () { node.classList.remove('active'); }, ms);
   }
 
-  function pressKey(midi, vel) {
+  function pressKey(midi, vel, opts) {
+    opts = opts || {};
     if (typeof Game !== 'undefined') Game.keyPress(midi);
     setFreq(midiToFreq(midi));
-    Audio.note(midi, { vel: vel == null ? 0.95 : vel, when: 0 });
+    Audio.note(midi, { vel: vel == null ? 0.95 : vel, when: 0, cents: opts.cents, inst: opts.inst });
     state.beatEnv = Math.min(1.6, state.beatEnv + 0.5);
     state.wave = 0;
     state.waveAmp = Math.min(1.3, state.waveAmp + 0.7);
@@ -9174,6 +9382,163 @@
       sax: 'sax', trumpet: 'trumpet', guitar: 'guitar', bass: 'bass', recorder: 'recorder', panflute: 'panflute',
       lyre: 'lyre', flowzither: 'flowzither'
     };
+    /* 每件乐器可弹的技法与手势说明 */
+    var TECH = {
+      pipa:      { fam: 'strings', swipe: '扫弦', roll: '轮指', hint: '轻点=弹挑 · 横扫=扫弦/拂 · 长按=轮指 · 上下推=推拉 · 快晃=揉弦', techs: ['弹', '挑', '轮指', '扫弦', '拂', '推拉', '揉弦', '泛音'] },
+      guzheng:   { fam: 'strings', swipe: '刮奏', roll: '摇指', hint: '轻点=托劈 · 横扫=刮奏 · 长按=摇指 · 上下推=按滑 · 快晃=揉弦', techs: ['托', '劈', '摇指', '刮奏', '按滑', '揉弦', '泛音'] },
+      guitar:    { fam: 'strings', swipe: '扫弦', roll: '轮扫', hint: '轻点=拨弦 · 横扫=扫弦 · 长按=轮扫 · 上下推=推弦 · 快晃=揉弦', techs: ['分解', '扫弦', '轮扫', '推弦', '滑音', '泛音'] },
+      bass:      { fam: 'strings', swipe: '勾弦', roll: '轮指', hint: '轻点=指弹 · 横扫=勾弦 · 长按=轮指 · 上下推=滑音', techs: ['指弹', '勾弦', '轮指', '滑音', '闷音'] },
+      harp:      { fam: 'strings', swipe: '刮奏', roll: '琶音', hint: '轻点=拨弦 · 横扫=刮奏 · 长按=琶音 · 快晃=揉弦', techs: ['拨弦', '刮奏', '琶音', '泛音'] },
+      violin:    { fam: 'strings', swipe: '滑音', roll: '长弓', hint: '轻点=连弓 · 长按=长弓/颤音 · 上下拖=滑音 · 快晃=揉弦', techs: ['连弓', '分弓', '长弓', '滑音', '揉弦', '泛音'] },
+      flute:     { fam: 'winds', hint: '轻点=吐音 · 长按=长音 · 横扫=滑音 · 快晃=颤音', techs: ['吐音', '连音', '滑音', '颤音', '气声'] },
+      clarinet:  { fam: 'winds', hint: '轻点=吐音 · 长按=长音 · 横扫=滑音 · 快晃=颤音', techs: ['吐音', '连音', '滑音', '颤音'] },
+      piccolo:   { fam: 'winds', hint: '轻点=吐音 · 长按=长音 · 横扫=滑音 · 快晃=颤音', techs: ['吐音', '连音', '滑音', '颤音'] },
+      recorder:  { fam: 'winds', hint: '轻点=吐音 · 长按=长音 · 横扫=滑音 · 快晃=颤音', techs: ['吐音', '连音', '滑音', '颤音'] },
+      panflute:  { fam: 'winds', hint: '轻点=吐音 · 长按=长音 · 横扫=滑音 · 快晃=颤音', techs: ['吐音', '连音', '滑音', '颤音'] },
+      bell:      { fam: 'struck', hint: '轻点=单击 · 连点=双击 · 横扫=滚奏 · 轻按=闷音', techs: ['单击', '双击', '滚奏', '闷音', '泛音'] },
+      bianzhong: { fam: 'struck', hint: '轻点=正鼓 · 连点=双击 · 横扫=滚奏', techs: ['正鼓', '侧鼓', '双击', '滚奏', '泛音'] },
+      handpan:   { fam: 'struck', hint: '轻点=点音 · 连点=双击 · 横扫=滚奏', techs: ['点音', '双击', '滚奏', '泛音'] },
+      marimba:   { fam: 'struck', hint: '轻点=单击 · 连点=双击 · 横扫=滚奏', techs: ['单击', '双击', '滚奏', '双音'] },
+      musicbox:  { fam: 'struck', hint: '轻点=单击 · 连点=双击 · 横扫=碎音', techs: ['单击', '双击', '碎音'] },
+      piano:     { fam: 'keys', hint: '轻点=单音 · 横扫=刮奏 · 长按=延音 · 快晃=颤音', techs: ['单音', '和弦', '琶音', '刮奏', '延音'] },
+      ep:        { fam: 'keys', hint: '轻点=单音 · 横扫=刮奏 · 长按=延音 · 快晃=颤音', techs: ['单音', '和弦', '琶音', '延音'] },
+      synth:     { fam: 'keys', hint: '轻点=单音 · 横扫=滑音 · 长按=延音', techs: ['单音', '滑音', '琶音', '延音'] }
+    };
+    function techHTML(inst, notes) {
+      var prof = TECH[inst] || TECH.piano;
+      var fam = prof.fam;
+      var h = '<div class="tech-layer">';
+      var i, n, x, y;
+      if (fam === 'strings') {
+        n = Math.min(7, notes.length);
+        for (i = 0; i < n; i++) {
+          x = n > 1 ? 12 + i * (76 / (n - 1)) : 50;
+          h += '<button type="button" class="tech-str" data-midi="' + notes[i] + '" style="left:' + x.toFixed(1) + '%"><i></i><span>' + nameOf(notes[i]) + '</span></button>';
+        }
+      } else if (fam === 'winds') {
+        n = Math.min(8, notes.length);
+        for (i = 0; i < n; i++) {
+          x = n > 1 ? 10 + i * (80 / (n - 1)) : 50;
+          h += '<button type="button" class="tech-pipe" data-midi="' + notes[i] + '" style="left:' + x.toFixed(1) + '%"><i></i><span>' + nameOf(notes[i]) + '</span></button>';
+        }
+      } else if (fam === 'struck') {
+        n = Math.min(9, notes.length);
+        for (i = 0; i < n; i++) {
+          x = 22 + (i % 3) * 28; y = 30 + Math.floor(i / 3) * 22;
+          h += '<button type="button" class="tech-pad" data-midi="' + notes[i] + '" style="left:' + x + '%;top:' + y + '%"><i></i><span>' + nameOf(notes[i]) + '</span></button>';
+        }
+      } else {
+        n = Math.min(12, notes.length);
+        for (i = 0; i < n; i++) {
+          x = i * (100 / n);
+          h += '<button type="button" class="tech-key" data-midi="' + notes[i] + '" style="left:' + x.toFixed(1) + '%"><i></i><span>' + nameOf(notes[i]) + '</span></button>';
+        }
+      }
+      h += '<div class="tech-float"></div><div class="tech-hint">' + (prof.hint || '') + '</div></div>';
+      return h;
+    }
+    function techPlay(midi, vel, name, cents) {
+      pressKey(midi, Math.max(0.15, Math.min(0.98, vel)), { cents: cents, inst: state.instrument });
+      if (el.note) el.note.textContent = '♪ ' + nameOf(midi) + (name ? ' · ' + name : '');
+      var layer = el.surface.querySelector('.tech-layer');
+      if (layer) {
+        var f = layer.querySelector('.tech-float');
+        if (f && name) { f.textContent = name; f.classList.add('on'); clearTimeout(f._t); f._t = setTimeout(function () { f.classList.remove('on'); }, 430); }
+      }
+    }
+    function bindTech(inst) {
+      var layer = el.surface.querySelector('.tech-layer');
+      if (!layer || layer.dataset.bound) return;
+      layer.dataset.bound = '1';
+      var prof = TECH[inst] || TECH.piano;
+      var fam = prof.fam;
+      var ptr = null, holdT = 0, tremT = 0, lastIdx = -1, lastT = 0, lastX = 0, lastY = 0, rev = 0, lastDir = 0;
+      function at(e) {
+        var n = document.elementFromPoint(e.clientX, e.clientY);
+        var it = n && n.closest ? n.closest('.tech-str,.tech-pipe,.tech-pad,.tech-key') : null;
+        return it && layer.contains(it) ? it : null;
+      }
+      function midiOf(it) { return it ? +it.dataset.midi : null; }
+      function press(it, e) {
+        var midi = midiOf(it); if (midi == null) return;
+        var r = it.getBoundingClientRect();
+        var vel = 0.5 + Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) * 0.45;
+        techPlay(midi, vel, fam === 'winds' ? '吐音' : (fam === 'struck' ? '单击' : '弹'));
+        it.classList.add('on');
+        setTimeout(function () { it.classList.remove('on'); }, 170);
+      }
+      function startHold(it) {
+        var midi = midiOf(it); if (midi == null) return;
+        var name = fam === 'strings' ? (prof.roll || '轮指') : (fam === 'winds' ? '长音' : '滚奏');
+        var step = fam === 'struck' ? 100 : 72;
+        tremT = setInterval(function () {
+          techPlay(midi, 0.32, name, fam === 'winds' ? (Math.random() < 0.5 ? 12 : -12) : 0);
+        }, step);
+      }
+      function bend(it, dir) {
+        var midi = midiOf(it); if (midi == null) return;
+        techPlay(midi, 0.55, fam === 'winds' ? '滑音' : '推拉');
+        setTimeout(function () { techPlay(midi + dir, 0.44, fam === 'winds' ? '滑音' : '推拉', dir * 16); }, 70);
+      }
+      function vibrato(it) {
+        var midi = midiOf(it); if (midi == null) return;
+        techPlay(midi, 0.46, fam === 'winds' ? '颤音' : '揉弦', 16);
+        setTimeout(function () { techPlay(midi, 0.4, fam === 'winds' ? '颤音' : '揉弦', -18); }, 90);
+        setTimeout(function () { techPlay(midi, 0.36, fam === 'winds' ? '颤音' : '揉弦', 12); }, 180);
+      }
+      layer.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        var it = at(e); if (!it) return;
+        var midi = midiOf(it);
+        var now = performance.now();
+        var dbl = (now - lastT < 260 && lastIdx === midi);
+        ptr = { idx: midi, y: e.clientY };
+        lastX = e.clientX; lastY = e.clientY; rev = 0; lastDir = 0;
+        lastIdx = midi; lastT = now;
+        if (dbl) techPlay(midi, 0.9, fam === 'struck' ? '双击' : '双弹');
+        else press(it, e);
+        it.classList.add('on');
+        clearTimeout(holdT);
+        holdT = setTimeout(function () { if (ptr) startHold(it); }, 300);
+        try { layer.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      layer.addEventListener('pointermove', function (e) {
+        if (!ptr) return;
+        var now = performance.now();
+        var dx = e.clientX - lastX, dy = e.clientY - lastY;
+        if (Math.abs(dx) + Math.abs(dy) > 6 && now - lastT > 26) {
+          var dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : -1) : (dy > 0 ? 2 : -2);
+          if (lastDir && dir !== lastDir) {
+            rev++;
+            if (rev >= 3 && now - lastT < 520) { vibrato(at(e)); rev = 0; }
+          }
+          lastDir = dir;
+        }
+        lastX = e.clientX; lastY = e.clientY; lastT = now;
+        var it = at(e);
+        if (!it) return;
+        var m = midiOf(it);
+        if (m != null && m !== ptr.idx) {
+          var name = fam === 'strings' ? (prof.swipe || '扫弦') : (fam === 'winds' ? '滑音' : '滚奏');
+          techPlay(m, 0.55, name);
+          ptr.idx = m;
+          clearTimeout(holdT);
+          holdT = setTimeout(function () { if (ptr) startHold(it); }, 320);
+        } else if (Math.abs(e.clientY - ptr.y) > 28) {
+          bend(it, e.clientY > ptr.y ? 1 : -1);
+          ptr.y = e.clientY;
+        }
+      });
+      function end() {
+        if (!ptr) return;
+        clearTimeout(holdT);
+        if (tremT) { clearInterval(tremT); tremT = 0; }
+        ptr = null;
+      }
+      layer.addEventListener('pointerup', end);
+      layer.addEventListener('pointercancel', end);
+    }
+
     // ART:START
     var SURFACE_ART = {
       guzheng: 'art/guzheng.webp',
@@ -9655,9 +10020,10 @@
         var sNotes = noteArr(type);
         var sLabels = [];
         for (var li = 0; li < sNotes.length; li++) sLabels.push(nameOf(sNotes[li]));
-        el.surface.innerHTML = '<img class="gs-photo-bg" src="' + artImg + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + artImg + '" alt="">' + zonesHTML(sNotes, sLabels, 'gs-keys') + '</div>';
+        el.surface.innerHTML = '<img class="gs-photo-bg" src="' + artImg + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + artImg + '" alt="">' + techHTML(state.instrument, sNotes) + '</div>';
         el.surface.dataset.count = noteArr(type).length;
         el.surface.dataset.type = type;
+        bindTech(state.instrument);
         return;
       }
       var i, x, y, w, h, markup = '';
@@ -9817,7 +10183,8 @@
         scBtn0.textContent = gsScaleLabel();
       }
       var inst = INSTRUMENTS.filter(function (x) { return x.id === state.instrument; })[0] || { name: state.instrument };
-      el.title.textContent = inst.name + ' · 自由演奏';
+      var tp = TECH[state.instrument];
+      el.title.textContent = inst.name + ' · ' + (tp ? tp.techs.slice(0, 3).join('/') : '自由演奏');
       el.note.textContent = '';
       if (typeof G3D !== 'undefined') G3D.stop();
       if (fourierStopAnim) { fourierStopAnim(); fourierStopAnim = null; }
@@ -9840,7 +10207,8 @@
         el.piano.innerHTML = '';
         el.surface.hidden = false;
         if (kArt) {
-          el.surface.innerHTML = '<img class="gs-photo-bg" src="' + kArt + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + kArt + '" alt="">' + zonesHTML(kN, kL, 'gs-keys') + '</div>';
+          el.surface.innerHTML = '<img class="gs-photo-bg" src="' + kArt + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + kArt + '" alt="">' + techHTML(state.instrument, kN) + '</div>';
+          bindTech(state.instrument);
         } else {
           el.surface.innerHTML = '';
         }
@@ -9862,6 +10230,11 @@
       if (!el.body) return;
       var btns = el.body.querySelectorAll('.gs-inst-btn');
       for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].dataset.inst === state.instrument);
+      var hint = el.body.querySelector('.gs-tech-hint');
+      var tp = TECH[state.instrument];
+      var nm = '';
+      for (var k = 0; k < INSTRUMENTS.length; k++) if (INSTRUMENTS[k].id === state.instrument) { nm = INSTRUMENTS[k].name; break; }
+      if (hint) hint.innerHTML = tp ? ('<b>' + nm + '</b><br>' + tp.hint + '<br>技法：' + tp.techs.join(' / ')) : '';
     }
     function buildPanel() {
       if (!el.body) return;
@@ -9878,6 +10251,9 @@
         });
         el.body.appendChild(b);
       });
+      var hit = document.createElement('div');
+      hit.className = 'gs-tech-hint';
+      el.body.appendChild(hit);
       markActive();
     }
     function toggle() {
