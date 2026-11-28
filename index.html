@@ -373,7 +373,9 @@
   .gs-rot{appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#dfe9f2;font-size:13px;font-family:inherit;padding:4px 9px;border-radius:8px;cursor:pointer;margin-left:4px}
   .gs-rot.on{background:var(--accent);border-color:transparent;color:#00161c}
   .gs-close{position:absolute;top:14px;right:14px;z-index:2;appearance:none;-webkit-appearance:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#dfe9f2;font-size:13px;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:8px 12px;border-radius:10px;cursor:pointer;letter-spacing:.06em}
-  .gs-head{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:baseline;color:#dfe9f2;font-size:14px;letter-spacing:.1em;white-space:nowrap}
+  .gs-head{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;color:#dfe9f2;font-size:13px;letter-spacing:.06em;white-space:nowrap;max-width:calc(100% - 96px);flex-wrap:wrap;justify-content:center}
+  .gs-head #gsTitle{display:inline-block;max-width:40vw;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+  .gs-head .gs-rot{font-size:12px;padding:3px 7px;margin-left:2px}
   #gsNoteName{color:var(--accent);font-size:13px;letter-spacing:.04em}
   .gs-stagewrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;margin-top:8px}
   .gs-surface{width:min(94vw,760px);height:min(62vh,540px);position:relative;touch-action:none}
@@ -438,14 +440,6 @@
   .gs-piano88{display:block;overflow-x:auto;overflow-y:hidden;white-space:nowrap;position:relative;height:200px;background:#2a1c0e}
   .gs-piano88 .gp-white{display:inline-flex;width:22px;min-width:22px;height:100%;flex:none}
   .gs-piano88 .gp-black{width:15px;height:62%}
-  .gs-slider{position:relative;width:min(80vw,520px);height:26px;margin-top:10px;border-radius:13px;background:linear-gradient(180deg,#3a2a18,#1a120a);border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 2px 6px rgba(0,0,0,.6);touch-action:none;display:none}
-  .gs-slider.on{display:block}
-  .gs-slider.bow{background:none;border:none;box-shadow:none;height:30px}
-  .gs-slider.bow .gs-slider-knob{width:100%;height:10px;left:0;margin:-5px 0 0 0;border-radius:5px;background:linear-gradient(180deg,#f3e3c0,#c99a55 45%,#8a6238);box-shadow:0 5px 12px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.5)}
-  .gs-slider.bow .gs-slider-knob:after{content:'';position:absolute;left:6%;right:6%;top:100%;height:8px;border-radius:4px;background:linear-gradient(180deg,#f7f2e4,#cfc8b4);box-shadow:0 2px 6px rgba(0,0,0,.5)}
-  .gs-slider.bow .gs-slider-knob:before{content:'';position:absolute;left:0;top:-6px;width:10px;height:22px;border-radius:4px;background:linear-gradient(180deg,#5d3d1e,#2a1a0d)}
-  .gs-slider-label{position:absolute;left:50%;transform:translateX(-50%);bottom:-16px;font-size:10px;letter-spacing:.18em;color:#9fb3c0}
-  .gs-slider-knob{position:absolute;top:50%;left:50%;width:22px;height:34px;margin:-17px 0 0 -11px;border-radius:6px;background:linear-gradient(180deg,#f6e7c3,#c99a55);border:1px solid #6b4a25;box-shadow:0 4px 10px rgba(0,0,0,.6);pointer-events:none}
   .gs-piano[hidden]{display:none}
   .gs-photo{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);aspect-ratio:16 / 9;border-radius:16px;overflow:hidden;border:1px solid rgba(240,230,255,.18);box-shadow:0 12px 40px rgba(0,0,0,.6);background:#0a0812}
   .gs-photo img{width:100%;height:100%;object-fit:cover;display:block}
@@ -566,12 +560,12 @@
     <span id="gsTitle">自由演奏</span>
     <span id="gsNoteName"></span>
     <button id="gsGrid" class="gs-rot" title="音阶网格">🎹 音阶</button>
+    <button id="gsScale" class="gs-rot" title="音阶">🎼 五声</button>
     <button id="gsRotate" class="gs-rot" title="旋转乐器">🔄</button>
   </div>
   <div class="gs-stagewrap" id="gsStageWrap">
     <div class="gs-surface" id="gsSurface"></div>
     <div class="gs-piano" id="gsPiano"></div>
-    <div class="gs-slider" id="gsSlider"><div class="gs-slider-knob" id="gsKnob"></div></div>
   </div>
   <div class="gs-panel collapsed" id="gsPanel">
     <div class="gs-panel-head" id="gsPanelHead">
@@ -1057,6 +1051,7 @@
    * 状态
    * ============================================================ */
   var state = {
+    gsScale: 'penta',
     freq: 432,
     m: 2,
     n: 2,
@@ -8527,6 +8522,21 @@
   var Game = (function () {
     var on = false, el = {}, drag = null, lastIdx = -1, lastT = 0, gridMode = false;
     var SCALE = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86];
+    var GAME_SCALES = {
+      penta: { name: '五声', notes: [60, 62, 64, 67, 69, 72, 74, 76, 79, 81] },
+      major: { name: '大调', notes: [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79] },
+      minor: { name: '小调', notes: [60, 62, 63, 65, 67, 68, 70, 72, 74, 75, 77, 79] },
+      whole: { name: '全音', notes: [60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82] },
+      chromatic: { name: '十二音', notes: [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71] }
+    };
+    function currentScaleNotes() {
+      var sc = GAME_SCALES[state.gsScale] || GAME_SCALES.penta;
+      return sc.notes;
+    }
+    function gsScaleLabel() {
+      var sc = GAME_SCALES[state.gsScale] || GAME_SCALES.penta;
+      return '🎼 ' + sc.name;
+    }
     var HANDPAN = [60, 62, 64, 67, 69, 72, 74, 76];
     var FAM = {
       piano: 'keys', ep: 'keys', synth: 'keys', musicbox: 'musicbox', marimba: 'marimba',
@@ -9014,11 +9024,11 @@
       var artType = ART_ALIAS[type] || type;
       var artImg = SURFACE_ART[state.instrument] || SURFACE_ART[artType] || SURFACE_ART[type];
       if (artImg) {
-        var sNotes = type === 'handpan' ? HANDPAN : SCALE;
+        var sNotes = noteArr(type);
         var sLabels = [];
         for (var li = 0; li < sNotes.length; li++) sLabels.push(nameOf(sNotes[li]));
         el.surface.innerHTML = '<img class="gs-photo-bg" src="' + artImg + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + artImg + '" alt="">' + zonesHTML(sNotes, sLabels, 'gs-keys') + '</div>';
-        el.surface.dataset.count = type === 'handpan' ? HANDPAN.length : SCALE.length;
+        el.surface.dataset.count = noteArr(type).length;
         el.surface.dataset.type = type;
         return;
       }
@@ -9082,7 +9092,7 @@
       el.surface.dataset.count = type === 'handpan' ? HANDPAN.length : SCALE.length;
       el.surface.dataset.type = type;
     }
-    function noteArr(type) { return type === 'handpan' ? HANDPAN : SCALE; }
+    function noteArr(type) { return type === 'handpan' ? HANDPAN : currentScaleNotes(); }
     function ripple(x, y) {
       var d = document.createElement('div');
       d.className = 'gs-ripple';
@@ -9110,17 +9120,20 @@
       flashZone(el.surface, idx);
       floatNoteText(el.surface, e.clientX - r.left, e.clientY - r.top, '♪ ' + nameOf(arr[idx]));
     }
-    function buildKeys() {
+    function buildKeys(rangeKey) {
+      var range = RANGES[rangeKey] || RANGES['88'];
       el.piano.innerHTML = '';
       el.piano.hidden = false;
-      el.piano.className = 'gs-piano gs-piano88';
-      el.surface.hidden = true;
+      el.piano.className = 'gs-piano gs-piano' + (rangeKey || '88');
       var whiteW = 22, whiteIdx = 0;
+      var whitesN = 0;
+      for (var wm = range[0]; wm <= range[1]; wm++) if ([0, 2, 4, 5, 7, 9, 11].indexOf(wm % 12) >= 0) whitesN++;
+      whiteW = whitesN > 40 ? 22 : (whitesN > 20 ? 24 : (whitesN > 10 ? 30 : 40));
       function bind(node, n) {
         node.dataset.midi = n;
         node.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); node.classList.add('on'); setTimeout(function () { node.classList.remove('on'); }, 160); pressKey(n); });
       }
-      for (var m = 21; m <= 108; m++) {
+      for (var m = range[0]; m <= range[1]; m++) {
         var isW = [0, 2, 4, 5, 7, 9, 11].indexOf(m % 12) >= 0;
         var b = document.createElement('div');
         if (isW) {
@@ -9170,6 +9183,11 @@
     }
     function build() {
       var fam = FAM[state.instrument] || 'keys';
+      var scBtn0 = document.getElementById('gsScale');
+      if (scBtn0) {
+        scBtn0.style.display = (fam === 'lyre' || fam === 'flowzither' || fam === 'handpan' || gridMode) ? 'none' : '';
+        scBtn0.textContent = gsScaleLabel();
+      }
       var inst = INSTRUMENTS.filter(function (x) { return x.id === state.instrument; })[0] || { name: state.instrument };
       el.title.textContent = inst.name + ' · 自由演奏';
       el.note.textContent = '';
@@ -9186,12 +9204,12 @@
         return;
       }
       if (fam === 'keys') {
+        var kArt = SURFACE_ART[state.instrument];
+        var kN = currentScaleNotes(), kL = [];
+        for (var ki = 0; ki < kN.length; ki++) kL.push(nameOf(kN[ki]));
         document.getElementById('gsStageWrap').classList.remove('piano-mode');
         el.piano.hidden = true;
         el.piano.innerHTML = '';
-        var kArt = SURFACE_ART[state.instrument];
-        var kN = SCALE, kL = [];
-        for (var ki = 0; ki < kN.length; ki++) kL.push(nameOf(kN[ki]));
         el.surface.hidden = false;
         if (kArt) {
           el.surface.innerHTML = '<img class="gs-photo-bg" src="' + kArt + '" alt=""><div class="gs-photo-glow"></div><div class="gs-photo"><img src="' + kArt + '" alt="">' + zonesHTML(kN, kL, 'gs-keys') + '</div>';
@@ -9199,7 +9217,7 @@
           el.surface.innerHTML = '';
         }
         el.surface.dataset.type = state.instrument;
-        el.surface.dataset.count = SCALE.length;
+        el.surface.dataset.count = kN.length;
         showSlider(false);
         markActive();
         return;
@@ -9255,6 +9273,17 @@
         gridBtn.classList.toggle('on', gridMode);
         build();
       });
+      var scaleBtn = document.getElementById('gsScale');
+      var gsScaleOrder = ['penta', 'major', 'minor', 'whole', 'chromatic'];
+      if (scaleBtn) scaleBtn.addEventListener('click', function () {
+        var i = gsScaleOrder.indexOf(state.gsScale);
+        state.gsScale = gsScaleOrder[(i + 1) % gsScaleOrder.length];
+        try { localStorage.setItem('cz_gsscale', state.gsScale); } catch (e) {}
+        scaleBtn.textContent = gsScaleLabel();
+        toast('音阶：' + (GAME_SCALES[state.gsScale] || GAME_SCALES.penta).name, 1600);
+        build();
+      });
+      try { var gsc0 = localStorage.getItem('cz_gsscale'); if (gsc0 && GAME_SCALES[gsc0]) state.gsScale = gsc0; } catch (e) {}
       var rotBtn = document.getElementById('gsRotate');
       if (rotBtn) rotBtn.addEventListener('click', function () {
         rotMode = !rotMode;
