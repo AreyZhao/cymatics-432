@@ -1977,24 +1977,24 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [66, 78], scale: 'penta', drums: 'soft', wet: 0.78, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, introBeats: 16, introTex: 0, altScales: ['dorian', 'minorPenta'], velScale: 0.9, liveliness: 0.8, arpChance: 0.3, pats: [[0, 2, 4, 6], [0, 2, 3, 5, 6], [0, 1.5, 3, 4.5, 6]], instPool: ['flute', 'clarinet', 'harp', 'ep', 'piano', 'marimba', 'bell', 'musicbox', 'guzheng', 'bianzhong'],
-      desc: '音色：空灵通透、柔和泛音，弦乐与吹奏都偏温润。结构：长句连贯、留白舒展，前奏慢慢铺开。混音：大空间弥散混响、柔和延迟，中高频通透。',
+    { id: 'aurora', name: '极光 · 空灵', icon: '🌌', mood: '空灵', bpm: 72, bpmRange: [66, 78], scale: 'penta', drums: 'soft', wet: 0.78, octave: 24, bright: true, school: 'debussy', soloChance: 0.35, introBeats: 16, introTex: 0, altScales: ['dorian', 'minorPenta'], velScale: 0.9, liveliness: 0.8, arpChance: 0.3, sparkle: 1.7, wave: 0.25, swing: 0, pats: [[0, 2, 4, 6], [0, 2, 3, 5, 6], [0, 1.5, 3, 4.5, 6]], instPool: ['flute', 'clarinet', 'harp', 'ep', 'piano', 'marimba', 'bell', 'musicbox', 'guzheng', 'bianzhong'],
+      desc: '灵感：极光、彩虹与霞光——大地磁场的呼吸、雨后的七彩、日落的光带。音色：空灵通透、柔亮泛音，像光在夜空缓慢流动。结构：长句舒展、留白多，旋律如光带层层变幻，不堆叠。混音：大空间弥散混响、柔和延迟，高频泛起微光。统一氛围：和谐、奇幻、沉浸。',
       visual: { hex: '#b388ff', hue: 0.75 },
       game: { insts: ['flute', 'harp', 'guzheng'], scale: 'penta', tip: '五声慢板 · 长音铺展' } },
-    { id: 'night',  name: '夜色 · 心动', icon: '🌃', mood: '优美', bpm: 104, bpmRange: [96, 112], scale: 'major', drums: 'soft', wet: 0.45, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, introBeats: 8, introTex: 2, altScales: ['penta'], velScale: 0.9, liveliness: 1.15, arpChance: 0.4, pats: [[0, 1.5, 2.5, 3.5, 5], [0, 1, 2, 3.5, 4.5, 5.5, 6.5], [0, 2, 3, 4.5, 6]], instPool: ['ep', 'piano', 'guzheng', 'pipa', 'bell', 'musicbox', 'harp', 'flute', 'clarinet'],
-      desc: '音色：温暖电钢与钟琴，柔和颗粒。结构：中速律动，旋律有起伏记忆点。混音：房间混响、中频温暖、低频不压。',
+    { id: 'night',  name: '夜色 · 心动', icon: '🌃', mood: '优美', bpm: 104, bpmRange: [96, 112], scale: 'major', drums: 'soft', wet: 0.45, octave: 24, bright: true, school: 'schubert', soloChance: 0.3, introBeats: 8, introTex: 2, altScales: ['penta'], velScale: 0.9, liveliness: 1.15, arpChance: 0.4, sparkle: 1.0, wave: 0.2, swing: 0.02, pats: [[0, 1.5, 2.5, 3.5, 5], [0, 1, 2, 3.5, 4.5, 5.5, 6.5], [0, 2, 3, 4.5, 6]], instPool: ['ep', 'piano', 'guzheng', 'pipa', 'bell', 'musicbox', 'harp', 'flute', 'clarinet'],
+      desc: '灵感：城市通勤的夜、车窗外的霞光——归途、牵挂与温柔。音色：温暖电钢与钟琴，细腻有呼吸感，句子带人情味。结构：中速律动，旋律起伏有记忆点，情感丰沛但不吵闹。混音：房间混响、中频温暖、低频不压。统一氛围：爱、联结、心安。',
       visual: { hex: '#ff9ec7', hue: 0.95 },
       game: { insts: ['ep', 'piano', 'musicbox'], scale: 'major', tip: '大调中速 · 温暖和弦' } },
-    { id: 'neon',   name: '霓虹 · 律动', icon: '🌈', mood: '律动', bpm: 126, bpmRange: [118, 134], scale: 'penta', drums: 'groove', wet: 0.35, octave: 24, bright: true, school: 'reich', soloChance: 0.25, introBeats: 0, introTex: 2, altScales: ['minorPenta', 'major'], velScale: 0.88, liveliness: 1.4, arpChance: 0.5, pats: [[0, 1, 2, 3, 4, 5, 6], [0, 1, 1.5, 2, 3, 4, 4.5, 5, 6], [0, 0.5, 1.5, 2.5, 3, 4, 5, 6]], instPool: ['synth', 'marimba', 'pipa', 'guzheng', 'bell', 'piccolo', 'ep', 'piano'],
-      desc: '音色：明亮合成器与马林巴，颗粒清晰。结构：稳态四拍律动，短句推进。混音：宽立体声、短混响、亮而不刺。',
+    { id: 'neon',   name: '霓虹 · 律动', icon: '🌈', mood: '律动', bpm: 126, bpmRange: [118, 134], scale: 'penta', drums: 'groove', wet: 0.35, octave: 24, bright: true, school: 'reich', soloChance: 0.25, introBeats: 0, introTex: 2, altScales: ['minorPenta', 'major'], velScale: 0.88, liveliness: 1.4, arpChance: 0.5, sparkle: 1.2, wave: 0, swing: 0.04, pats: [[0, 1, 2, 3, 4, 5, 6], [0, 1, 1.5, 2, 3, 4, 4.5, 5, 6], [0, 0.5, 1.5, 2.5, 3, 4, 5, 6]], instPool: ['synth', 'marimba', 'pipa', 'guzheng', 'bell', 'piccolo', 'ep', 'piano'],
+      desc: '灵感：城市通勤的霓虹与车流——热闹、鲜活、向前奔涌。音色：明亮合成器与马林巴，颗粒清晰、有光泽。结构：稳态四拍律动、短句推进，热闹但不拥挤。混音：宽立体声、短混响，亮而不刺。统一氛围：生命力、城市心跳。',
       visual: { hex: '#00e5ff', hue: 0.55 },
       game: { insts: ['synth', 'pipa', 'piccolo'], scale: 'penta', tip: '五声律动 · 短促跳跃' } },
-    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 92, bpmRange: [86, 100], scale: 'penta', drums: 'soft', wet: 0.45, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, introBeats: 16, introTex: 1, altScales: ['minorPenta', 'dorian'], velScale: 0.9, liveliness: 0.9, arpChance: 0.25, pats: [[0, 2, 4, 6], [0, 1, 2, 3, 4, 5, 6], [0, 2, 3, 4, 6]], instPool: ['clarinet', 'flute', 'handpan', 'marimba', 'ep', 'piano', 'bianzhong', 'bell', 'guzheng'],
-      desc: '音色：厚重低音与铜管/钟琴，层次饱满。结构：低音铺底、渐强递进，克制不炸。混音：大厅混响、低频支撑、高频收住。',
+    { id: 'pulse',  name: '脉冲 · 震撼', icon: '⚡', mood: '震撼', bpm: 92, bpmRange: [86, 100], scale: 'penta', drums: 'soft', wet: 0.5, octave: 12, bright: false, school: 'bruckner', soloChance: 0.2, introBeats: 16, introTex: 1, altScales: ['minorPenta', 'dorian'], velScale: 0.9, liveliness: 0.95, arpChance: 0.25, sparkle: 0.8, wave: 0.65, swing: 0, pats: [[0, 2, 4, 6], [0, 1, 2, 3, 4, 5, 6], [0, 2, 3, 4, 6]], instPool: ['clarinet', 'flute', 'handpan', 'marimba', 'ep', 'piano', 'bianzhong', 'bell', 'guzheng'],
+      desc: '灵感：惊涛骇浪、波澜壮阔、寰宇激荡——大海的怒涛、天穹深处的脉动。音色：厚重低音与铜管/钟琴，层次饱满、有海的重量。结构：低音铺底、浪涌式一波推一波的渐强，力量内敛不炸耳。混音：巨型厅堂混响、低频支撑、高频收住。统一氛围：生命力、壮阔、敬畏。',
       visual: { hex: '#ffb74d', hue: 0.09 },
-      game: { insts: ['bianzhong', 'handpan', 'clarinet'], scale: 'minor', tip: '小调低音 · 渐强推进' } },
-    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 104, bpmRange: [96, 112], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, introBeats: 8, introTex: 1, altScales: ['penta', 'dorian'], velScale: 0.88, liveliness: 1.2, arpChance: 0.45, pats: [[0, 1.5, 2.5, 3.5], [0, 1, 2, 2.5, 3, 3.5], [0, 0.75, 1.5, 2.5, 3.5]], instPool: ['marimba', 'bell', 'harp', 'guzheng', 'pipa', 'flute', 'piano', 'musicbox'],
-      desc: '音色：马林巴与钟琴，干净清脆。结构：渐层生长、循环推进。混音：轻混响、清晰分离、层次逐步叠加。',
+      game: { insts: ['bianzhong', 'handpan', 'clarinet'], scale: 'minor', tip: '小调低音 · 浪涌推进' } },
+    { id: 'grow',   name: '潮生 · 律动', icon: '🌀', mood: '律动', bpm: 104, bpmRange: [96, 112], scale: 'major', drums: 'groove', wet: 0.42, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.25, introBeats: 8, introTex: 1, altScales: ['penta', 'dorian'], velScale: 0.88, liveliness: 1.2, arpChance: 0.45, sparkle: 1.1, wave: 0.8, swing: 0, pats: [[0, 1.5, 2.5, 3.5], [0, 1, 2, 2.5, 3, 3.5], [0, 0.75, 1.5, 2.5, 3.5]], instPool: ['marimba', 'bell', 'harp', 'guzheng', 'pipa', 'flute', 'piano', 'musicbox'],
+      desc: '灵感：潮起潮落、万物复苏与更迭——循环、生长、不断向更好的自己进化。音色：马林巴与钟琴，干净清脆，像水与光。结构：波浪式起伏、循环渐层叠加，生生不息。混音：轻混响、清晰分离、层次逐步丰盈。统一氛围：进化、更新、希望。',
       visual: { hex: '#36f1a1', hue: 0.42 },
       game: { insts: ['marimba', 'guzheng', 'harp'], scale: 'major', tip: '大调循环 · 渐层生长' } }
   ];
@@ -2424,6 +2424,24 @@
       } else if (layer >= 1 && !isIntro && !isOutro) {
         for (var h1 = 0; h1 < 16; h1 += 4) drums.push({ kind: 'hat', t: base + h1, vel: 0.07 * env });
       }
+    }
+    if (style.sparkle && style.sparkle !== 1) {
+      for (var sp2 = 0; sp2 < sparkles.length; sp2++) sparkles[sp2].vel *= style.sparkle;
+    }
+    if (style.wave) {
+      var tb2 = Math.max(1, phases * 16);
+      var wc2 = style.waveCycles || 2;
+      var wave2 = function (arr, amp) {
+        for (var w2 = 0; w2 < arr.length; w2++) {
+          var ev2 = arr[w2];
+          var ph2 = (ev2.t % tb2) / tb2;
+          ev2.vel *= 1 - amp * 0.5 + amp * 0.5 * (0.5 + 0.5 * Math.sin(2 * Math.PI * ph2 * wc2 - Math.PI / 2));
+        }
+      };
+      wave2(melody, style.wave);
+      wave2(chords, style.wave * 0.6);
+      wave2(arp, style.wave * 0.8);
+      wave2(bassline, style.wave * 0.7);
     }
     drums.length = 0;
     var softK2 = style.velScale || 1;
@@ -2891,6 +2909,29 @@
           arp.push({ t: ce.t + ak * 0.5 + (rnd() - 0.5) * 0.02, midi: am, vel: (0.07 + rnd() * 0.06) * (ce.vel || 0.4) * 1.6 * LIVE });
         }
       }
+    }
+    /* 风格化处理：微光闪烁、摇摆、波浪起伏 */
+    if (style.sparkle && style.sparkle !== 1) {
+      for (var spx = 0; spx < sparkles.length; spx++) sparkles[spx].vel *= style.sparkle;
+    }
+    if (style.swing) {
+      for (var swx = 0; swx < melody.length; swx++) if (swx % 2 === 1) melody[swx].t += style.swing;
+    }
+    if (style.wave) {
+      var totalBeats = Math.max(1, sections * 8);
+      var wavCycles = style.waveCycles || 2;
+      var applyWave = function (arr, amp) {
+        for (var wi = 0; wi < arr.length; wi++) {
+          var ev = arr[wi];
+          var ph = (ev.t % totalBeats) / totalBeats;
+          var wf = 1 - amp * 0.5 + amp * 0.5 * (0.5 + 0.5 * Math.sin(2 * Math.PI * ph * wavCycles - Math.PI / 2));
+          ev.vel *= wf;
+        }
+      };
+      applyWave(melody, style.wave);
+      applyWave(chords, style.wave * 0.6);
+      applyWave(arp, style.wave * 0.8);
+      applyWave(bassline, style.wave * 0.7);
     }
     drums.length = 0;
     var softK = style.velScale || 1;
@@ -7079,6 +7120,10 @@
         });
       });
       body.appendChild(rowg);
+      var ng0 = document.createElement('div');
+      ng0.className = 'sheet-note';
+      ng0.textContent = '统一氛围：和谐 · 生命力 · 进化 · 爱（全部灵感取自大自然）。';
+      body.appendChild(ng0);
       var ng = document.createElement('div');
       ng.className = 'sheet-note';
       var curStyle = (state.genStyle && state.genStyle !== 'auto') ? styleById(state.genStyle) : null;
