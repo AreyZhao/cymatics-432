@@ -381,15 +381,19 @@
   .gs-stagewrap.piano-mode .gs-piano{height:140px}
   .gs-surface svg{width:100%;height:100%;display:block}
   .gs-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;border-radius:16px}
-  .lyre-wrap{position:absolute;inset:0;border-radius:18px;background:radial-gradient(circle at 50% 28%, rgba(34,66,76,.92), rgba(6,12,16,.97) 72%);border:1px solid rgba(214,182,112,.38);box-shadow:inset 0 0 70px rgba(0,0,0,.65),0 0 46px rgba(214,182,112,.13);overflow:hidden}
-  .lyre-wrap.lyre-b{background:radial-gradient(circle at 50% 28%, rgba(60,40,60,.92), rgba(10,8,14,.97) 72%);border-color:rgba(190,150,220,.35)}
-  .lyre-orn{position:absolute;inset:10px;border-radius:13px;border:1px solid rgba(214,182,112,.22);pointer-events:none}
-  .lyre-orn:before,.lyre-orn:after{content:'';position:absolute;left:50%;width:70%;height:1px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,rgba(214,182,112,.4),transparent)}
+  .lyre-stage{position:absolute;inset:0;border-radius:18px;overflow:hidden;background:radial-gradient(circle at 50% 26%, rgba(42,30,66,.96), rgba(8,6,16,.985) 74%);border:1px solid rgba(196,186,255,.30);box-shadow:inset 0 0 80px rgba(0,0,0,.7),0 0 52px rgba(140,120,255,.16)}
+  .lyre-stage .gs-canvas{border-radius:18px}
+  .lyre-halo{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 34%, rgba(190,214,255,.18), transparent 58%),radial-gradient(circle at 50% 92%, rgba(244,223,174,.10), transparent 60%)}
+  .lyre-wrap{position:absolute;inset:0;border-radius:18px;background:transparent;border:none;box-shadow:none;overflow:hidden;pointer-events:none}
+  .lyre-wrap.lyre-b{background:transparent}
+  .lyre-orn{position:absolute;inset:10px;border-radius:13px;border:1px solid rgba(196,186,255,.18);pointer-events:none}
+  .lyre-orn:before,.lyre-orn:after{content:'';position:absolute;left:50%;width:70%;height:1px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,rgba(190,214,255,.45),transparent)}
   .lyre-orn:before{top:8px}.lyre-orn:after{bottom:8px}
   .lyre-grid{position:relative;display:flex;flex-direction:column;justify-content:center;gap:12px;height:100%;padding:16px;box-sizing:border-box}
   .lyre-row{display:flex;justify-content:center;gap:8px}
-  .lyre-key{width:clamp(38px,9.5vw,56px);height:clamp(38px,9.5vw,56px);border-radius:50%;appearance:none;-webkit-appearance:none;border:1px solid rgba(226,198,138,.55);background:radial-gradient(circle at 40% 35%, rgba(255,240,200,.30), rgba(120,96,50,.22) 60%, rgba(20,26,30,.6));color:#f6e7c2;font-size:clamp(10px,2.6vw,12px);letter-spacing:.02em;cursor:pointer;box-shadow:0 0 16px rgba(226,198,138,.16), inset 0 0 12px rgba(255,235,190,.10);transition:transform .07s, box-shadow .12s;font-family:inherit;user-select:none;-webkit-user-select:none}
-  .lyre-key.on{transform:scale(.9);box-shadow:0 0 30px rgba(255,225,150,.7), inset 0 0 18px rgba(255,240,200,.4);background:radial-gradient(circle at 40% 35%, rgba(255,250,220,.8), rgba(226,190,110,.55))}
+  .lyre-key{pointer-events:auto;width:clamp(38px,9.5vw,56px);height:clamp(38px,9.5vw,56px);border-radius:50%;appearance:none;-webkit-appearance:none;border:1px solid rgba(196,214,255,.5);background:radial-gradient(circle at 38% 30%, rgba(226,238,255,.34), rgba(96,110,180,.16) 55%, rgba(12,12,26,.55));color:#e6efff;font-size:clamp(10px,2.6vw,12px);letter-spacing:.02em;cursor:pointer;box-shadow:0 0 18px rgba(160,190,255,.22), inset 0 0 14px rgba(210,228,255,.12), 0 4px 12px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:transform .07s, box-shadow .12s;font-family:inherit;user-select:none;-webkit-user-select:none}
+  .lyre-key.on{transform:scale(.9);box-shadow:0 0 34px rgba(190,214,255,.75), inset 0 0 20px rgba(240,246,255,.5);background:radial-gradient(circle at 38% 30%, rgba(255,255,255,.85), rgba(178,200,255,.6))}
+  .lyre-plate{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:11px;letter-spacing:.35em;color:rgba(214,224,255,.6);pointer-events:none}
   .lyre-key span{pointer-events:none}
   .gs-ripple{position:absolute;width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);pointer-events:none;transform:translate(-50%,-50%);animation:gsrip .55s ease-out forwards}
   @keyframes gsrip{from{opacity:.95;box-shadow:0 0 10px var(--accent)}to{opacity:0;box-shadow:0 0 34px var(--accent);width:90px;height:90px}}
@@ -8060,6 +8064,8 @@
       else if (type === 'marimba') root = Rx(-0.55);
       else if (type === 'musicbox') root = mul(T(0, -0.1, 0), Rx(-0.22));
       else if (type === 'piano') root = mul(T(0, -0.1, 0), Rx(-0.34));
+      else if (type === 'lyre') root = mul(T(0, -0.05, 0), Rx(-0.12));
+      else if (type === 'zither3') root = mul(T(0, -0.05, 0), Rx(-0.42));
       var WOOD = 'wood', METAL = 'metal', LAC = 'lacquer';
       var wt = [1.0, 0.93, 0.82], mt = [1.0, 1.0, 1.0], lt = [1.0, 0.9, 0.85];
       var dark = [0.45, 0.4, 0.35];
@@ -8247,6 +8253,44 @@
         }
         add(mkBox(2.7, 0.08, 0.12), LAC, [0.3, 0.26, 0.22], 0, 0.35, 0);
         add(mkBox(2.7, 0.08, 0.12), LAC, [0.3, 0.26, 0.22], 0, -0.35, 0);
+      } else if (type === 'lyre') {
+        var LY_GOLD = [1.3, 1.08, 0.66], LY_STR = [0.86, 0.96, 1.2];
+        add(mkBox(1.15, 0.18, 0.36), LAC, [0.55, 0.4, 0.22], 0, -0.88, 0);
+        add(mkLathe([[0.02, 0.09], [0.2, 0.08], [0.34, 0.02], [0.36, -0.06]], 24), 'gold', LY_GOLD, 0, -0.86, 0);
+        for (var la = 0; la < 2; la++) {
+          var sgn = la === 0 ? -1 : 1;
+          for (var ls = 0; ls < 6; ls++) {
+            var lyy = -0.7 + ls * 0.32;
+            var lxx = sgn * (0.34 + Math.sin(ls / 5 * 1.1) * 0.3);
+            add(mkCyl(0.05, 0.05, 0.36, 12), 'gold', LY_GOLD, lxx, lyy, 0, 1, 1, 1, 0, sgn * (0.55 - ls * 0.16));
+          }
+          add(mkSphere(0.09, 12, 8), 'gold', [1.4, 1.2, 0.8], sgn * 0.58, 1.02, 0);
+        }
+        add(mkCyl(0.055, 0.055, 1.25, 14), 'gold', LY_GOLD, 0, 1.02, 0, 1, 1, 1, 0, Math.PI / 2);
+        for (var lst = 0; lst < 21; lst++) {
+          var lx = -0.52 + lst * 0.052;
+          var lyTop = 0.98 - Math.abs(lx) * 0.22;
+          add(mkCyl(0.006, 0.006, lyTop + 0.72, 6), METAL, LY_STR, lx, (lyTop - 0.72) / 2, 0.02);
+        }
+        add(mkBox(0.9, 0.05, 0.12), 'gold', [1.1, 0.92, 0.6], 0, -0.72, 0.12);
+        for (var lp = 0; lp < 5; lp++) add(mkSphere(0.035, 10, 8), 'gold', [1.5, 1.3, 0.9], -0.3 + lp * 0.15, -0.74, 0.14);
+      } else if (type === 'zither3') {
+        var ZT = [1.15, 0.88, 1.4], ZT_STR = [0.92, 0.94, 1.2];
+        add(mkBox(3.0, 0.26, 0.86), LAC, ZT, 0, 0.12, 0);
+        add(mkBox(3.02, 0.06, 0.88), LAC, [1.25, 1.0, 1.5], 0, 0.3, 0);
+        add(mkBox(0.24, 0.12, 0.88), 'gold', [1.2, 1.0, 0.66], -1.5, 0.3, 0);
+        add(mkBox(0.24, 0.12, 0.88), 'gold', [1.2, 1.0, 0.66], 1.5, 0.3, 0);
+        for (var zs = 0; zs < 21; zs++) {
+          var zx = -1.3 + zs * 0.13;
+          add(mkCyl(0.006, 0.006, 0.8, 6), METAL, ZT_STR, zx, 0.38, 0);
+          if (zs % 2 === 0) add(mkBox(0.05, 0.1, 0.5), 'gold', [1.15, 0.95, 0.7], zx, 0.4, 0);
+        }
+        add(mkSphere(0.28, 20, 12), LAC, [0.9, 0.7, 1.2], -0.6, 0.5, 0.1, 1, 0.35, 1);
+        add(mkSphere(0.2, 16, 10), LAC, [1.1, 0.85, 1.35], 0.75, 0.55, -0.1, 1, 0.3, 1);
+        for (var zp = 0; zp < 8; zp++) {
+          var za = zp / 8 * Math.PI * 2;
+          add(mkSphere(0.05, 10, 6), LAC, [1.3, 0.95, 1.5], Math.cos(za) * 1.7, 0.55 + Math.sin(za) * 0.25, Math.sin(za) * 0.5, 1, 0.35, 1);
+        }
       } else if (type === 'bells') {
         add(mkBox(3.0, 0.14, 0.34), WOOD, wt, 0, 1.15, 0);
         add(mkBox(0.1, 0.14, 0.34), LAC, lt, -1.5, 1.28, 0);
@@ -8462,7 +8506,9 @@
     function buildLyre(type) {
       var LYRE_NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'];
       var LYRE_SEMI = [0, 2, 4, 5, 7, 9, 11];
-      var html = '<div class="lyre-wrap ' + (type === 'lyre' ? 'lyre-a' : 'lyre-b') + '"><div class="lyre-orn"></div><div class="lyre-grid">';
+      var plate = type === 'lyre' ? '风 物 之 诗 琴' : (type === 'flowzither' ? '镜 花 之 琴' : '');
+      var html = '<div class="lyre-stage"><div class="lyre3d" id="lyre3d"></div><div class="lyre-halo"></div>' +
+        '<div class="lyre-wrap ' + (type === 'lyre' ? 'lyre-a' : 'lyre-b') + '"><div class="lyre-orn"></div><div class="lyre-grid">';
       for (var rr = 0; rr < 3; rr++) {
         html += '<div class="lyre-row">';
         for (var cc = 0; cc < 7; cc++) {
@@ -8472,9 +8518,17 @@
         html += '</div>';
       }
       html += '</div></div>';
+      html += plate ? '<div class="lyre-plate">' + plate + '</div>' : '';
+      html += '</div>';
       el.surface.innerHTML = html;
       el.surface.dataset.type = type;
       el.surface.dataset.count = '21';
+      var host3 = document.getElementById('lyre3d');
+      if (host3) {
+        host3.style.cssText = 'position:absolute;inset:0;border-radius:18px;overflow:hidden';
+        var gtype = type === 'lyre' ? 'lyre' : (type === 'flowzither' ? 'zither3' : null);
+        if (gtype && typeof G3D !== 'undefined') G3D.mount(host3, gtype);
+      }
       var held = false, lastMidi = -1, holdMidi = -1, holdT = 0, holdIv = 0;
       function strike(node) {
         var m = +node.dataset.midi;
