@@ -1491,9 +1491,11 @@
       var out = outBus(wet, opts.bus);
       var INST_TRIM = { musicbox: 0.95, piano: 0.9, ep: 1.2, flute: 0.8, bell: 0.8, handpan: 0.8, synth: 1.2, marimba: 0.6, clarinet: 1.2, guzheng: 0.45, pipa: 1.3, bianzhong: 0.9, violin: 0.91, harp: 0.85, piccolo: 0.92, sax: 0.8, trumpet: 0.85, guitar: 0.82, bass: 0.95, recorder: 0.9, panflute: 0.86 };
       out.gain.value = INST_TRIM[inst] || 1;
-      if (SAMPLE_BANK[inst]) {
-        loadSample(inst, c);
-        if (playSample(inst, c, f, t, vel, out)) return;
+      var SAMPLE_ALIAS = { bianzhong: 'bell', piccolo: 'flute', recorder: 'flute', lyre: 'harp', flowzither: 'guzheng' };
+      var sKey = SAMPLE_ALIAS[inst] || inst;
+      if (SAMPLE_BANK[sKey]) {
+        loadSample(sKey, c);
+        if (playSample(sKey, c, f, t, vel, out)) return;
       }
       var o, g, o2, g2, lp, lfo, lfoG;
 
