@@ -654,7 +654,7 @@
       <li>🎤 <b>外音</b>：手机外放音乐，麦克风收音，波纹跟着低音与节拍呼吸。</li>
       <li>🎧 <b>系统声</b>：电脑 Chrome/Edge 共享标签页时勾选「分享音频」，可只听系统声、不拾取麦克风；手机浏览器抓不到系统声，会自动切换成「页面内部声音」分析（放歌/天籁照样能驱动画面）。</li>
       <li>🎵 <b>放首歌</b>：选手机里的 mp3，页面自己播放；声音会实时换算成 0–∞ 的频率，直接改变图形形状。</li>
-      <li>✨ <b>天籁</b>：随机即兴；「🎛 设置 → 创作 → 换一首」按选定风格生成新曲并存进曲库。7 种风格：🌫️ 空灵悠远 / 🏞️ 辽阔旷野 / 🌑 幽暗深邃 / ✨ 轻快灵动 / ⚔️ 磅礴史诗 / 🧘 静谧冥想 / 🌐 冷冽科技。</li>
+      <li>✨ <b>天籁</b>：随机即兴；「🎛 设置 → 创作 → 换一首」按选定风格生成新曲并存进曲库。7 种风格：🌊 清寂流韵 / 🍃 长风旷野 / 🌑 渊底沉音 / 🌟 星屑跃动 / 🏔️ 山河宏章 / ☁️ 空境止息 / 💎 晶界流光。</li>
       <li>🎤 <b>哼唱</b>：对着麦克风哼旋律（每个音要稳定约 0.2 秒），自动量化成五声音阶配乐；可在「🎛 设置 → 哼唱」里**直接回放**，满意再保存 MIDI。</li>
       <li>🎹 <b>音色</b>：八音盒 / 电子琴 / 电钢琴 / 长笛 / 钟琴 / 手碟 / 马林巴 / 单簧管 / 电古筝 / 电琵琶 / 编钟 / 小提琴 / 竖琴 / 短笛 / 合成器。每首曲只用 1–3 件乐器，独奏时只用一种。</li>
       <li>🎛 <b>设置面板</b>：点右下角 🎨 打开三级菜单——音源 / 音色 / 外观 / 创作 / 哼唱，对应选项都在二级页里。</li>
@@ -1976,46 +1976,46 @@
   ];
 
   var STYLES = [
-    { id: 'aurora', name: '空灵悠远', icon: '🌫️', mood: '空灵', bpm: 64, bpmRange: [60, 68], scale: 'penta', drums: 'soft', wet: 0.78, octave: 24, bright: true, school: 'debussy', soloChance: 0.4, introBeats: 24, introTex: 0, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'harp', 'clarinet'], comp: ['marimba', 'bell', 'ep', 'bianzhong', 'guzheng'] } },
-    { id: 'grow',   name: '辽阔旷野', icon: '🏞️', mood: '优美', bpm: 78, bpmRange: [72, 86], scale: 'major', drums: 'soft', wet: 0.5, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, introBeats: 16, introTex: 2, altScales: ['penta', 'dorian'], palette: { lead: ['marimba', 'bell', 'flute'], comp: ['bell', 'ep', 'marimba'] } },
-    { id: 'abyss',  name: '幽暗深邃', icon: '🌑', mood: '震撼', bpm: 52, bpmRange: [48, 58], scale: 'minorPenta', drums: 'soft', wet: 0.9, octave: 12, bright: false, school: 'bruckner', soloChance: 0.25, introBeats: 16, introTex: 0, altScales: ['dorian', 'minorPenta'], palette: { lead: ['clarinet', 'handpan', 'bianzhong'], comp: ['ep', 'handpan', 'bianzhong', 'marimba'] } },
-    { id: 'night',  name: '轻快灵动', icon: '✨', mood: '律动', bpm: 116, bpmRange: [108, 124], scale: 'penta', drums: 'groove', wet: 0.34, octave: 24, bright: true, school: 'reich', soloChance: 0.3, introBeats: 4, introTex: 2, altScales: ['major'], palette: { lead: ['musicbox', 'marimba', 'piccolo'], comp: ['marimba', 'bell', 'ep'] } },
-    { id: 'pulse',  name: '磅礴史诗', icon: '⚔️', mood: '震撼', bpm: 88, bpmRange: [82, 94], scale: 'dorian', drums: 'soft', wet: 0.62, octave: 12, bright: false, school: 'bruckner', soloChance: 0.18, introBeats: 32, introTex: 1, altScales: ['minorPenta', 'penta'], palette: { lead: ['clarinet', 'flute', 'handpan'], comp: ['handpan', 'marimba', 'ep', 'bianzhong'] } },
-    { id: 'zen',    name: '静谧冥想', icon: '🧘', mood: '空灵', bpm: 44, bpmRange: [40, 50], scale: 'penta', drums: 'soft', wet: 0.92, octave: 24, bright: false, school: 'debussy', soloChance: 0.55, introBeats: 40, introTex: 1, altScales: ['dorian'], palette: { lead: ['handpan', 'harp', 'flute'], comp: ['bell', 'ep', 'bianzhong'] } },
-    { id: 'neon',   name: '冷冽科技', icon: '🌐', mood: '律动', bpm: 104, bpmRange: [96, 112], scale: 'dorian', drums: 'groove', wet: 0.3, octave: 24, bright: true, school: 'reich', soloChance: 0.35, introBeats: 8, introTex: 2, altScales: ['minorPenta'], palette: { lead: ['synth', 'marimba', 'piccolo'], comp: ['synth', 'bell', 'marimba'] } },
+    { id: 'aurora', name: '清寂流韵', icon: '🌊', mood: '空灵', bpm: 60, bpmRange: [56, 64], scale: 'penta', drums: 'soft', wet: 0.82, octave: 24, bright: true, school: 'debussy', soloChance: 0.42, altScales: ['dorian', 'minorPenta'], palette: { lead: ['flute', 'harp', 'clarinet'], comp: ['marimba', 'bell', 'ep', 'guzheng', 'bianzhong'] } },
+    { id: 'grow',   name: '长风旷野', icon: '🍃', mood: '优美', bpm: 76, bpmRange: [70, 84], scale: 'major', drums: 'soft', wet: 0.55, octave: 24, bright: true, evolving: true, school: 'reich', soloChance: 0.2, altScales: ['penta', 'dorian'], palette: { lead: ['flute', 'harp', 'marimba'], comp: ['bell', 'ep', 'marimba'] } },
+    { id: 'abyss',  name: '渊底沉音', icon: '🌑', mood: '震撼', bpm: 48, bpmRange: [44, 54], scale: 'minorPenta', drums: 'soft', wet: 0.9, octave: 12, bright: false, school: 'bruckner', soloChance: 0.28, altScales: ['dorian', 'minorPenta'], palette: { lead: ['clarinet', 'handpan', 'bianzhong'], comp: ['ep', 'handpan', 'bianzhong', 'marimba'] } },
+    { id: 'night',  name: '星屑跃动', icon: '🌟', mood: '律动', bpm: 112, bpmRange: [104, 120], scale: 'penta', drums: 'groove', wet: 0.3, octave: 24, bright: true, school: 'reich', soloChance: 0.35, altScales: ['major'], palette: { lead: ['musicbox', 'marimba', 'piccolo'], comp: ['marimba', 'bell', 'ep'] } },
+    { id: 'pulse',  name: '山河宏章', icon: '🏔️', mood: '震撼', bpm: 84, bpmRange: [78, 92], scale: 'dorian', drums: 'soft', wet: 0.62, octave: 12, bright: false, school: 'bruckner', soloChance: 0.18, altScales: ['minorPenta', 'penta'], palette: { lead: ['clarinet', 'flute', 'handpan'], comp: ['handpan', 'marimba', 'ep', 'bianzhong'] } },
+    { id: 'zen',    name: '空境止息', icon: '☁️', mood: '空灵', bpm: 40, bpmRange: [36, 46], scale: 'penta', drums: 'soft', wet: 0.95, octave: 24, bright: false, school: 'debussy', soloChance: 0.6, altScales: ['dorian'], palette: { lead: ['handpan', 'harp', 'flute'], comp: ['bell', 'ep', 'bianzhong'] } },
+    { id: 'neon',   name: '晶界流光', icon: '💎', mood: '律动', bpm: 100, bpmRange: [92, 108], scale: 'dorian', drums: 'groove', wet: 0.28, octave: 24, bright: true, school: 'reich', soloChance: 0.35, altScales: ['minorPenta'], palette: { lead: ['synth', 'marimba', 'piccolo'], comp: ['synth', 'bell', 'marimba'] } },
   ];
   /* ===== Text-to-Audio 音乐生成 prompt（英文） ===== */
   var SYSTEM_PREFIX = `acoustic chamber instrumental, no vocals, no singing, elegant layered arrangement, 3-5 instruments in clear harmonic layers: lead melody, harmonic pad, rhythmic or colour accents, natural acoustic timbre, high-fidelity studio recording, voice leading, smooth modal harmony, intentional negative space, slow organic dynamic shaping, subtle expression, large diffused hall reverb, wide stereo, harmonic suspension and gentle resolution, music for cymatics resonance visualization, no busy overfilled texture, 60-90 seconds duration`;
 
   var INTRO_DIRECTIVE = `starting immediately at full energy, no intro: main melody and harmonic layers present from the first bar, immediate climactic material, instruments add subtle layers as it evolves, gradual fade-out ending`;
 
-  var promptEther = `${SYSTEM_PREFIX}, style: ethereal and far-reaching (空灵悠远), tranquil still atmosphere, long sustained melody lines unfolding slowly, soft large-hall diffuse reverb, spacious and quiet flowing motion, natural gentle dynamic breathing, delicate floating overtones, BPM 64, long slow intro, no busy percussion`;
+  var promptClear = `${SYSTEM_PREFIX}, style: clear tranquil flowing charm (清寂流韵), timbre like water flowing, delicate long harmonics, cave-like deep spacious reverb, gentle winding melody with no abrupt turns, notes born slowly one from another, slow spreading intro, warm calm quiet, like ripples expanding, BPM 60`;
 
-  var promptWild = `${SYSTEM_PREFIX}, style: vast open wilderness (辽阔旷野), open and expansive, bright clear timbres, long sustained notes, light open-air echo, relaxed unhurried rhythm, intro rising slowly out of silence, transparent and clean, BPM 78, wide stereo, gentle evolving layers`;
+  var promptWind = `${SYSTEM_PREFIX}, style: long wind over wilderness (长风旷野), open airy timbre with wind transparency, huge soundstage, free unhurried melodic lines, rhythm following the breath, natural dynamic swells, like wind sweeping the wild plain, relaxed and free, BPM 76`;
 
-  var promptAbyss = `${SYSTEM_PREFIX}, style: dark and deep (幽暗深邃), low full bass, enclosed dark resonant space, introspective slow melody, heavy atmospheric depth, BPM 52, low drone foundation, intro brewing slowly, restrained, no bright harsh highs`;
+  var promptDeep = `${SYSTEM_PREFIX}, style: sound from the abyss (渊底沉音), heavy low-frequency foundation, dark introverted timbre, enclosed deep reverb, slow restrained melody, strong dark undercurrent, emotions held inside without bursting, quiet gathering intro, weighty and still, BPM 48`;
 
-  var promptAgile = `${SYSTEM_PREFIX}, style: light and agile (轻快灵动), nimble delicate quick notes, short sustained tails, airy light reverb, playful fragmented phrases, very short light intro, never harsh, BPM 116, crisp articulation, gentle bounce`;
+  var promptStardust = `${SYSTEM_PREFIX}, style: stardust bouncing (星屑跃动), tiny light notes like bouncing points of light, short clean tails, soft agile groove that is not noisy, clear bright transparent timbre, light nimble intro, ethereal floating, no sharp harsh noise, BPM 112`;
 
-  var promptEpic = `${SYSTEM_PREFIX}, style: grand sweeping epic (磅礴史诗), wide full timbres, rich layered arrangement, melodic tension, intro gathers strength from low drone and rising harmony, gradual crescendo, controlled dynamics, never explosive or harsh, BPM 88, broad hall reverb`;
+  var promptMountains = `${SYSTEM_PREFIX}, style: grand chapter of mountains and rivers (山河宏章), majestic wide soundstage, layers stacked progressively, melody with rise and fall tension, thick calm breath, intro building layer by layer, restrained power, refusing brutal explosion, grand and spacious, BPM 84`;
 
-  var promptZen = `${SYSTEM_PREFIX}, style: minimal meditation (静谧冥想), extreme sparse notes, long open harmonics, hazy soft reverb, almost no discernible rhythm, very long intro of near-silence, spacious emptiness, BPM 44, for emptying the mind`;
+  var promptVoid = `${SYSTEM_PREFIX}, style: emptiness and cessation (空境止息), minimal blank, very few notes, abundant silence, long diffused harmonics, pulse blurred and nearly dissolved, extremely long intro, for inward stillness and emptying the mind, BPM 40`;
 
-  var promptTech = `${SYSTEM_PREFIX}, style: cold technological calm (冷冽科技), calm and clear, timbres with faint metallic shimmer, sleek precise lines, light sustained tails, clean transparent sound field, intro fading in slowly, fits particle-flow visuals, BPM 104, no harshness`;
+  var promptCrystal = `${SYSTEM_PREFIX}, style: crystal boundary flowing light (晶界流光), cold clean transparent timbre with faint crystalline shimmer, clean sharp lines, detached clean soundfield, calm restrained groove, clear boundaries between notes and notes, perfect for dot-matrix particle flow visuals, BPM 100`;
 
-  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic overcrowded layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music, abrupt cut, dead silence, short clip, looped repetition`;
+  var NEG_PROMPT = `human voice, singing, lyrics, harsh distortion, cheap plastic digital synth, cheesy preset sounds, overly sweet cutesy melody, clashing dissonance, loud explosive drums, rapid busy arpeggios, chaotic overcrowded layers, bad voice leading, out-of-tune, clicks, pops, heavy compression, overbright harsh high frequency, generic stock background music, slow intro, empty opening, long silent intro, abrupt cut, dead silence, short clip, looped repetition, electric guitar, EDM drop`;
 
   var TTA_SYSTEM_PREFIX = SYSTEM_PREFIX;
   var TTA_NEGATIVE_PROMPT = NEG_PROMPT;
 
   var TTA_STYLE_PROMPTS = {
-    aurora: { bpm: [60, 68], instruments: ['flute', 'harp', 'bells'], composers: 'Claude Debussy, Erik Satie', prompt: promptEther, intro: [12, 20], introText: 'long serene intro (12-20s): sparse sustained pad and slow melodic fragments, no percussion', structure: 'long_intro -> unfold -> floating -> fade_out' },
-    grow:   { bpm: [72, 86], instruments: ['marimba', 'bells', 'electric piano'], composers: 'Steve Reich, Keiko Abe', prompt: promptWild, intro: [10, 16], introText: 'slow rising intro (10-16s): open fifths and long tones gradually bloom', structure: 'rising_intro -> open_theme -> layering -> fade_out' },
-    abyss:  { bpm: [48, 58], instruments: ['clarinet', 'handpan', 'piano'], composers: 'Arvo Part, Anton Bruckner', prompt: promptAbyss, intro: [12, 20], introText: 'slow dark intro (12-20s): deep drone and sparse low notes, slowly gathering weight', structure: 'dark_intro -> low_theme -> heavy_climax -> deep_fade' },
-    night:  { bpm: [108, 124], instruments: ['music box', 'marimba', 'bells'], composers: 'Joe Hisaishi, Yann Tiersen', prompt: promptAgile, intro: [2, 6], introText: 'very short light intro (2-6s): a few bright notes immediately set the pulse', structure: 'light_intro -> playful_theme -> variation -> fade' },
-    pulse:  { bpm: [82, 94], instruments: ['french horn', 'clarinet', 'timpani'], composers: 'Anton Bruckner, Tan Dun', prompt: promptEpic, intro: [12, 20], introText: 'building intro (12-20s): low drone and rising harmony gather momentum, gradual crescendo, never exploding', structure: 'building_intro -> grand_theme -> full_layers -> resolve' },
-    zen:    { bpm: [40, 50], instruments: ['handpan', 'bells', 'harp'], composers: 'Harold Budd, Brian Eno', prompt: promptZen, intro: [20, 30], introText: 'very long intro (20-30s): near-silence, single long tones and sparse harmonics, almost no rhythm', structure: 'long_silence_intro -> sparse_tones -> dissolve' },
-    neon:   { bpm: [96, 112], instruments: ['synth', 'marimba', 'bells'], composers: 'Ryuichi Sakamoto, Alva Noto', prompt: promptTech, intro: [6, 12], introText: 'fade-in intro (6-12s): clean sparkling lines emerge from silence', structure: 'fade_in -> clean_theme -> pulse -> fade_out' }
+    aurora: { bpm: [56, 64], instruments: ['flute', 'harp', 'bells'], composers: 'Claude Debussy, Erik Satie', prompt: promptClear, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' },
+    grow:   { bpm: [70, 84], instruments: ['flute', 'marimba', 'bells'], composers: 'Steve Reich, Keiko Abe', prompt: promptWind, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' },
+    abyss:  { bpm: [44, 54], instruments: ['clarinet', 'handpan', 'piano'], composers: 'Arvo Part, Arvo Part', prompt: promptDeep, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' },
+    night:  { bpm: [104, 120], instruments: ['music box', 'marimba', 'bells'], composers: 'Joe Hisaishi, Yann Tiersen', prompt: promptStardust, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' },
+    pulse:  { bpm: [78, 92], instruments: ['french horn', 'clarinet', 'timpani'], composers: 'Anton Bruckner, Tan Dun', prompt: promptMountains, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' },
+    zen:    { bpm: [36, 46], instruments: ['handpan', 'bells', 'harp'], composers: 'Harold Budd, Brian Eno', prompt: promptVoid, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' },
+    neon:   { bpm: [92, 108], instruments: ['synth', 'marimba', 'bells'], composers: 'Ryuichi Sakamoto, Alva Noto', prompt: promptCrystal, intro: [0, 0], introText: 'no intro: main melody and harmonic layers present from the first bar', structure: 'immediate_full_energy -> layers_evolve -> fade_out' }
   };
 
   function clampBpm(style, bpm) {
@@ -2035,10 +2035,10 @@
       : def.prompt;
     var introRange = def.intro || [0, 0];
     var introSec = Math.round(introRange[0] + Math.random() * Math.max(0, introRange[1] - introRange[0]));
-    var introText = def.introText || 'no intro, start immediately';
+    var introText = introSec > 0 ? (def.introText || 'slow intro') : 'no intro, starting immediately at full texture';
     var prompt = body
       + " (max three instruments: " + arr.join(', ') + "; solo sections may use one)."
-      + " Total duration " + duration + " seconds (60-90s). Structure: " + introText + ", then the main theme enters and layers evolve gently, gradual fade-out ending. "
+      + " Total duration " + duration + " seconds (60-90s). " + introText + ". Then the main theme continues, layers evolve gently, gradual fade-out ending. "
       + "Clean instrument separation, long natural reverb tails, spacious mix, gentle rhythm for cymatics visuals. Instrumental only, no vocals.";
     return {
       styleId: styleId,
@@ -2222,13 +2222,13 @@
   }
 
   var TITLE_POOLS = {
-    aurora: [['空谷', '远山', '雾岚', '流云', '星河', '月蚀', '霜降', '萤火', '风隙'], ['之梦', '低语', '漫游', '呼吸', '倒影', '余波']],
-    grow:   [['旷野', '长风', '远原', '荒原', '天际', '云海', '草浪', '归途'], ['回响', '无尽', '舒展', '呼吸', '远行']],
-    abyss:  [['深渊', '暗河', '玄夜', '沉钟', '幽壑', '冥潮', '墨海'], ['低语', '回旋', '暗涌', '余响', '沉沦']],
-    night:  [['灵光', '碎星', '风铃', '露珠', '花火', '溪石', '初雪'], ['轻跃', '跳动', '嬉游', '回旋', '闪烁', '奔跑']],
-    pulse:  [['山河', '天穹', '巨浪', '烽火', '星辰', '沧溟', '龙脊'], ['史诗', '序章', '远征', '回旋', '颂歌']],
-    zen:    [['止水', '空山', '一息', '静湖', '月照', '素心', '无尘'], ['冥想', '留白', '呼吸', '沉息', '归静']],
-    neon:   [['冷光', '冰晶', '棱镜', '数据', '星轨', '电流', '蓝屏'], ['轨迹', '脉冲', '回路', '闪烁', '低鸣']]
+    aurora: [['清泉', '漫流', '幽涧', '水月', '涟漪', '润石', '流韵', '夜露'], ['轻吟', '回环', '浅唱', '余波', '漫游']],
+    grow:   [['长风', '旷野', '荒野', '云隙', '草浪', '远山', '风痕', '天际'], ['自在', '舒展', '随风', '远行', '回响']],
+    abyss:  [['渊底', '深潭', '暗河', '沉钟', '玄潭', '幽壑', '重水'], ['沉音', '低鸣', '暗涌', '余震', '潜流']],
+    night:  [['星屑', '碎光', '萤点', '露珠', '花火', '星尘', '微光'], ['跃动', '弹跳', '轻舞', '闪烁', '嬉游']],
+    pulse:  [['山河', '宏章', '巨川', '龙脊', '峰峦', '沧溟', '大荒'], ['序章', '颂歌', '远征', '回响', '长风']],
+    zen:    [['空境', '止息', '无尘', '静水', '一息', '素白', '空山'], ['留白', '归静', '沉息', '无念', '静默']],
+    neon:   [['晶界', '流光', '棱镜', '冰晶', '星轨', '晶屑', '冷光'], ['轨迹', '低鸣', '脉冲', '折光', '流线']]
   };
   var PROGS = {
     '空灵': [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 3, 5], [0, 5, 6, 4]],
@@ -2427,13 +2427,13 @@
   };
 
   var ORIG_STYLE_PARAMS = {
-    aurora: { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 64, density: 0.26, drums: 'lite', inst: 'flute', comp: 'marimba', leads: ['flute', 'harp', 'musicbox', 'clarinet'] },
-    grow:   { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 78, density: 0.4, drums: 'groove', inst: 'marimba', comp: 'bell', leads: ['marimba', 'bell', 'flute', 'guzheng'] },
-    abyss:  { scale: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24], bpm: 52, density: 0.28, drums: 'lite', inst: 'clarinet', comp: 'handpan', leads: ['clarinet', 'handpan', 'piano', 'bianzhong'] },
-    night:  { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 116, density: 0.5, drums: 'lite', inst: 'musicbox', comp: 'marimba', leads: ['musicbox', 'marimba', 'piccolo', 'ep'] },
-    pulse:  { scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19], bpm: 88, density: 0.32, drums: 'lite', inst: 'clarinet', comp: 'handpan', leads: ['clarinet', 'handpan', 'flute', 'piano'] },
-    zen:    { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 44, density: 0.16, drums: 'none', inst: 'handpan', comp: 'bell', leads: ['handpan', 'harp', 'flute', 'clarinet'] },
-    neon:   { scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19], bpm: 104, density: 0.42, drums: 'groove', inst: 'synth', comp: 'marimba', leads: ['synth', 'marimba', 'piccolo', 'ep'] }
+    aurora: { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 60, density: 0.22, drums: 'lite', inst: 'flute', comp: 'marimba', leads: ['flute', 'harp', 'musicbox', 'clarinet'] },
+    grow:   { scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19, 21], bpm: 76, density: 0.34, drums: 'groove', inst: 'flute', comp: 'bell', leads: ['flute', 'harp', 'marimba', 'bell'] },
+    abyss:  { scale: [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24], bpm: 48, density: 0.26, drums: 'lite', inst: 'clarinet', comp: 'handpan', leads: ['clarinet', 'handpan', 'piano', 'bianzhong'] },
+    night:  { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 112, density: 0.5, drums: 'lite', inst: 'musicbox', comp: 'marimba', leads: ['musicbox', 'marimba', 'piccolo', 'ep'] },
+    pulse:  { scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19], bpm: 84, density: 0.3, drums: 'lite', inst: 'clarinet', comp: 'handpan', leads: ['clarinet', 'handpan', 'flute', 'piano'] },
+    zen:    { scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24], bpm: 40, density: 0.12, drums: 'none', inst: 'handpan', comp: 'bell', leads: ['handpan', 'harp', 'flute', 'clarinet'] },
+    neon:   { scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19], bpm: 100, density: 0.38, drums: 'groove', inst: 'synth', comp: 'marimba', leads: ['synth', 'marimba', 'piccolo', 'ep'] }
   };
   function resolveStyleId() {
     if (state.genStyle && state.genStyle !== 'auto') {
@@ -7016,7 +7016,7 @@
       body.appendChild(rowg);
       var ng = document.createElement('div');
       ng.className = 'sheet-note';
-      ng.textContent = '空灵悠远=沉静长混响；辽阔旷野=开阔清亮；幽暗深邃=低频幽深；轻快灵动=细碎跳跃；磅礴史诗=宏大递进；静谧冥想=稀疏留白；冷冽科技=清冷线条。选好后点「换一首」按这个气质生成。';
+      ng.textContent = '清寂流韵=水感长混响；长风旷野=开阔通透；渊底沉音=厚重低频；星屑跃动=细碎光点；山河宏章=层层堆叠；空境止息=极简留白；晶界流光=冷净线条。选好后点「换一首」按这个气质生成。';
       body.appendChild(ng);
     } else if (id === 'recdur') {
       var rowd = document.createElement('div');
