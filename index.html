@@ -1442,7 +1442,8 @@
         }).catch(function () { sampleLoading[inst] = 0; });
       } catch (e) { sampleLoading[inst] = 0; }
     }
-    function playSample(inst, c, f, t, vel, out) {
+    var sampleVoices = {};
+    function playSample(inst, c, f, t, vel, out, short) {
       var sm = sampleCache[inst];
       if (!sm) return false;
       var src = c.createBufferSource();
@@ -1455,13 +1456,23 @@
       var v = Math.max(0.2, Math.min(1, vel));
       var boost = { bass: 3.4, guzheng: 2.6, pipa: 2.6, harp: 1.9, bell: 2.0, guitar: 1.7, piano: 1.5, ep: 1.6, violin: 1.5, flute: 1.3, clarinet: 1.4, panflute: 1.3 }[inst] || 1.6;
       var trim = 1.7 * boost;
-      var dur = Math.min(3.2, sm.buf.duration / rate);
+      var nat = sm.buf.duration / rate;
+      var dur = short ? Math.min(0.5, nat * 0.6) : Math.min(2.6, nat);
       g.gain.setValueAtTime(0.0001, t);
       g.gain.linearRampToValueAtTime(trim * 0.8 * v, t + 0.005);
-      g.gain.setValueAtTime(trim * 0.8 * v, t + 0.02);
+      g.gain.setValueAtTime(trim * 0.8 * v, t + 0.016);
       g.gain.exponentialRampToValueAtTime(0.0002, t + dur);
       src.connect(g); g.connect(out);
-      src.start(t); src.stop(t + dur + 0.05);
+      src.start(t); src.stop(t + dur + 0.03);
+      var list = sampleVoices[inst] || (sampleVoices[inst] = []);
+      list.push({ src: src, end: t + dur });
+      while (list.length > 6) {
+        var oldV = list.shift();
+        try { oldV.src.stop(); } catch (e) {}
+      }
+      setTimeout(function () {
+        for (var i = list.length - 1; i >= 0; i--) if (list[i].src === src) list.splice(i, 1);
+      }, (t - c.currentTime + dur + 0.2) * 1000);
       return true;
     }
 
@@ -1495,7 +1506,7 @@
       var sKey = SAMPLE_ALIAS[inst] || inst;
       if (SAMPLE_BANK[sKey]) {
         loadSample(sKey, c);
-        if (playSample(sKey, c, f, t, vel, out)) return;
+        if (playSample(sKey, c, f, t, vel, out, opts.short)) return;
       }
       var o, g, o2, g2, lp, lfo, lfoG;
 
@@ -7442,7 +7453,7 @@
     opts = opts || {};
     if (typeof Game !== 'undefined') Game.keyPress(midi);
     setFreq(midiToFreq(midi));
-    Audio.note(midi, { vel: vel == null ? 0.95 : vel, when: 0, cents: opts.cents, inst: opts.inst });
+    Audio.note(midi, { vel: vel == null ? 0.95 : vel, when: 0, cents: opts.cents, inst: opts.inst, short: opts.short });
     state.beatEnv = Math.min(1.6, state.beatEnv + 0.5);
     state.wave = 0;
     state.waveAmp = Math.min(1.3, state.waveAmp + 0.7);
@@ -9439,8 +9450,8 @@
       h += '<div class="tech-float"></div><div class="tech-hint">' + (prof.hint || '') + '</div></div>';
       return h;
     }
-    function techPlay(midi, vel, name, cents) {
-      pressKey(midi, Math.max(0.15, Math.min(0.98, vel)), { cents: cents, inst: state.instrument });
+    function techPlay(midi, vel, name, cents, short) {
+      pressKey(midi, Math.max(0.15, Math.min(0.98, vel)), { cents: cents, inst: state.instrument, short: short });
       if (el.note) el.note.textContent = '♪ ' + nameOf(midi) + (name ? ' · ' + name : '');
       var layer = el.surface.querySelector('.tech-layer');
       if (layer) {
@@ -9448,6 +9459,7 @@
         if (f && name) { f.textContent = name; f.classList.add('on'); clearTimeout(f._t); f._t = setTimeout(function () { f.classList.remove('on'); }, 430); }
       }
     }
+    var techStopAll = null;
     function bindTech(inst) {
       var layer = el.surface.querySelector('.tech-layer');
       if (!layer || layer.dataset.bound) return;
@@ -9474,8 +9486,8 @@
         var name = fam === 'strings' ? (prof.roll || '轮指') : (fam === 'winds' ? '长音' : '滚奏');
         var step = fam === 'struck' ? 100 : 72;
         tremT = setInterval(function () {
-          techPlay(midi, 0.32, name, fam === 'winds' ? (Math.random() < 0.5 ? 12 : -12) : 0);
-        }, step);
+          techPlay(midi, 0.32, name, fam === 'winds' ? (Math.random() < 0.5 ? 12 : -12) : 0, true);
+        }, Math.max(80, step));
       }
       function bend(it, dir) {
         var midi = midiOf(it); if (midi == null) return;
@@ -9539,6 +9551,10 @@
       }
       layer.addEventListener('pointerup', end);
       layer.addEventListener('pointercancel', end);
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+      window.addEventListener('blur', end);
+      techStopAll = function () { end(); };
     }
 
     // ART:START
@@ -10178,6 +10194,7 @@
       sl.addEventListener('pointercancel', function () { dragging = false; });
     }
     function build() {
+      if (typeof techStopAll === 'function') techStopAll();
       var fam = FAM[state.instrument] || 'keys';
       var scBtn0 = document.getElementById('gsScale');
       if (scBtn0) {
@@ -10260,6 +10277,7 @@
     }
     function toggle() {
       on = !on;
+      if (!on && typeof techStopAll === 'function') techStopAll();
       if (!on && typeof G3D !== 'undefined') G3D.stop();
       el.stage.hidden = !on;
       document.body.classList.toggle('game-active', on);
