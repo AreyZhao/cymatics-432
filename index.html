@@ -8664,6 +8664,16 @@
         }
         return '<path d="' + d + '" fill="none" stroke="url(#lgold)" stroke-width="' + sw + '" stroke-linecap="round" opacity=".85"/>';
       };
+      var cloudMotif = function (cx5, cy5, sc) {
+        var g = '<g opacity=".85">';
+        g += '<path d="M' + (cx5 - 20 * sc) + ' ' + (cy5 + 4 * sc) + ' q' + (5 * sc) + ' ' + (-9 * sc) + ' ' + (13 * sc) + ' ' + (-5 * sc) + ' q' + (7 * sc) + ' ' + (3 * sc) + ' ' + (3 * sc) + ' ' + (10 * sc) + ' q' + (-3 * sc) + ' ' + (5 * sc) + ' ' + (-9 * sc) + ' ' + (3 * sc) + '" fill="none" stroke="url(#lgold)" stroke-width="' + (2.1 * sc) + '" stroke-linecap="round"/>';
+        g += '<circle cx="' + (cx5 + 2 * sc) + '" cy="' + (cy5 - 2 * sc) + '" r="' + (5.4 * sc) + '" fill="none" stroke="url(#lgold)" stroke-width="' + (1.5 * sc) + '"/>';
+        g += '<circle cx="' + (cx5 + 13 * sc) + '" cy="' + (cy5 + 2 * sc) + '" r="' + (4.2 * sc) + '" fill="none" stroke="url(#lgold)" stroke-width="' + (1.3 * sc) + '"/>';
+        g += '<path d="M' + (cx5 - 26 * sc) + ' ' + (cy5 + 13 * sc) + ' q' + (24 * sc) + ' ' + (7 * sc) + ' ' + (52 * sc) + ' 0" fill="none" stroke="url(#lgold)" stroke-width="' + (1.2 * sc) + '" opacity=".7" stroke-linecap="round"/>';
+        g += '<circle cx="' + (cx5 - 14 * sc) + '" cy="' + (cy5 + 4 * sc) + '" r="' + (1.4 * sc) + '" fill="#ffeec2" opacity=".8"/>';
+        g += '</g>';
+        return g;
+      };
       var rosette = function (cx4, cy4, r4) {
         var g = '<circle cx="' + cx4 + '" cy="' + cy4 + '" r="' + r4 + '" fill="none" stroke="#8a6a2c" stroke-width="1.1" opacity=".85"/>';
         g += '<circle cx="' + cx4 + '" cy="' + cy4 + '" r="' + (r4 * 0.62) + '" fill="none" stroke="#a1803c" stroke-width=".8" opacity=".75"/>';
@@ -8681,39 +8691,39 @@
         svg += '<path d="M124 168 C146 176 174 176 196 168" fill="none" stroke="#8a6a2c" stroke-width=".9" opacity=".5"/>';
         svg += '<path d="M128 180 C146 186 174 186 192 180" fill="none" stroke="#8a6a2c" stroke-width=".8" opacity=".4"/>';
         for (var bd = 0; bd < 5; bd++) svg += '<circle cx="' + (142 + bd * 9) + '" cy="186" r="1.7" fill="#ffeec2" opacity=".9"/>';
-        svg += '<path d="M143 70 C139 96 138 126 142 152 C146 160 174 160 178 152 C182 126 181 96 177 70 C170 64 150 64 143 70 Z" fill="url(#lboard)" stroke="#9c7a42" stroke-width="1.1" stroke-linejoin="round"/>';
-        svg += '<path d="M151 74 C149 100 149 128 151 150 M169 74 C171 100 171 128 169 150" fill="none" stroke="#c19b64" stroke-width=".9" opacity=".55"/>';
-        svg += rosette(160, 118, 9);
-        var armL = 'M139 160 C126 140 112 116 108 96 C104 76 108 58 118 48';
-        var armR = 'M181 160 C194 140 208 116 212 96 C216 76 212 58 202 48';
+        svg += '<path d="M146 96 C142 120 141 144 144 158 C148 165 172 165 176 158 C179 144 178 120 174 96 C168 90 152 90 146 96 Z" fill="url(#lboard)" stroke="#9c7a42" stroke-width="1.1" stroke-linejoin="round"/>';
+        svg += '<path d="M152 100 C150 122 150 142 152 154 M168 100 C170 122 170 142 168 154" fill="none" stroke="#c19b64" stroke-width=".9" opacity=".55"/>';
+        svg += rosette(160, 128, 8);
+        var armL = 'M139 160 C126 134 112 106 108 84 C104 58 108 40 118 32';
+        var armR = 'M181 160 C194 134 208 106 212 84 C216 58 212 40 202 32';
         svg += '<path d="' + armL + '" fill="none" stroke="#6b4a1c" stroke-width="11" stroke-linecap="round" opacity=".4"/>';
         svg += '<path d="' + armR + '" fill="none" stroke="#6b4a1c" stroke-width="11" stroke-linecap="round" opacity=".4"/>';
         svg += '<path d="' + armL + '" fill="none" stroke="url(#lgold)" stroke-width="8" stroke-linecap="round"/>';
         svg += '<path d="' + armR + '" fill="none" stroke="url(#lgold)" stroke-width="8" stroke-linecap="round"/>';
         svg += '<path d="' + armL + '" fill="none" stroke="#fff9e6" stroke-width="1.7" opacity=".5" stroke-linecap="round"/>';
         svg += '<path d="' + armR + '" fill="none" stroke="#fff9e6" stroke-width="1.7" opacity=".5" stroke-linecap="round"/>';
-        svg += '<path d="M112 50 C140 40 180 40 208 50" fill="none" stroke="#6b4a1c" stroke-width="11" stroke-linecap="round" opacity=".4"/>';
-        svg += '<path d="M112 50 C140 40 180 40 208 50" fill="none" stroke="url(#lgold)" stroke-width="7.4" stroke-linecap="round"/>';
-        svg += '<path d="M114 48 C142 39 178 39 206 48" fill="none" stroke="#fff9e6" stroke-width="1.5" opacity=".45" stroke-linecap="round"/>';
-        for (var bd2 = 0; bd2 < 5; bd2++) svg += '<circle cx="' + (130 + bd2 * 15) + '" cy="' + (46 + Math.sin(bd2 / 4 * Math.PI) * 3) + '" r="2.3" fill="#fff2c6" stroke="#8a6a2c" stroke-width=".7"/>';
+        svg += '<path d="M112 32 C140 24 180 24 208 32" fill="none" stroke="#6b4a1c" stroke-width="11" stroke-linecap="round" opacity=".4"/>';
+        svg += '<path d="M112 32 C140 24 180 24 208 32" fill="none" stroke="url(#lgold)" stroke-width="7.4" stroke-linecap="round"/>';
+        svg += '<path d="M114 30 C142 22 178 22 206 30" fill="none" stroke="#fff9e6" stroke-width="1.5" opacity=".45" stroke-linecap="round"/>';
+        for (var bd2 = 0; bd2 < 5; bd2++) svg += '<circle cx="' + (130 + bd2 * 15) + '" cy="' + (30 + Math.sin(bd2 / 4 * Math.PI) * 3) + '" r="2.3" fill="#fff2c6" stroke="#8a6a2c" stroke-width=".7"/>';
         var i2;
         for (i2 = 0; i2 < 21; i2++) {
           var tx = i2 / 20;
           var sx2 = 118 + tx * 84;
-          var sy2 = 46 + Math.sin(Math.PI * tx) * -2 + 3;
+          var sy2 = 30 + Math.sin(Math.PI * tx) * -2 + 3;
           var bx = 149 + tx * 22;
-          svg += '<path class="strline" d="M' + sx2.toFixed(1) + ' ' + sy2.toFixed(1) + ' Q' + ((sx2 + bx) / 2).toFixed(1) + ' ' + (sy2 + (72 - sy2) * 0.55).toFixed(1) + ' ' + bx.toFixed(1) + ' 74" fill="none" stroke="#f7faff" stroke-width=".8" opacity=".85"/>';
+          svg += '<path class="strline" d="M' + sx2.toFixed(1) + ' ' + sy2.toFixed(1) + ' Q' + ((sx2 + bx) / 2).toFixed(1) + ' ' + (sy2 + (96 - sy2) * 0.5).toFixed(1) + ' ' + bx.toFixed(1) + ' 98" fill="none" stroke="#f7faff" stroke-width=".8" opacity=".85"/>';
         }
-        svg += '<g class="scrollGlow" filter="url(#lglow)">' + curl(118, 48, 1.1, 2.4) + curl(202, 48, 1.1, 2.4) + '</g>';
+        svg += '<g class="scrollGlow" filter="url(#lglow)">' + curl(118, 32, 1.1, 2.4) + curl(202, 32, 1.1, 2.4) + '</g>';
         svg += curl(112, 92, 0.8, 1.5) + curl(208, 92, 0.8, 1.5);
         svg += curl(110, 130, 0.7, 1.3) + curl(210, 130, 0.7, 1.3);
         svg += '<g class="petalGroup" opacity=".8"><ellipse class="petal" cx="92" cy="118" rx="2.4" ry="1.1" fill="#e7ccff"/><ellipse class="petal" cx="230" cy="126" rx="2.2" ry="1" fill="#e7ccff"/><ellipse class="petal" cx="86" cy="78" rx="1.7" ry=".8" fill="#f4dfae"/></g>';
       } else {
         svg += '<ellipse cx="160" cy="152" rx="148" ry="7" fill="#000" opacity=".4"/>';
-        var body2 = 'M20 94 C58 81 108 77 160 77 C212 77 262 81 300 94 C311 98 311 114 300 118 C262 131 212 135 160 135 C108 135 58 131 20 118 C9 114 9 98 20 94 Z';
+        var body2 = 'M14 86 L306 86 Q312 86 312 92 L312 126 Q312 132 306 132 L14 132 Q8 132 8 126 L8 92 Q8 86 14 86 Z';
         svg += '<path d="' + body2 + '" fill="#2a1a33" opacity=".5" transform="translate(0,6)"/>';
         svg += '<path d="' + body2 + '" fill="url(#lviol)" stroke="#4a3560" stroke-width="1.5" stroke-linejoin="round"/>';
-        svg += '<path d="M34 96 C72 87 116 84 160 84 C204 84 248 87 286 96 C292 99 292 111 286 114 C248 123 204 126 160 126 C116 126 72 123 34 114 C28 111 28 99 34 96 Z" fill="#f0e6ff" opacity=".16"/>';
+        svg += '<path d="M26 92 L294 92 L294 126 L26 126 Z" fill="#f0e6ff" opacity=".16"/>';
         svg += '<path d="M40 90 C120 84 200 84 280 90" fill="none" stroke="#ffeec4" stroke-width="1" opacity=".35"/>';
         svg += '<path d="M36 122 C120 128 200 128 284 122" fill="none" stroke="#cbb6ff" stroke-width="1" opacity=".3"/>';
         svg += '<path d="M14 84 C5 91 5 121 14 128 C21 132 30 122 31 111 L31 101 C30 90 21 80 14 84 Z" fill="url(#lgold)" stroke="#8a6a2c" stroke-width="1"/>';
@@ -8730,6 +8740,8 @@
           svg += '<path d="M' + (bx5 - 3.4) + ' 113 Q' + bx5 + ' 105 ' + (bx5 + 3.4) + ' 113" fill="none" stroke="#f7e6bb" stroke-width="1.7" stroke-linecap="round" opacity=".9"/>';
           svg += '<circle cx="' + bx5 + '" cy="105" r="1.1" fill="#ffeec2" opacity=".85"/>';
         }
+        svg += cloudMotif(56, 98, 1.0);
+        svg += cloudMotif(264, 98, 1.0);
         svg += '<g class="petalGroup" opacity=".75"><ellipse class="petal" cx="116" cy="64" rx="2.4" ry="1.1" fill="#e7ccff"/><ellipse class="petal" cx="214" cy="146" rx="2.2" ry="1" fill="#e7ccff"/><ellipse class="petal" cx="256" cy="70" rx="1.7" ry=".8" fill="#f4dfae"/></g>';
       }
       return svg + '</svg>';
