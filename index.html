@@ -255,6 +255,7 @@
     padding:14px;border-radius:18px;border:1px solid var(--stroke);
     background:rgba(9,12,17,.98);box-shadow:0 24px 70px rgba(0,0,0,.85);
   }
+  .lib-note{font-size:10px;color:var(--muted);margin-left:6px;letter-spacing:.04em}
   .lib-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;letter-spacing:.12em;color:var(--accent)}
   .lib-head button{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
   .lib-search{
@@ -581,7 +582,7 @@
 <div id="medLib">
   <div class="lib-panel">
     <div class="lib-head">
-      <b>🧘 冥想音乐</b>
+      <b>🧘 冥想音乐</b><span class="lib-note">疗愈预设 · 独立于天籁创作</span>
       <div class="medlib-actions">
         <button id="medLibFav" class="lib-btn">⭐ 收藏</button>
         <button id="medLibTrash" class="lib-btn">🗑 回收站</button>
@@ -610,7 +611,7 @@
 
 <div id="lib">
   <div class="lib-panel">
-    <div class="lib-head"><b>曲库</b><button id="libClose" aria-label="关闭">✕</button></div>
+    <div class="lib-head"><b>曲库</b><span class="lib-note">天籁 · A4=432Hz</span><button id="libClose" aria-label="关闭">✕</button></div>
     <input id="libSearch" class="lib-search" placeholder="搜索曲名 / 风格…" aria-label="搜索曲目">
     <div class="lib-filters" id="libFilters"></div>
     <div class="lib-list" id="libList"></div>
@@ -2926,6 +2927,7 @@
     }
     return {
       id: 't' + seed.toString(36) + '-' + style.id,
+      tuning: 'A4=432Hz', tag: '天籁', engine: 'piece432',
       mode: mode, arpInst: mode === 'solo' ? inst : compInst, counterInst: compInst, sparkInst: sparkInst,
       name: opts.name || autoName,
       styleId: style.id, mood: style.mood, bpm: bpm, root: root, scaleName: scaleName,
@@ -3073,18 +3075,9 @@
 
   function origSchedule(i, t, bus) {
     var tr = orig.transpose;
-    var drums = orig.drums || 'lite';
-    if (orig.hasDrums !== false) {
-      if (i % 8 === 0 || (drums === 'strong' && i % 8 === 4)) { Audio.kick(t, 1, bus); visQueue.push({ t: t, kind: 'beat', amt: 1 }); }
-      if (i === 6 || i === 22) { Audio.kick(t, drums === 'sparse' ? 0.28 : 0.38, bus); visQueue.push({ t: t, kind: 'beat', amt: 0.38 }); }
-    }
+    /* 天籁即兴不使用鼓/打击，避免"破鼓声"与疗愈节拍混淆 */
     if (i % 16 === 0) Audio.bass(t, 45 + tr, 0.8, bus);
-    if (orig.drumLead && i % 4 === 0) {
-      var dsc = orig.scale || [0, 2, 4, 7, 9, 12];
-      var dMidi = 48 + dsc[Math.floor(Math.random() * dsc.length)] + tr;
-      Audio.note(dMidi, { when: t, vel: i % 8 === 0 ? 0.8 : 0.5, wet: 0.35, inst: orig.styleId === 'pulse' ? 'marimba' : 'handpan', bus: bus });
-      visQueue.push({ t: t, kind: 'note', midi: dMidi });
-    }
+    /* 不安排打击型声部 */
     if (!orig.hasPad && orig.compKind === 'arp' && i % 4 === 0) {
       var csc = orig.scale || [0, 2, 4, 7, 9, 12];
       Audio.note(60 + csc[Math.floor((i / 4) % csc.length)] + tr, { when: t, vel: 0.2, wet: 0.5, inst: orig.compInst || 'marimba', bus: bus });
@@ -3147,9 +3140,9 @@
     orig.inst = (state.instrument && state.instrument !== 'musicbox') ? state.instrument : leadPool[Math.floor(Math.random() * leadPool.length)];
     var lprof = INST_PROFILES[orig.inst] || { char: 'sustain' };
     orig.density = sp.density + (lprof.char === 'pluck' ? 0.06 : (lprof.char === 'sustain' ? -0.04 : 0.02));
-    orig.hasDrums = Math.random() < 0.62;
+    orig.hasDrums = false;
     orig.hasPad = false;
-    orig.drumLead = sid === 'pulse' ? Math.random() < 0.7 : Math.random() < 0.15;
+    orig.drumLead = false;
     orig.compKind = Math.random() < 0.5 ? 'arp' : 'none';
     orig.bus = Audio.bus();
     orig.bus.gain.value = 1;
@@ -3159,7 +3152,7 @@
     orig.next = c.currentTime + 0.1;
     state.seqOn = true;
     state.mood = styleById(sid).mood || '优美';
-    state.currentPiece = { name: '天籁 · 即兴', styleId: sid, bpm: sp.bpm };
+    state.currentPiece = { name: '天籁 · 即兴', styleId: sid, bpm: sp.bpm, tuning: 'A4=432Hz', tag: '天籁' };
     if (autoBtn) { autoBtn.textContent = '⏹ 停演'; autoBtn.classList.add('on'); }
     if (bpmTag) { bpmTag.hidden = false; bpmTag.textContent = sp.bpm + ' BPM'; }
     showNowTitle(state.currentPiece);
@@ -5215,16 +5208,18 @@
   function restartSeq() {
     stopSeq();
     var sid = resolveStyleId();
-    var sp = ORIG_STYLE_PARAMS[sid];
     var seed = ((Date.now() * 2654435761) >>> 0);
     var title = pickName();
     var userInst = (state.instrument && state.instrument !== 'musicbox') ? state.instrument : null;
-    var p = composeOriginalPiece({ seed: seed, styleId: sid, bpm: sp.bpm, name: title, instrument: userInst });
+    var p = composePiece({ seed: seed, styleId: sid, name: title, instrument: userInst });
+    p.tuning = 'A4=432Hz';
+    p.tag = '天籁';
+    p.engine = 'piece432';
     state.currentPiece = p;
     playPiece(p);
     saveLibraryPiece(p);
     var st = styleById(sid);
-    toast('🎲 ' + esc(title) + '（' + st.icon + ' ' + st.name + '，' + sp.bpm + ' BPM）已存入曲库', 3800);
+    toast('🎲 ' + esc(title) + '（' + st.icon + ' ' + st.name + '，' + p.bpm + ' BPM · A4=432Hz）已存入曲库', 3800);
   }
 
   /* ---------- 浮动曲名（可拖动） ---------- */
@@ -5430,7 +5425,8 @@
     library.unshift({
       id: piece.id, name: piece.name, styleId: piece.styleId, bpm: piece.bpm,
       root: piece.root, scaleName: piece.scaleName, instrument: piece.instrument,
-      seed: piece.seed, created: piece.created, bars: piece.bars, engine: piece.engine || ''
+      seed: piece.seed, created: piece.created, bars: piece.bars, engine: piece.engine || '',
+      tuning: piece.tuning || (piece.medFreq ? '' : 'A4=432Hz'), tag: piece.tag || (piece.medFreq ? '冥想' : '')
     });
     library = library.slice(0, 60);
     saveLibrary();
@@ -5617,7 +5613,7 @@
       var t = document.createElement('div');
       t.className = 't';
       t.innerHTML = '<div class="nm">' + (it.preset ? '⭐ ' : '') + esc(it.name) + '</div>' +
-        '<div class="meta">' + st.icon + ' ' + st.name + ' · ' + it.bpm + ' BPM · ' + fmtDate(it.created) + '</div>';
+        '<div class="meta">' + st.icon + ' ' + st.name + ' · ' + it.bpm + ' BPM · ' + (it.medFreq ? ('疗愈 ' + it.medFreq + 'Hz') : 'A4=432Hz') + ' · ' + (it.tag === '冥想' ? '冥想 · ' : '') + fmtDate(it.created) + '</div>';
       var play = document.createElement('button');
       play.className = 'lib-btn primary';
       play.textContent = '▶';
@@ -7106,8 +7102,8 @@
       ng.className = 'sheet-note';
       var curStyle = (state.genStyle && state.genStyle !== 'auto') ? styleById(state.genStyle) : null;
       ng.textContent = curStyle
-        ? (curStyle.desc + ' 音游：' + ((curStyle.game && curStyle.game.tip) || ''))
-        : '自动随机：每首随机一种风格。选一个风格后，网页配色和音游默认乐器/音阶会一起切换。';
+        ? (curStyle.desc + ' 音游：' + ((curStyle.game && curStyle.game.tip) || '') + ' 生成曲目一律以 A4=432Hz 为基准，与「冥想 / 疗愈」预设分开归档。')
+        : '自动随机：每首随机一种风格，一律 A4=432Hz；与「冥想 / 疗愈」预设分开归档。选风格后网页配色和音游默认乐器/音阶会一起切换。';
       body.appendChild(ng);
     } else if (id === 'recdur') {
       var rowd = document.createElement('div');
